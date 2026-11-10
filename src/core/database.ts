@@ -80,6 +80,8 @@ const migrations: string[] = [
      end_ms INTEGER,
      PRIMARY KEY (interview_id, number)
    ) STRICT;`,
+  // A speaker's role in the Speaker Mapping. NULL until the Interviewer confirms the mapping.
+  `ALTER TABLE transcript_speaker ADD COLUMN role TEXT CHECK (role IN ('candidate', 'interviewer', 'other'));`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

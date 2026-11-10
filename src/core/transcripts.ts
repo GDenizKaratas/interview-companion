@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { inTransaction } from "./database.ts";
-import { InvalidInputError } from "./errors.ts";
+import { InvalidInputError, NotFoundError } from "./errors.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { requireInterview } from "./interviews.ts";
 import { adapterFor, transcriptAdapters, type ParsedSegment } from "./transcript-formats/index.ts";
@@ -16,10 +16,15 @@ export interface TranscriptFormat {
   extensions: string[];
 }
 
+const speakerRoles = ["candidate", "interviewer", "other"] as const;
+export type SpeakerRole = (typeof speakerRoles)[number];
+
 export interface Speaker {
   id: string;
   // The label exactly as the file wrote it, such as "Speaker 1" or a name.
   label: string;
+  // The role the Interviewer gave this label in the confirmed Speaker Mapping, or null before it.
+  role: SpeakerRole | null;
   // False until the Interviewer confirms the Speaker Mapping.
   verified: boolean;
 }
@@ -40,6 +45,8 @@ export interface Transcript {
   fileName: string;
   format: string;
   importedAt: string;
+  // When the Interviewer last confirmed the Speaker Mapping, or null before that.
+  speakerMappingConfirmedAt: string | null;
   // In the order they first speak.
   speakers: Speaker[];
   segments: Segment[];
@@ -149,8 +156,8 @@ export function getTranscript(db: DatabaseSync, interviewId: string): Transcript
   const verified = row.speaker_mapping_confirmed_at !== null;
   const speakers = (
     db
-      .prepare("SELECT id, label FROM transcript_speaker WHERE interview_id = ? ORDER BY position")
-      .all(interviewId) as unknown as { id: string; label: string }[]
+      .prepare("SELECT id, label, role FROM transcript_speaker WHERE interview_id = ? ORDER BY position")
+      .all(interviewId) as unknown as { id: string; label: string; role: SpeakerRole | null }[]
   ).map((speaker) => ({ ...speaker, verified }));
   const segments = (
     db
@@ -165,5 +172,49 @@ export function getTranscript(db: DatabaseSync, interviewId: string): Transcript
     startMs: segment.start_ms,
     endMs: segment.end_ms,
   }));
-  return { interviewId: row.interview_id, fileName: row.file_name, format: row.format, importedAt: row.imported_at, speakers, segments };
+  return {
+    interviewId: row.interview_id,
+    fileName: row.file_name,
+    format: row.format,
+    importedAt: row.imported_at,
+    speakerMappingConfirmedAt: row.speaker_mapping_confirmed_at,
+    speakers,
+    segments,
+  };
+}
+
+// Gives every speaker of the Interview's Transcript its role and confirms the Speaker Mapping,
+// all at once. Confirming again replaces the earlier mapping.
+export function confirmSpeakerMapping(
+  db: DatabaseSync,
+  now: Now,
+  interviewId: string,
+  roles: Record<string, SpeakerRole>,
+): Transcript {
+  requireInterview(db, interviewId);
+  if (!db.prepare("SELECT 1 FROM transcript WHERE interview_id = ?").get(interviewId)) {
+    throw new NotFoundError("This Interview has no Transcript.");
+  }
+  const speakerIds = (
+    db.prepare("SELECT id FROM transcript_speaker WHERE interview_id = ?").all(interviewId) as unknown as { id: string }[]
+  ).map((speaker) => speaker.id);
+  // A speaker the browser knows but the Transcript does not: most likely it was replaced meanwhile.
+  if (Object.keys(roles).some((id) => !speakerIds.includes(id))) {
+    throw new NotFoundError("A speaker is not in this Transcript. Reload the Transcript and try again.");
+  }
+  if (speakerIds.some((id) => !Object.hasOwn(roles, id))) {
+    throw new InvalidInputError("speakerMapping", "required", "Give every speaker a role before confirming.");
+  }
+  if (speakerIds.some((id) => !(speakerRoles as readonly string[]).includes(roles[id]!))) {
+    throw new InvalidInputError("speakerMapping", "format", "A speaker's role must be Candidate, Interviewer, or Other.");
+  }
+  inTransaction(db, () => {
+    const setRole = db.prepare("UPDATE transcript_speaker SET role = ? WHERE id = ?");
+    for (const id of speakerIds) setRole.run(roles[id]!, id);
+    db.prepare("UPDATE transcript SET speaker_mapping_confirmed_at = ? WHERE interview_id = ?").run(
+      now().toISOString(),
+      interviewId,
+    );
+  });
+  return getTranscript(db, interviewId)!;
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
 import { api, type Interview, type Transcript, type TranscriptFormat } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { SpeakerMapping } from "./SpeakerMapping.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
 import { useText } from "./text.tsx";
@@ -86,6 +87,8 @@ function InterviewTranscript({ interview }: { interview: Interview }) {
               {t.replace}
             </button>
           </div>
+          {/* Keyed by import, so a replaced Transcript never keeps roles chosen for the old speakers. */}
+          <SpeakerMapping key={transcript.importedAt} transcript={transcript} onConfirmed={setTranscript} />
           <ol className="segments">
             {transcript.segments.map((segment) => {
               const speaker = labels.get(segment.speakerId);
@@ -100,7 +103,11 @@ function InterviewTranscript({ interview }: { interview: Interview }) {
                       <span className="segment-time">{formatTime(segment.startMs)}</span>
                     )}
                     <span className="segment-speaker">{speaker?.label}</span>
-                    {speaker && !speaker.verified && <span className="unverified">{t.unverified}</span>}
+                    {speaker?.verified && speaker.role ? (
+                      <span className="speaker-role">{t.speakers.roles[speaker.role]}</span>
+                    ) : (
+                      speaker && <span className="unverified">{t.unverified}</span>
+                    )}
                   </div>
                   <p className="segment-text">{segment.text}</p>
                 </li>
