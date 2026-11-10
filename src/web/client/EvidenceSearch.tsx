@@ -26,12 +26,11 @@ export function EvidenceSearch({
   const [search, setSearch] = useState<SearchResult | undefined>();
   const [error, setError] = useState<string | undefined>();
 
-  async function runSearch(event: FormEvent) {
-    event.preventDefault();
+  async function runSearch(options = { sources, candidateOnly }) {
     setSearching(true);
     setError(undefined);
     try {
-      setSearch(await api.searchEvidence(candidateId, query, sources, candidateOnly));
+      setSearch(await api.searchEvidence(candidateId, query, options.sources, options.candidateOnly));
     } catch (failure) {
       setSearch(undefined);
       setError(failure instanceof ApiError && failure.rule === "required" ? t.required : t.failed);
@@ -40,20 +39,40 @@ export function EvidenceSearch({
     }
   }
 
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    void runSearch();
+  }
+
+  // Changing what to search runs the shown search again, so its results never mismatch the choices.
+  function changeOptions(options: { sources: EvidenceSources; candidateOnly: boolean }) {
+    setSources(options.sources);
+    setCandidateOnly(options.candidateOnly);
+    if (search) void runSearch(options);
+  }
+
+  function nameOf(interviewId: string): string {
+    const interview = interviews.find((i) => i.id === interviewId);
+    return interview ? interviewName(text, interview) : "";
+  }
+
+  // "CV · page 2", or "First interview · 18:42 · Ayşe (Interviewer)".
+  function placeOf(result: EvidenceResult): string {
+    if (result.source === "cv") return `${t.cv} · ${fill(t.page, { page: String(result.page) })}`;
+    const time = result.startMs === null ? text.panels.transcript.noTime : formatTime(result.startMs);
+    const role = result.speakerRole ? ` (${text.panels.transcript.speakers.roles[result.speakerRole]})` : "";
+    return `${nameOf(result.interviewId)} · ${time} · ${result.speakerLabel}${role}`;
+  }
+
   function clear() {
     setQuery("");
     setSearch(undefined);
     setError(undefined);
   }
 
-  const nameOf = (interviewId: string) => {
-    const interview = interviews.find((i) => i.id === interviewId);
-    return interview ? interviewName(text, interview) : "";
-  };
-
   return (
     <section className="evidence-search" aria-label={t.label}>
-      <form className="evidence-search-form" onSubmit={runSearch}>
+      <form className="evidence-search-form" onSubmit={submit}>
         <input
           type="search"
           value={query}
@@ -61,13 +80,13 @@ export function EvidenceSearch({
           aria-label={t.label}
           onChange={(event) => setQuery(event.target.value)}
         />
-        <select aria-label={t.sourcesLabel} value={sources} onChange={(event) => setSources(event.target.value as EvidenceSources)}>
+        <select aria-label={t.sourcesLabel} value={sources} onChange={(event) => changeOptions({ sources: event.target.value as EvidenceSources, candidateOnly })}>
           <option value="all">{t.sources.all}</option>
           <option value="cv">{t.sources.cv}</option>
           <option value="transcripts">{t.sources.transcripts}</option>
         </select>
         <label className="evidence-candidate-only" title={t.candidateOnlyHint}>
-          <input type="checkbox" checked={candidateOnly} onChange={(event) => setCandidateOnly(event.target.checked)} />
+          <input type="checkbox" checked={candidateOnly} onChange={(event) => changeOptions({ sources, candidateOnly: event.target.checked })} />
           {t.candidateOnly}
         </label>
         <button type="submit" disabled={searching}>
@@ -104,7 +123,7 @@ export function EvidenceSearch({
           {search.results.length > 0 && (
             <ol className="evidence-list">
               {search.results.map((result) => (
-                <li key={result.source === "cv" ? `cv-${result.page}-${result.excerpt}` : `${result.interviewId}-${result.segmentNumber}`}>
+                <li key={result.source === "cv" ? `cv-${result.page}-${result.excerptStart}` : `${result.interviewId}-${result.segmentNumber}`}>
                   <button type="button" className="evidence-result" onClick={() => onOpen(result)}>
                     <span className="evidence-place">{placeOf(result)}</span>
                     <span className="evidence-excerpt">
@@ -119,12 +138,4 @@ export function EvidenceSearch({
       )}
     </section>
   );
-
-  // "CV · page 2", or "First interview · 18:42 · Ayşe (Interviewer)".
-  function placeOf(result: EvidenceResult): string {
-    if (result.source === "cv") return `${t.cv} · ${fill(t.page, { page: String(result.page) })}`;
-    const time = result.startMs === null ? text.panels.transcript.noTime : formatTime(result.startMs);
-    const role = result.speakerRole ? ` (${text.panels.transcript.speakers.roles[result.speakerRole]})` : "";
-    return `${nameOf(result.interviewId)} · ${time} · ${result.speakerLabel}${role}`;
-  }
 }

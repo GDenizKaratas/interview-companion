@@ -57,12 +57,54 @@ describe("Evidence search in the CV", () => {
         source: "cv",
         page: 1,
         excerpt: "Node.js, PostgreSQL, Redis ve BullMQ ile ödeme servisleri.",
+        excerptStart: 10,
         highlights: [{ start: 21, end: 26 }],
       },
-      { source: "cv", page: 2, excerpt: "Sertifika: Redis Geliştirici", highlights: [{ start: 11, end: 16 }] },
+      {
+        source: "cv",
+        page: 2,
+        excerpt: "Sertifika: Redis Geliştirici",
+        excerptStart: 0,
+        highlights: [{ start: 11, end: 16 }],
+      },
     ]);
     expect(search.results.map((result) => result.source)).toEqual(["cv", "cv", "transcript"]);
     expect(search.foundIn).toEqual({ cv: true, interviewIds: [first.id] });
+  });
+
+  it("keeps two equal lines as two results, and gives each line's matches to that line", async () => {
+    const repeated = makePdf([
+      [
+        { text: "Redis ile kuyruk, Redis ile önbellek.", size: 10 },
+        { text: "Redis ile kuyruk, Redis ile önbellek.", size: 10 },
+      ],
+    ]);
+    await core.attachCv(candidate.id, { fileName: "cv.pdf", bytes: repeated });
+
+    const search = core.searchEvidence(candidate.id, { query: "Redis", sources: "cv", candidateOnly: false });
+
+    expect(search.results).toEqual([
+      {
+        source: "cv",
+        page: 1,
+        excerpt: "Redis ile kuyruk, Redis ile önbellek.",
+        excerptStart: 0,
+        highlights: [
+          { start: 0, end: 5 },
+          { start: 18, end: 23 },
+        ],
+      },
+      {
+        source: "cv",
+        page: 1,
+        excerpt: "Redis ile kuyruk, Redis ile önbellek.",
+        excerptStart: 38,
+        highlights: [
+          { start: 0, end: 5 },
+          { start: 18, end: 23 },
+        ],
+      },
+    ]);
   });
 
   it("searches only the sources asked for", async () => {

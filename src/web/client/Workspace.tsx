@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api, ApiError, type Candidate, type EvidenceResult, type Interview } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { CvPanel } from "./CvPanel.tsx";
@@ -29,13 +29,18 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [deleting, setDeleting] = useState(false);
   // The search result the Interviewer opened last.
   const [focus, setFocus] = useState<EvidenceFocus | undefined>();
+  const focusCount = useRef(0);
 
   // A Transcript result selects its Interview, since the Transcript panel shows one Interview.
   function openEvidence(result: EvidenceResult) {
-    const id = Date.now();
+    const id = ++focusCount.current;
     if (result.source === "cv") {
-      const marks = result.highlights.map(({ start, end }) => result.excerpt.slice(start, end));
-      setFocus({ id, source: "cv", page: result.page, marks });
+      // The CV panel marks the match in the page's whole text, not only in the excerpt.
+      const highlights = result.highlights.map(({ start, end }) => ({
+        start: result.excerptStart + start,
+        end: result.excerptStart + end,
+      }));
+      setFocus({ id, source: "cv", page: result.page, highlights });
     } else {
       setInterviewId(result.interviewId);
       setFocus({ id, source: "transcript", interviewId: result.interviewId, segmentNumber: result.segmentNumber, highlights: result.highlights });

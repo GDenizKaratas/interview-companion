@@ -3,6 +3,7 @@
 import type {
   Candidate,
   Cv,
+  CvPage,
   EvidenceResult,
   EvidenceSearch,
   EvidenceSources,
@@ -19,7 +20,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { Candidate, Cv, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, Transcript, TranscriptFormat };
+export type { Candidate, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;

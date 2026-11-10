@@ -1,23 +1,35 @@
 import { getDocument, GlobalWorkerOptions, TextLayer, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { useEffect, useRef, useState } from "react";
-import type { EvidenceFocus } from "./evidence-focus.ts";
+import type { CvPage, Highlight } from "./api.ts";
+import type { CvFocus } from "./evidence-focus.ts";
+import { markedParts } from "./marked-parts.ts";
 import { useText } from "./text.tsx";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
+// The text pieces pdf.js laid over the drawn page, and the text of each.
+interface PageText {
+  pageNumber: number;
+  pieces: HTMLElement[];
+  texts: string[];
+}
+
 // Draws one page of a PDF at a time, as wide as the panel, with buttons to move between pages.
 // The page's text is laid over it, invisible but selectable, so a search match can be marked.
-export function PdfPages({ url, focus }: { url: string; focus?: Extract<EvidenceFocus, { source: "cv" }> }) {
+// pages is the CV's text as core stored it, which says where on the page a match is.
+export function PdfPages({ url, pages, focus }: { url: string; pages: CvPage[]; focus?: CvFocus }) {
   const { text } = useText();
   const t = text.panels.cv;
   const [document, setDocument] = useState<PDFDocumentProxy | undefined>();
   const [failed, setFailed] = useState(false);
   const [pageNumber, setPageNumber] = useState(1);
   const [width, setWidth] = useState(0);
+  const [pageText, setPageText] = useState<PageText | undefined>();
   const frame = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const textLayer = useRef<HTMLDivElement>(null);
+  const scrolledFocusId = useRef<number | undefined>(undefined);
 
   // Opening a search result goes to its page, once per click; the buttons still work after it.
   const [openedFocusId, setOpenedFocusId] = useState<number | undefined>();
@@ -44,16 +56,13 @@ export function PdfPages({ url, focus }: { url: string; focus?: Extract<Evidence
     return () => observer.disconnect();
   }, []);
 
-  // The words of the opened search result, if it is on the shown page.
-  const marks = focus && focus.page === pageNumber ? focus.marks : undefined;
-
   useEffect(() => {
     if (!document || !canvas.current || !textLayer.current || width === 0) return;
     const target = canvas.current;
     const layer = textLayer.current;
     let cancelled = false;
     let renderTask: RenderTask | undefined;
-    let text: TextLayer | undefined;
+    let pieces: TextLayer | undefined;
     document.getPage(pageNumber).then((page) => {
       if (cancelled) return;
       const scale = width / page.getViewport({ scale: 1 }).width;
@@ -66,19 +75,29 @@ export function PdfPages({ url, focus }: { url: string; focus?: Extract<Evidence
       renderTask.promise.catch(() => {});
       layer.replaceChildren();
       layer.style.setProperty("--total-scale-factor", String(scale));
-      text = new TextLayer({ textContentSource: page.streamTextContent(), container: layer, viewport: page.getViewport({ scale }) });
-      text.render().then(() => {
-        if (cancelled || !marks) return;
-        markWords(text!.textDivs, marks);
-        layer.querySelector("mark")?.scrollIntoView({ block: "center", behavior: "smooth" });
+      pieces = new TextLayer({ textContentSource: page.streamTextContent(), container: layer, viewport: page.getViewport({ scale }) });
+      pieces.render().then(() => {
+        if (!cancelled) setPageText({ pageNumber, pieces: pieces!.textDivs, texts: pieces!.textContentItemsStr });
       }, () => {});
     }, () => setFailed(true));
     return () => {
       cancelled = true;
       renderTask?.cancel();
-      text?.cancel();
+      pieces?.cancel();
     };
-  }, [document, pageNumber, width, marks]);
+  }, [document, pageNumber, width]);
+
+  // Marks the opened result on its page, and brings it into view once per click.
+  useEffect(() => {
+    if (!pageText) return;
+    const stored = pages.find((page) => page.number === pageText.pageNumber)?.text;
+    const highlights = focus && focus.page === pageText.pageNumber && stored !== undefined ? focus.highlights : [];
+    markPieces(pageText, stored ?? "", highlights);
+    if (focus && highlights.length > 0 && scrolledFocusId.current !== focus.id) {
+      scrolledFocusId.current = focus.id;
+      textLayer.current?.querySelector("mark")?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [pageText, pages, focus]);
 
   const pageCount = document?.numPages ?? 0;
 
@@ -117,31 +136,47 @@ export function PdfPages({ url, focus }: { url: string; focus?: Extract<Evidence
   );
 }
 
-// Marks every place the given words appear in the page's text pieces. The words are exact text
-// from the CV, and the CV's text was read from these same pieces, so an exact match finds them.
-function markWords(pieces: HTMLElement[], words: string[]) {
-  for (const piece of pieces) {
-    const content = piece.textContent ?? "";
-    const ranges = words
-      .flatMap((word) => [...content.matchAll(new RegExp(escapeRegExp(word), "g"))].map((m) => [m.index, m.index + word.length]))
-      .sort((a, b) => a[0]! - b[0]!);
-    if (ranges.length === 0) continue;
-    const parts: Node[] = [];
-    let at = 0;
-    for (const [start, end] of ranges as [number, number][]) {
-      if (end <= at) continue;
-      const from = Math.max(start, at);
-      if (from > at) parts.push(window.document.createTextNode(content.slice(at, from)));
-      const mark = window.document.createElement("mark");
-      mark.textContent = content.slice(from, end);
-      parts.push(mark);
-      at = end;
+// Marks the highlights, given as positions in the page's stored text, on the text pieces.
+// Core stored the page as these same pieces' text, with only spaces and line breaks changed, so
+// the n-th letter that is not a space is the same letter in both. A match that runs over several
+// pieces is marked in each of them.
+function markPieces({ pieces, texts }: PageText, stored: string, highlights: Highlight[]) {
+  const wanted = highlights.map(({ start, end }) => [lettersBefore(stored, start), lettersBefore(stored, end)] as const);
+  let letter = 0;
+  texts.forEach((pieceText, i) => {
+    const ranges: Highlight[] = [];
+    for (let at = 0; at < pieceText.length; at++) {
+      if (isSpace(pieceText[at]!)) continue;
+      if (wanted.some(([from, to]) => letter >= from && letter < to)) {
+        const last = ranges.at(-1);
+        // Spaces between marked letters of the same match are marked too.
+        if (last && wanted.some(([from, to]) => letter > from && letter < to)) last.end = at + 1;
+        else ranges.push({ start: at, end: at + 1 });
+      }
+      letter++;
     }
-    parts.push(window.document.createTextNode(content.slice(at)));
-    piece.replaceChildren(...parts);
-  }
+    const piece = pieces[i]!;
+    if (ranges.length === 0) {
+      if (piece.querySelector("mark")) piece.textContent = pieceText;
+      return;
+    }
+    piece.replaceChildren(
+      ...markedParts(pieceText, ranges).map((part) => {
+        if (!part.marked) return window.document.createTextNode(part.text);
+        const mark = window.document.createElement("mark");
+        mark.textContent = part.text;
+        return mark;
+      }),
+    );
+  });
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function lettersBefore(text: string, position: number): number {
+  let count = 0;
+  for (let at = 0; at < position; at++) if (!isSpace(text[at]!)) count++;
+  return count;
+}
+
+function isSpace(character: string): boolean {
+  return /\s/.test(character);
 }

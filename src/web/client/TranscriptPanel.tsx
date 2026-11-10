@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
 import { api, type Interview, type Transcript, type TranscriptFormat } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
-import type { EvidenceFocus } from "./evidence-focus.ts";
+import type { TranscriptFocus } from "./evidence-focus.ts";
 import { MarkedText } from "./MarkedText.tsx";
 import { SpeakerMapping } from "./SpeakerMapping.tsx";
 import { interviewName } from "./interview-names.ts";
@@ -12,8 +12,6 @@ import { formatNames, formatTime, transcriptRefusalMessage } from "./transcript-
 
 // The Transcript panel. A Transcript belongs to one Interview, so it shows the selected
 // Interview's Transcript, or asks the Interviewer to select one.
-type TranscriptFocus = Extract<EvidenceFocus, { source: "transcript" }>;
-
 export function TranscriptPanel({
   interviews,
   selectedInterviewId,
@@ -35,7 +33,7 @@ export function TranscriptPanel({
   );
 }
 
-function InterviewTranscript({ interview, focus }: { interview: Interview; focus?: TranscriptFocus }) {
+function InterviewTranscript({ interview, focus: openedFocus }: { interview: Interview; focus?: TranscriptFocus }) {
   const { text } = useText();
   const t = text.panels.transcript;
   // undefined while loading, null when the Interview has no Transcript.
@@ -48,10 +46,15 @@ function InterviewTranscript({ interview, focus }: { interview: Interview; focus
   const [replacement, setReplacement] = useState<File | undefined>();
   const fileInput = useRef<HTMLInputElement>(null);
   const segmentList = useRef<HTMLOListElement>(null);
+  // A result found in a Transcript that has since been replaced points at text that is gone.
+  const [replacedFocusId, setReplacedFocusId] = useState<number | undefined>();
+  const focus = openedFocus && openedFocus.id !== replacedFocusId ? openedFocus : undefined;
+  const scrolledFocusId = useRef<number | undefined>(undefined);
 
-  // Brings the found segment into view once the Transcript is shown, and again on every click.
+  // Brings the found segment into view once per click, after the Transcript is shown.
   useEffect(() => {
-    if (!focus || !transcript) return;
+    if (!focus || !transcript || scrolledFocusId.current === focus.id) return;
+    scrolledFocusId.current = focus.id;
     segmentList.current
       ?.querySelector(`[data-segment="${focus.segmentNumber}"]`)
       ?.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -76,6 +79,7 @@ function InterviewTranscript({ interview, focus }: { interview: Interview; focus
     setImportError(undefined);
     try {
       setTranscript(await api.importTranscript(interview.id, file));
+      setReplacedFocusId(openedFocus?.id);
     } catch (error) {
       setImportError(error);
     } finally {

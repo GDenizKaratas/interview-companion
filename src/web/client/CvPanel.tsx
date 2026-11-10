@@ -3,7 +3,7 @@ import { AddButton } from "./AddButton.tsx";
 import { api, type Cv } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { cvRefusalMessage } from "./cv-refusal.ts";
-import type { EvidenceFocus } from "./evidence-focus.ts";
+import type { CvFocus } from "./evidence-focus.ts";
 import { useText } from "./text.tsx";
 
 // pdf.js is large, so it is loaded only when a CV is shown.
@@ -16,7 +16,7 @@ export function CvPanel({
 }: {
   candidateId: string;
   // A search result to open and mark in the CV.
-  focus?: Extract<EvidenceFocus, { source: "cv" }>;
+  focus?: CvFocus;
 }) {
   const { text } = useText();
   const t = text.panels.cv;
@@ -80,7 +80,7 @@ export function CvPanel({
           </div>
           {/* The upload time is part of the key, so a replaced CV is loaded again. */}
           <Suspense fallback={<p className="empty">{t.reading}</p>}>
-            <PdfPages key={cv.uploadedAt} url={api.cvFileUrl(candidateId)} focus={focus} />
+            <PdfPages key={cv.uploadedAt} url={api.cvFileUrl(candidateId)} pages={cv.pages} focus={focus} />
           </Suspense>
         </>
       )}

@@ -41,6 +41,8 @@ export interface CvEvidence {
   page: number;
   // The whole line (or lines) of the page the match is on, exactly as stored.
   excerpt: string;
+  // Where the excerpt starts in the page's text, so the interface can find the match on the page.
+  excerptStart: number;
   highlights: Highlight[];
 }
 
@@ -86,10 +88,12 @@ function searchCv(db: DatabaseSync, candidateId: string, terms: string[][]): CvE
       const end = lineEnd === -1 ? page.text.length : lineEnd;
       const highlight = { start: match.start - start, end: match.end - start };
       const last = results.at(-1);
-      if (last && last.page === page.number && last.excerpt === page.text.slice(start, end)) {
+      // Matches on the same line are one result; equal lines elsewhere on the page are not.
+      if (last && last.page === page.number && last.excerptStart === start && last.excerpt.length === end - start) {
         last.highlights.push(highlight);
       } else {
-        results.push({ source: "cv", page: page.number, excerpt: page.text.slice(start, end), highlights: [highlight] });
+        const excerpt = page.text.slice(start, end);
+        results.push({ source: "cv", page: page.number, excerpt, excerptStart: start, highlights: [highlight] });
       }
     }
   }
