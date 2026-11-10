@@ -67,7 +67,18 @@ export async function generateAiNotes(
 // go through the same gate and the same quote check as notes the app generates.
 export function saveAiNotesFromClient(db: DatabaseSync, now: Now, interviewId: string, proposed: ProposedAiNote[]): AiNoteGeneration {
   requireAiClientWrites(db);
-  return acceptNotes(db, now, requireConfirmedTranscript(db, interviewId), proposed, "aiClient");
+  return saveCheckedAiNotes(db, now, interviewId, proposed, "aiClient");
+}
+
+// Saves AI Notes written elsewhere, such as the demo's, through the gate and the quote check.
+export function saveCheckedAiNotes(
+  db: DatabaseSync,
+  now: Now,
+  interviewId: string,
+  proposed: ProposedAiNote[],
+  source: AiSource,
+): AiNoteGeneration {
+  return acceptNotes(db, now, requireConfirmedTranscript(db, interviewId), proposed, source);
 }
 
 // Keeps the proposed notes that pass the quote check and saves them, Unreviewed.

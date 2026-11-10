@@ -1,0 +1,19 @@
+Ayşe: Merhaba Mert, hoş geldin. Şu an çalıştığın veri hattını anlatır mısın?
+Mert: Merhaba. Uygulamadan gelen tıklama olaylarını Kafka ile topluyoruz. Saatte yaklaşık on milyon olay geliyor.
+Mert: Olaylar Flink ile işleniyor ve sonuçlar ClickHouse'a yazılıyor.
+Ayşe: Bu ölçekte veri kaybını nasıl önlüyorsunuz?
+Mert: Kafka'da her konu üç kopya tutuluyor. Flink tarafında da her beş dakikada bir kontrol noktası alıyoruz, bir hata olursa oradan devam ediyor.
+Ayşe: Aynı olay iki kez gelirse ne oluyor?
+Mert: Her olayın bir kimliği var. ClickHouse'ta yinelenen kayıtları bu kimliğe göre birleştiren bir tablo yapısı kullanıyoruz.
+Ayşe: Toplu işler için ne kullanıyorsunuz?
+Mert: Gece çalışan raporlar için Airflow kullanıyoruz. Yaklaşık altmış iş var.
+Ayşe: Bir Airflow işi başarısız olunca ne oluyor?
+Mert: İş iki kez daha deneniyor. Yine olmazsa ekibin Slack kanalına bir uyarı düşüyor ve sabah ilk iş ona bakıyoruz.
+Ayşe: Veri kalitesini nasıl kontrol ediyorsunuz?
+Mert: Önemli tablolarda Great Expectations ile kurallar tanımladık. Örneğin bir günün satır sayısı bir önceki haftanın ortalamasından çok saparsa iş duruyor.
+Ayşe: Şemada bir değişiklik olduğunda ne yapıyorsunuz?
+Mert: Şemaları bir şema kayıt servisinde tutuyoruz. Geriye uyumsuz bir değişiklik gelirse üretici tarafında yayına alınamıyor.
+Ayşe: Ekipte kaç kişisiniz?
+Mert: Beş veri mühendisiyiz. Analistlerle haftada bir ortak toplantı yapıyoruz.
+Ayşe: Teşekkürler Mert, yarınki görüşmede bir tasarım sorusu üzerinde çalışacağız.
+Mert: Teşekkürler, görüşmek üzere.

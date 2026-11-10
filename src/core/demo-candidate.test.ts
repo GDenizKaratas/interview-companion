@@ -251,4 +251,29 @@ describe("Demo set", () => {
     const cvCount = second.filter((c) => core.getCv(c.id) !== undefined).length;
     expect(readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((path) => path.endsWith(".pdf"))).toHaveLength(cvCount);
   });
+
+  it("gives three past Interviews a full Transcript with confirmed speakers, ready Asked Questions, and AI Notes", async () => {
+    const demos = await core.loadDemoCandidates();
+
+    const ready = demos
+      .flatMap((c) => core.listInterviews(c.id))
+      .filter((i) => core.getTranscript(i.id)?.speakerMappingConfirmedAt);
+    expect(ready).toHaveLength(3);
+    for (const interview of ready) {
+      expect(core.getTranscript(interview.id)!.segments.length).toBeGreaterThanOrEqual(18);
+      expect(core.listAskedQuestions(interview.id)).toMatchObject({ stale: false });
+      expect(core.listAskedQuestions(interview.id)!.askedQuestions.length).toBeGreaterThanOrEqual(7);
+      expect(core.listAiNotes(interview.id).length).toBeGreaterThanOrEqual(4);
+      expect(core.listAiNotes(interview.id).every((note) => !note.stale)).toBe(true);
+    }
+  });
+
+  it("links some Saved Questions to the questions asked and shows others as not found", async () => {
+    const demos = await core.loadDemoCandidates();
+
+    const checks = demos.flatMap((c) => core.listSavedQuestionChecks(c.id));
+    expect(checks.filter((check) => check.askedQuestion !== null).length).toBeGreaterThanOrEqual(5);
+    expect(checks.filter((check) => check.askedQuestion === null).length).toBeGreaterThanOrEqual(3);
+  });
 });
+
