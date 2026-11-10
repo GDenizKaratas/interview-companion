@@ -1,11 +1,14 @@
+import { useState } from "react";
+import { ApiKeyDialog } from "./ApiKeyDialog.tsx";
 import { linkTo } from "./navigation.ts";
 import { languages } from "./languages.ts";
 import { useText } from "./text.tsx";
 
 // The bar at the top of every page: the app's mark, its name, what it is for,
-// and the interface language switch.
+// the AI settings, and the interface language switch.
 export function AppBar() {
   const { text, languageCode, chooseLanguage } = useText();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <header className="app-bar">
       <a className="brand" href="/" onClick={linkTo("/")}>
@@ -13,6 +16,9 @@ export function AppBar() {
         <span className="brand-name">{text.appName}</span>
       </a>
       <span className="tagline">{text.tagline}</span>
+      <button type="button" className="quiet ai-settings-button" onClick={() => setSettingsOpen(true)}>
+        {text.aiSettings.open}
+      </button>
       <select
         className="language-switch"
         aria-label={text.languageLabel}
@@ -25,6 +31,7 @@ export function AppBar() {
           </option>
         ))}
       </select>
+      {settingsOpen && <ApiKeyDialog onClose={() => setSettingsOpen(false)} />}
     </header>
   );
 }

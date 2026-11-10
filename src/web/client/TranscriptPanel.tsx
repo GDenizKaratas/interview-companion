@@ -8,19 +8,50 @@ import { fill } from "./languages.ts";
 import { useText } from "./text.tsx";
 import { formatNames, formatTime, transcriptRefusalMessage } from "./transcript-text.ts";
 
+export interface SegmentHighlight {
+  interviewId: string;
+  segmentNumber: number;
+  // Changes on every request, so the same segment can be shown again.
+  request: number;
+}
+
+interface TranscriptPanelProps {
+  interviews: Interview[];
+  selectedInterviewId: string | null;
+  // The segment an AI Note's quote points to, scrolled into view and highlighted.
+  highlight: SegmentHighlight | undefined;
+  // Called after a Transcript is imported or its speakers are confirmed.
+  onChanged: () => void;
+}
+
 // The Transcript panel. A Transcript belongs to one Interview, so it shows the selected
 // Interview's Transcript, or asks the Interviewer to select one.
-export function TranscriptPanel({ interviews, selectedInterviewId }: { interviews: Interview[]; selectedInterviewId: string | null }) {
+export function TranscriptPanel({ interviews, selectedInterviewId, highlight, onChanged }: TranscriptPanelProps) {
   const { text } = useText();
   const t = text.panels.transcript;
   const selected = interviews.find((interview) => interview.id === selectedInterviewId);
   if (interviews.length === 0) return <p className="empty">{t.noInterview}</p>;
   if (!selected) return <p className="empty">{t.selectInterview}</p>;
   // The key starts each Interview with a fresh state, so nothing of another Interview shows.
-  return <InterviewTranscript key={selected.id} interview={selected} />;
+  return (
+    <InterviewTranscript
+      key={selected.id}
+      interview={selected}
+      highlight={highlight?.interviewId === selected.id ? highlight : undefined}
+      onChanged={onChanged}
+    />
+  );
 }
 
-function InterviewTranscript({ interview }: { interview: Interview }) {
+function InterviewTranscript({
+  interview,
+  highlight,
+  onChanged,
+}: {
+  interview: Interview;
+  highlight: SegmentHighlight | undefined;
+  onChanged: () => void;
+}) {
   const { text } = useText();
   const t = text.panels.transcript;
   // undefined while loading, null when the Interview has no Transcript.
@@ -32,11 +63,21 @@ function InterviewTranscript({ interview }: { interview: Interview }) {
   // A file chosen to replace the current Transcript, waiting for the Interviewer to confirm.
   const [replacement, setReplacement] = useState<File | undefined>();
   const fileInput = useRef<HTMLInputElement>(null);
+  const segmentList = useRef<HTMLOListElement>(null);
 
   useEffect(() => {
     api.getTranscript(interview.id).then(setTranscript, () => setLoadFailed(true));
     api.listTranscriptFormats().then(setFormats, () => setLoadFailed(true));
   }, [interview.id]);
+
+  // Scrolls the highlighted segment into view once it is on screen.
+  const highlighted = highlight?.segmentNumber;
+  useEffect(() => {
+    if (highlighted === undefined || !transcript) return;
+    segmentList.current
+      ?.querySelector(`[data-segment="${highlighted}"]`)
+      ?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [highlighted, highlight?.request, transcript]);
 
   function handleFileChosen(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -52,6 +93,7 @@ function InterviewTranscript({ interview }: { interview: Interview }) {
     setImportError(undefined);
     try {
       setTranscript(await api.importTranscript(interview.id, file));
+      onChanged();
     } catch (error) {
       setImportError(error);
     } finally {
@@ -88,12 +130,23 @@ function InterviewTranscript({ interview }: { interview: Interview }) {
             </button>
           </div>
           {/* Keyed by import, so a replaced Transcript never keeps roles chosen for the old speakers. */}
-          <SpeakerMapping key={transcript.importedAt} transcript={transcript} onConfirmed={setTranscript} />
-          <ol className="segments">
+          <SpeakerMapping
+            key={transcript.importedAt}
+            transcript={transcript}
+            onConfirmed={(updated) => {
+              setTranscript(updated);
+              onChanged();
+            }}
+          />
+          <ol className="segments" ref={segmentList}>
             {transcript.segments.map((segment) => {
               const speaker = labels.get(segment.speakerId);
               return (
-                <li key={segment.number} className="segment">
+                <li
+                  key={segment.number}
+                  data-segment={segment.number}
+                  className={segment.number === highlighted ? "segment highlighted" : "segment"}
+                >
                   <div className="segment-head">
                     {segment.startMs === null ? (
                       <span className="segment-time missing" title={t.noTimeDetail}>
