@@ -1,48 +1,38 @@
 # Workspace wireframe
 
-Status: **conceptual**. This is a sketch of the planned screen, not a screenshot of working software.
+Status: **implemented**. This is a sketch of the screen; the running app is the reference for details.
 
 ## Wide screen
 
+From about 1180 pixels wide, the Workspace fills the window and does not scroll. Everything about the Candidate is visible at once.
+
 ```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ ← Candidates   Deniz Yılmaz · Senior Backend Engineer            [EN | TR]   │
-│ Interview: [ All ▾ ]  1st · 2026-11-03   2nd · planned     [+ New interview] │
-│ [Search the CV and Transcripts…] [CV and Transcripts ▾] ☐ Only the Candidate │
-├───────────────────────────────┬──────────────────────────────────────────────┤
-│ CV                            │ MY NOTES                                     │
-│ ┌───────────────────────────┐ │ ┌──────────────────────────────────────────┐ │
-│ │                           │ │ │ Write a note, Enter to save…             │ │
-│ │   PDF page 1 of 2         │ │ └──────────────────────────────────────────┘ │
-│ │                           │ │ • Ask about idempotency          1st · 14:02 │
-│ │                           │ │ • Interesting Redis example      1st · 14:10 │
-│ └───────────────────────────┘ │ • Check scale of last project    no interview│
-├───────────────────────────────┼──────────────────────────────────────────────┤
-│ TRANSCRIPT                    │ AI NOTES  (AI-generated)        [Generate]   │
-│ Speakers: ✔ confirmed [Edit]  │ ┌──────────────────────────────────────────┐ │
-│                               │ │ Described using Redis and BullMQ for     │ │
-│ 18:42 Candidate               │ │ background jobs.            ❝ 18:42      │ │
-│   "We used Redis with BullMQ…"│ │ Unreviewed   [Confirm] [Correct] [Dismiss]│ │
-│ 19:05 Interviewer             │ └──────────────────────────────────────────┘ │
-│   "How did you handle retries"│                                              │
-├───────────────────────────────┴──────────────────────────────────────────────┤
-│ QUESTIONS                                                                    │
-│ ┌──────────────────────────────────────────────────────────────────────────┐ │
-│ │ Write a question, Enter to save…                                         │ │
-│ └──────────────────────────────────────────────────────────────────────────┘ │
-│ 1. How did you make the payment job idempotent?              written by you  │
-│ 2. What happens when a BullMQ job fails three times?    from a suggestion ⓘ  │
-│                                                                              │
-│ ▸ Suggest questions                                                          │
-└──────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│ ❝ Interview Companion   Your interviews, all in one place.     [AI settings] [English ▾] │ navy app bar
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│ ← Candidates  Deniz Yılmaz Senior Backend Engineer  [All ▾] [+ New Interview]            │
+│               [Search for a word…] [CV and Transcripts ▾] ☐ Only the Candidate [Search] 🗑 │ one bar
+├──────────────────────────┬────────────────────────────┬──────────────────────────────────┤
+│ CV                    ⛶  │ TRANSCRIPT              ⛶  │ MY NOTES                      ⛶  │
+│ ┌──────────────────────┐ │ Speakers: ✔ confirmed [Edit]│ [Write a note, Enter to save…]  │
+│ │                      │ │                            │ • Ask about idempotency   1st    │
+│ │   PDF page 1 of 2    │ │ 18:42 Deniz  Candidate     ├──────────────────────────────────┤
+│ │                      │ │   We used Redis with…      │ AI NOTES (AI-generated)       ⛶  │
+│ │                      │ │ 19:05 Ayşe  Interviewer    │ Described using Redis… ❝ 18:42   │
+│ │                      │ │   How did you handle…      ├──────────────────────────────────┤
+│ │                      │ │                            │ QUESTIONS                     ⛶  │
+│ └──────────────────────┘ │                            │ 1. How did you make it…          │
+└──────────────────────────┴────────────────────────────┴──────────────────────────────────┘
 ```
+
+On a wide screen the whole bar is one line. On a narrower one, the search moves to a second line.
 
 ## Panel order and reasons
 
-1. **Header.** Who the Candidate is and which Interview is selected. The Interview selector filters the Transcript, AI Notes, and tagged notes. Under it, one search bar searches the CV and Transcripts; its results show where the word was found, and clicking one opens and marks that place (decision 139).
-2. **Top row: CV and My Notes.** These are the two panels used before and during an interview, so they sit where the eye lands first. The note box is always ready to type in.
-3. **Middle row: Transcript and AI Notes.** A source and what was extracted from it sit side by side. Clicking the ❝ mark on an AI Note scrolls the Transcript to that segment and highlights it.
-4. **Bottom: Questions.** Saved Questions first. "Suggest questions" is one collapsed line; nothing is generated until the Interviewer opens it and asks.
+1. **Bar.** Who the Candidate is, which Interview is selected, and the search, in one line. The Interview selector filters the Transcript, AI Notes, and tagged notes. The search covers the CV and Transcripts. Its results open in a panel under the bar, over the Workspace, so they never push the panels down. Clicking a result closes them and opens and marks that place (decision 139). Delete sits at the far end, as an icon.
+2. **CV and Transcript, at full height.** The two sources are read the most, so they get the most room.
+3. **The working column: My Notes, AI Notes, Questions.** These are what the Interviewer writes and reviews during and after an interview. The note box is always ready to type in. Clicking the ❝ mark on an AI Note scrolls the Transcript to that segment and highlights it. "Suggest questions" is one collapsed line; nothing is generated until the Interviewer opens it and asks.
+4. **Full screen.** Each panel has a full-screen button (⛶) that shows when the pointer is over the panel. It opens the panel almost full screen over a dimmed Workspace, without reloading it. Escape, the ✕ button, or a click outside closes it.
 
 ## How authorship is shown
 
@@ -73,6 +63,8 @@ Each Suggested Question shows one short line under it, for example "CV mentions 
 
 Empty panels keep their place. They are never filled with sample or generated content.
 
-## Narrow screen
+## Middle and narrow screens
 
-Panels stack in this order: header, My Notes, CV, Transcript, AI Notes, Questions. My Notes goes first because it is the panel used during an interview.
+Below about 1180 pixels, the panels form two columns that grow with their content: CV and Transcript, then My Notes and AI Notes, then Questions.
+
+Below about 760 pixels, panels stack in this order: bar, My Notes, CV, Transcript, AI Notes, Questions. My Notes goes first because it is the panel used during an interview.

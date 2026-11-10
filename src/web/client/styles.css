@@ -1,12 +1,35 @@
+/* Design tokens. Colors and type follow TECHNIHQ's brand: navy and a bright blue, Space Grotesk
+   for headings and Outfit for text. The working area is light, for long reading of CVs and
+   Transcripts. Corners stay small: 4px for controls, 6px for cards. */
 :root {
-  --text: #1d1d1f;
-  --muted: #6b6b70;
-  --line: #d9d9de;
+  --navy: #0a2540;
+  --navy-soft: #173a5e;
+  --accent: #577aff;
+  --accent-strong: #3f5ef0;
+  --accent-tint: #eef2ff;
+  --text: #0f1b2d;
+  --muted: #5b6b80;
+  --faint: #8a98ab;
+  --line: #dfe5ee;
+  --line-strong: #c9d2df;
   --surface: #ffffff;
-  --page: #f5f5f7;
-  --ai-surface: #f1f0fb;
+  --page: #f3f5f9;
+  --ai-surface: #f5f7ff;
+  --warn: #8a5a00;
+  --warn-tint: #fff8e1;
+  --warn-line: #e0b84c;
   --error: #b42318;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mark: #ffe28a;
+  --radius: 4px;
+  --radius-card: 6px;
+  --shadow: 0 1px 2px rgb(10 37 64 / 0.06);
+  --shadow-raised: 0 16px 48px rgb(10 37 64 / 0.22);
+  --font-text: "Outfit Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Space Grotesk Variable", var(--font-text);
+  --bar-height: 3rem;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.45;
   color: var(--text);
   background: var(--page);
 }
@@ -15,153 +38,53 @@ body {
   margin: 0;
 }
 
+body.panel-open {
+  overflow: hidden;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-head);
+  letter-spacing: -0.01em;
+}
+
 h1 {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
+  font-weight: 600;
   margin: 0;
 }
 
 h2 {
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin: 0 0 0.75rem;
+  color: var(--navy);
+  margin: 0;
+}
+
+h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0;
 }
 
 a {
   color: inherit;
 }
 
-.page {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 1.5rem 1rem;
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-.app-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem 1rem;
-  padding: 0.75rem 1rem;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  text-decoration: none;
-}
-
-.brand-mark {
-  width: 1.75rem;
-  height: 1.75rem;
-  color: var(--text);
-  flex: none;
-}
-
-.brand-name {
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.tagline {
+.muted {
   color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.language-switch {
-  margin-left: auto;
-  font: inherit;
-  font-size: 0.9rem;
-  /* The browser's own arrow sits against the edge, so draw one with room around it. */
-  appearance: none;
-  padding: 0.3rem 1.9rem 0.3rem 0.6rem;
-  color: var(--text);
-  background: var(--surface)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b6b70' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
-    no-repeat right 0.65rem center;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.page-title {
-  margin-bottom: 1rem;
-}
-
-.candidate-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: flex-end;
-  margin-bottom: 1rem;
-}
-
-.candidate-form input {
-  width: 100%;
-}
-
-.candidate-form label {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.9rem;
-  flex: 1 1 10rem;
-}
-
-input,
-textarea,
-button {
-  box-sizing: border-box;
-  font: inherit;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
-
-button {
-  background: var(--text);
-  color: var(--surface);
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.6;
-}
-
-button.quiet {
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.85rem;
-  padding: 0.15rem 0.5rem;
-}
-
-button.quiet:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.candidate-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-
-.candidate-list li + li {
-  border-top: 1px solid var(--line);
-}
-
-.candidate-list a {
-  display: block;
-  padding: 0.75rem 1rem;
-  text-decoration: none;
 }
 
 .empty {
@@ -172,57 +95,144 @@ button.quiet:disabled {
   color: var(--error);
 }
 
-.workspace {
-  padding: 1rem;
-}
-
-.workspace-header {
-  display: flex;
-  gap: 1.5rem;
-  align-items: baseline;
-  margin-bottom: 1rem;
-}
-
-/* Kept away from everyday controls, at the far end of the header. */
-.workspace-header .delete-candidate {
-  margin-left: auto;
-}
-
-.interview-bar,
-.interview-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: flex-end;
-}
-
-.interview-bar {
-  margin-bottom: 1rem;
-}
-
-.interview-select,
-.interview-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.9rem;
-}
-
-.interview-bar .error {
-  flex-basis: 100%;
-  margin: 0;
-}
-
-.interview-select select {
+/* Controls */
+input,
+textarea,
+select,
+button {
+  box-sizing: border-box;
   font: inherit;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  font-size: 0.93rem;
+  color: var(--text);
+  padding: 0.38rem 0.6rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
   background: var(--surface);
-  min-width: 16rem;
 }
 
-/* Every button that adds something: dark, with a plus icon before the label. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+select {
+  /* The browser's own arrow sits against the edge, so draw one with room around it. */
+  appearance: none;
+  padding-right: 1.8rem;
+  background: var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235b6b80' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    no-repeat right 0.6rem center;
+  cursor: pointer;
+}
+
+/* Primary: the brand's blue. */
+button {
+  font-weight: 500;
+  color: #ffffff;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+  background: #3452e0;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+button.secondary,
+button.quiet {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+
+button.secondary:hover:not(:disabled),
+button.quiet:hover:not(:disabled) {
+  background: var(--page);
+  border-color: var(--faint);
+}
+
+button.quiet {
+  font-size: 0.82rem;
+  padding: 0.18rem 0.55rem;
+}
+
+button.quiet:disabled {
+  opacity: 0.35;
+}
+
+button.danger {
+  background: var(--error);
+  border-color: var(--error);
+  color: #ffffff;
+}
+
+button.danger:hover:not(:disabled) {
+  background: #9a1d14;
+}
+
+/* A square button with only an icon; its name is in aria-label and title. */
+button.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+}
+
+button.icon-button:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--page);
+  border-color: var(--line);
+}
+
+button.icon-button svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+button.danger-quiet:hover:not(:disabled) {
+  color: var(--error);
+  border-color: #f1c8c4;
+  background: #fdf1f0;
+}
+
+button.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-decoration: underline;
+}
+
+button.link-button:hover:not(:disabled) {
+  background: none;
+  color: var(--accent-strong);
+}
+
+/* Every button that adds something: the primary blue, with a plus icon before the label. */
 .add-button {
   display: inline-flex;
   align-items: center;
@@ -230,65 +240,769 @@ button.quiet:disabled {
 }
 
 .add-button svg {
-  width: 0.9em;
-  height: 0.9em;
+  width: 0.85em;
+  height: 0.85em;
   flex: none;
 }
 
-button.secondary {
+.card {
   background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+}
+
+.pill {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 3px;
+  vertical-align: 1px;
+}
+
+.pill.planned {
+  color: var(--accent-strong);
+  background: var(--accent-tint);
+}
+
+/* The app bar: navy, as on TECHNIHQ's site. */
+.app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-sizing: border-box;
+  height: var(--bar-height);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1rem;
+  color: #ffffff;
+  background: var(--navy);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 1.6rem;
+  height: 1.6rem;
+  color: var(--accent);
+  flex: none;
+}
+
+.brand-name {
+  font-family: var(--font-head);
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.tagline {
+  color: #9fb0c8;
+  font-size: 0.85rem;
+}
+
+.app-bar .bar-button,
+.app-bar .language-switch {
+  font-size: 0.82rem;
+  color: #ffffff;
+  background-color: transparent;
+  border-color: rgb(255 255 255 / 0.22);
+  padding-top: 0.22rem;
+  padding-bottom: 0.22rem;
+}
+
+.app-bar .bar-button:hover:not(:disabled),
+.app-bar .language-switch:hover {
+  background-color: var(--navy-soft);
+  border-color: rgb(255 255 255 / 0.4);
+}
+
+.app-bar .language-switch {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239fb0c8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.app-bar .language-switch option {
   color: var(--text);
 }
 
-.role {
-  font-weight: normal;
+.ai-settings-button {
+  margin-left: auto;
 }
 
-/* Wide screen: the fixed layout from docs/workspace-wireframe.md. */
-.panels {
+/* Home: the Candidates on the left, the calendar and the no-key guide on the right. */
+.home {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    "cv notes"
-    "transcript ai"
-    "questions questions";
+  grid-template-columns: minmax(0, 1fr) 22.5rem;
+  gap: 1.25rem;
+  align-items: start;
+  max-width: 88rem;
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 2rem;
 }
 
-/* A panel grows with its content up to a fixed height, then scrolls inside, so one long panel
-   never pushes the rest of the Workspace down. */
+.home-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.home-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.section-head h1 {
+  font-size: 1.35rem;
+}
+
+.count {
+  margin-left: 0.5rem;
+  font-family: var(--font-text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.section-head .filter {
+  margin-left: auto;
+  width: min(18rem, 100%);
+}
+
+.candidate-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.75rem;
+  align-items: flex-end;
+  padding: 0.75rem 0.9rem;
+}
+
+.candidate-form label,
+.cv-choice {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+  flex: 1 1 11rem;
+}
+
+.candidate-form input {
+  width: 100%;
+}
+
+.cv-choice-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.cv-choose {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.form-hint {
+  margin: -0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.candidate-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  font-size: 0.92rem;
+}
+
+.candidate-table th {
+  padding: 0.5rem 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--muted);
+  background: #f8fafc;
+  border-bottom: 1px solid var(--line);
+}
+
+.candidate-table td {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.candidate-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.candidate-table tbody tr {
+  cursor: pointer;
+}
+
+.candidate-table tbody tr:hover {
+  background: var(--accent-tint);
+}
+
+.candidate-table .number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.candidate-name {
+  display: block;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.candidate-name:hover {
+  color: var(--accent-strong);
+}
+
+.candidate-role {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* The Interview calendar. */
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.calendar-month {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-head);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.calendar-weekday {
+  padding: 0.2rem 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: #f8fafc;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  min-height: 3.1rem;
+  padding: 2px 3px 3px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.calendar-date {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.calendar-day.other-month {
+  background: #fafbfd;
+}
+
+.calendar-day.other-month .calendar-date {
+  color: var(--line-strong);
+}
+
+.calendar-day.today {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.calendar-day.today .calendar-date {
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+/* An Interview that has taken place is faded; a Planned one is solid blue. */
+.calendar-event {
+  display: block;
+  overflow: hidden;
+  padding: 0 3px;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  color: var(--muted);
+  background: #e9edf3;
+  border-radius: 2px;
+}
+
+.calendar-event.planned {
+  color: #ffffff;
+  background: var(--accent-strong);
+}
+
+.calendar-event:hover {
+  outline: 1px solid var(--navy);
+}
+
+.calendar-more {
+  font-size: 0.66rem;
+  color: var(--muted);
+}
+
+/* Outside full screen a day shows two Interviews and a "+n" count; full screen shows them all. */
+.calendar:not(.expanded) .calendar-event:nth-of-type(n + 3),
+.calendar.expanded .calendar-more {
+  display: none;
+}
+
+.calendar.expanded .calendar-day {
+  min-height: 9vh;
+  padding: 4px 6px;
+}
+
+.calendar.expanded .calendar-date,
+.calendar.expanded .calendar-event {
+  font-size: 0.85rem;
+}
+
+.calendar.expanded .calendar-event {
+  padding: 1px 6px;
+}
+
+.calendar.expanded .calendar-month {
+  font-size: 1.3rem;
+}
+
+.calendar-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 2px;
+  background: #e9edf3;
+}
+
+.legend-swatch.planned {
+  margin-left: 0.6rem;
+  background: var(--accent-strong);
+}
+
+.calendar-subtitle {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.planned-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+}
+
+.planned-list a {
+  display: grid;
+  grid-template-columns: 6.2rem minmax(0, 1fr);
+  column-gap: 0.5rem;
+  padding: 0.3rem 0.35rem;
+  font-size: 0.85rem;
+  text-decoration: none;
+  border-radius: var(--radius);
+}
+
+.planned-list a:hover {
+  background: var(--accent-tint);
+}
+
+.planned-date {
+  grid-row: span 2;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+
+.planned-who {
+  font-weight: 500;
+}
+
+.planned-which {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.calendar-undated {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* How to use AI without an API key. */
+.no-key-guide {
+  font-size: 0.85rem;
+}
+
+.no-key-card {
+  border-left: 3px solid var(--accent);
+}
+
+.no-key-guide h2 {
+  margin-bottom: 0.4rem;
+}
+
+.no-key-guide p {
+  margin: 0 0 0.45rem;
+}
+
+.no-key-step {
+  font-weight: 500;
+}
+
+.no-key-note {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.no-key-guide p:last-child {
+  margin-bottom: 0;
+}
+
+.no-key-guide.compact {
+  margin-top: 1rem;
+  border-left: 3px solid var(--accent);
+  padding: 0.7rem 0.8rem;
+  background: var(--accent-tint);
+  border-radius: var(--radius);
+}
+
+.command {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+  padding: 0.4rem 0.45rem 0.4rem 0.6rem;
+  background: var(--navy);
+  border-radius: var(--radius);
+}
+
+.command code {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #dbe5f5;
+  overflow-wrap: anywhere;
+}
+
+.command button.quiet {
+  flex: none;
+  font-size: 0.72rem;
+  color: #ffffff;
+  background: transparent;
+  border-color: rgb(255 255 255 / 0.3);
+}
+
+.command button.quiet:hover:not(:disabled) {
+  background: var(--navy-soft);
+}
+
+/* Workspace: one bar on top, then the panels fill the rest of the screen. */
+.workspace {
+  --workspace-bar: 3.1rem;
+  padding: 0 0.75rem 0.75rem;
+}
+
+.workspace-bar {
+  position: sticky;
+  top: var(--bar-height);
+  z-index: 15;
+  box-sizing: border-box;
+  min-height: var(--workspace-bar);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin: 0 -0.75rem 0.75rem;
+  padding: 0.45rem 0.75rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.back-link {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.back-link:hover {
+  color: var(--accent-strong);
+}
+
+.workspace-bar h1 {
+  min-width: 0;
+  max-width: 22rem;
+  overflow: hidden;
+  font-size: 1.08rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.role {
+  margin-left: 0.25rem;
+  font-family: var(--font-text);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Kept away from everyday controls, at the far end of the bar. */
+.workspace-bar .delete-candidate {
+  margin-left: auto;
+}
+
+.interview-bar,
+.interview-form {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* A fixed width: the options carry dates and "planned", and the search needs the room. */
+.interview-select select {
+  width: 14rem;
+}
+
+.interview-bar .error {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.interview-form .error {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+/* Wide screen: CV and Transcript side by side at full height, the working panels beside them. */
+.panels {
+  --panels-height: calc(100vh - var(--bar-height) - var(--workspace-bar) - 1.6rem);
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    "cv transcript notes"
+    "cv transcript ai"
+    "cv transcript questions";
+  height: max(var(--panels-height), 40rem);
+}
+
 .panel {
+  position: relative;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 1rem;
-  min-height: 8rem;
-  max-height: 32rem;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.3rem;
+  padding: 0 0.4rem 0 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel-head h2 {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+/* The full-screen button appears when the pointer is over the panel, or when it has focus. */
+.panel-expand {
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.panel:hover .panel-expand,
+.panel-expand:focus-visible,
+.panel.expanded .panel-expand {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .panel-expand {
+    opacity: 1;
+  }
+}
+
+.panel-body {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  padding: 0.7rem 0.85rem 0.85rem;
 }
 
 .panel-cv { grid-area: cv; }
 .panel-notes { grid-area: notes; }
 .panel-transcript { grid-area: transcript; }
-.panel-ai { grid-area: ai; background: var(--ai-surface); }
+.panel-ai { grid-area: ai; }
 .panel-questions { grid-area: questions; }
+
+.panel-ai .panel-body {
+  background: var(--ai-surface);
+}
+
+/* A panel opened full screen: almost the whole window, over a dimmed Workspace. */
+.panel.expanded {
+  position: fixed;
+  inset: 2.5vh 2.5vw;
+  z-index: 40;
+  box-shadow: var(--shadow-raised);
+}
+
+.panel.expanded .panel-head {
+  min-height: 2.8rem;
+  padding-left: 1.1rem;
+}
+
+.panel.expanded .panel-head h2 {
+  font-size: 0.9rem;
+}
+
+.panel.expanded .panel-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+/* A CV page full screen is drawn at a readable width, not the width of the window. */
+.panel.expanded .pdf-page-frame,
+.panel.expanded .pdf-page-nav {
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: rgb(10 37 64 / 0.45);
+}
 
 .ai-label {
   margin-left: 0.5rem;
-  font-size: 0.7rem;
-  font-weight: normal;
+  font-family: var(--font-text);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0;
   text-transform: none;
-  color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 4px;
+  color: var(--accent-strong);
+  background: var(--accent-tint);
+  border-radius: 3px;
   padding: 0.05rem 0.35rem;
 }
 
-/* My Notes: the box is always ready to type in; each note is plain text with its tag and time. */
-/* The box stays in place; only the list below it scrolls. */
+/* Middle screens: two columns that grow with their content. */
+@media (max-width: 1180px) {
+  .panels {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "cv transcript"
+      "notes ai"
+      "questions questions";
+  }
+
+  .panels .panel:not(.expanded) {
+    max-height: 34rem;
+  }
+
+  .home {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-side {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    align-items: start;
+  }
+}
+
+/* Narrow screen: My Notes first, because it is the panel used during an interview. */
+@media (max-width: 760px) {
+  .panels {
+    grid-template-columns: 1fr;
+    grid-template-areas: "notes" "cv" "transcript" "ai" "questions";
+  }
+
+  .workspace-bar {
+    position: static;
+  }
+
+  .candidate-table th:nth-child(n + 4),
+  .candidate-table td:nth-child(n + 4) {
+    display: none;
+  }
+}
+
+/* My Notes: the box is always ready to type in; each note is plain text with its tag and time.
+   The box stays in place; only the list below it scrolls. */
+.panel-notes .panel-body {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+}
+
 .notes {
   display: flex;
   flex-direction: column;
@@ -296,18 +1010,9 @@ button.secondary {
   flex: 1;
 }
 
-.panel-notes {
-  overflow-y: hidden;
-}
-
 .note-entry {
   flex: none;
-  margin-bottom: 0.75rem;
-}
-
-textarea,
-select {
-  font: inherit;
+  margin-bottom: 0.5rem;
 }
 
 /* Grows to about six lines, then scrolls inside. */
@@ -317,9 +1022,6 @@ select {
   max-height: 9.5rem;
   overflow-y: auto;
   resize: none;
-  padding: 0.5rem 0.6rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
 }
 
 .note-entry-meta,
@@ -327,8 +1029,8 @@ select {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.25rem 0.75rem;
-  font-size: 0.8rem;
+  gap: 0.2rem 0.7rem;
+  font-size: 0.78rem;
   color: var(--muted);
 }
 
@@ -336,14 +1038,14 @@ select {
   margin-left: auto;
 }
 
+select.note-tag,
 .note-tag {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--muted);
-  background: transparent;
+  background-color: transparent;
   border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 0.1rem 0.2rem;
-  cursor: pointer;
+  padding: 0.05rem 1.4rem 0.05rem 0.25rem;
+  background-position: right 0.35rem center;
 }
 
 .note-tag:hover,
@@ -354,10 +1056,10 @@ select {
 .notice {
   flex: none;
   margin: 0 0 0.5rem;
-  padding: 0.4rem 0.6rem;
-  font-size: 0.85rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.82rem;
   background: var(--page);
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 
 .note-list {
@@ -369,7 +1071,7 @@ select {
 }
 
 .note {
-  padding: 0.5rem 0;
+  padding: 0.4rem 0;
 }
 
 .note + .note {
@@ -377,7 +1079,7 @@ select {
 }
 
 .note-text {
-  margin: 0 0 0.2rem;
+  margin: 0 0 0.1rem;
   overflow-wrap: anywhere;
 }
 
@@ -392,27 +1094,6 @@ select {
   font-size: 0.85rem;
 }
 
-button.link-button {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--muted);
-  font-size: 0.8rem;
-  text-decoration: underline;
-}
-
-button.link-button:hover {
-  color: var(--text);
-}
-
-/* Narrow screen: My Notes first, because it is the panel used during an interview. */
-@media (max-width: 760px) {
-  .panels {
-    grid-template-columns: 1fr;
-    grid-template-areas: "notes" "cv" "transcript" "ai" "questions";
-  }
-}
-
 /* Saved Questions */
 .question-input {
   width: 100%;
@@ -420,16 +1101,16 @@ button.link-button:hover {
 }
 
 .question-list {
-  margin: 0.75rem 0 0;
-  padding-left: 1.5rem;
+  margin: 0.5rem 0 0;
+  padding-left: 1.4rem;
 }
 
 .question {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.25rem 0.75rem;
-  padding: 0.4rem 0;
+  gap: 0.2rem 0.6rem;
+  padding: 0.35rem 0;
 }
 
 .question + .question {
@@ -437,13 +1118,13 @@ button.link-button:hover {
 }
 
 .question-text {
-  flex: 1 1 16rem;
+  flex: 1 1 14rem;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 .question-edit {
-  flex: 1 1 16rem;
+  flex: 1 1 14rem;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -451,15 +1132,44 @@ button.link-button:hover {
 
 .question-origin {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
+/* The order and edit buttons appear on the question under the pointer or with focus, so the
+   list stays readable in a narrow panel. */
 .question-actions {
   display: inline-flex;
   gap: 0.25rem;
+  opacity: 0;
 }
 
-/* The dialog that asks before anything is deleted. */
+.question {
+  position: relative;
+}
+
+/* Outside editing, the buttons sit over the end of the line instead of taking a line of their own. */
+.question > .question-actions {
+  position: absolute;
+  top: 0.25rem;
+  right: 0;
+  padding-left: 0.5rem;
+  background: var(--surface);
+  box-shadow: -0.75rem 0 0.75rem var(--surface);
+}
+
+.question .question-edit .question-actions,
+.question:hover .question-actions,
+.question:focus-within .question-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .question-actions {
+    opacity: 1;
+  }
+}
+
+/* The dialog that asks before anything is deleted, and the AI settings. */
 .confirm-dialog {
   width: min(26rem, calc(100vw - 2rem));
   box-sizing: border-box;
@@ -467,17 +1177,18 @@ button.link-button:hover {
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-raised);
 }
 
 .confirm-dialog::backdrop {
-  background: rgb(29 29 31 / 0.35);
+  background: rgb(10 37 64 / 0.45);
 }
 
 .confirm-dialog h2 {
+  margin-bottom: 0.75rem;
   font-size: 1.05rem;
-  letter-spacing: normal;
+  letter-spacing: -0.01em;
   text-transform: none;
 }
 
@@ -486,7 +1197,7 @@ button.link-button:hover {
   overflow: auto;
   padding: 0.6rem 0.75rem;
   background: var(--page);
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 
 .confirm-dialog-subject p {
@@ -501,14 +1212,8 @@ button.link-button:hover {
 }
 
 .confirm-dialog-actions button {
-  font-size: 0.95rem;
-  padding: 0.45rem 0.9rem;
-}
-
-button.danger {
-  background: var(--error);
-  border-color: var(--error);
-  color: var(--surface);
+  font-size: 0.93rem;
+  padding: 0.4rem 0.9rem;
 }
 
 /* CV: the file name and Replace button stay above the page; the page fills the panel's width. */
@@ -524,7 +1229,7 @@ button.danger {
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--muted);
 }
 
@@ -541,41 +1246,13 @@ button.danger {
   justify-content: center;
   gap: 0.75rem;
   margin-bottom: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 .pdf-page {
   display: block;
   border: 1px solid var(--line);
-}
-
-.cv-choice {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.9rem;
-  flex: 1 1 10rem;
-}
-
-.cv-choice-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.cv-choose {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.form-hint {
-  margin: -0.5rem 0 1rem;
-  font-size: 0.85rem;
-  color: var(--muted);
+  box-shadow: var(--shadow);
 }
 
 /* Transcript: each segment shows its time (or "no time"), its speaker label, and its text. */
@@ -597,7 +1274,7 @@ button.danger {
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--muted);
 }
 
@@ -612,24 +1289,26 @@ button.danger {
   list-style: none;
   padding: 0;
   margin: 0;
-  max-height: 32rem;
-  overflow-y: auto;
+}
+
+.segment {
+  padding: 0.15rem 0.25rem;
 }
 
 .segment + .segment {
-  margin-top: 0.6rem;
+  margin-top: 0.45rem;
 }
 
 .segment-head {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .segment-time {
   font-variant-numeric: tabular-nums;
-  color: var(--muted);
+  color: var(--faint);
 }
 
 .segment-time.missing {
@@ -638,34 +1317,44 @@ button.danger {
 
 .segment-speaker {
   font-weight: 600;
+  color: var(--navy);
 }
 
 .unverified {
-  background: var(--line);
+  background: #edf0f5;
   color: var(--muted);
-  border-radius: 4px;
+  border-radius: 3px;
   padding: 0 0.35rem;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
 }
 
 .segment-text {
-  margin: 0.15rem 0 0;
+  margin: 0.1rem 0 0;
   white-space: pre-wrap;
 }
 
 .speaker-role {
-  border: 1px solid var(--line);
-  border-radius: 4px;
+  color: var(--accent-strong);
+  background: var(--accent-tint);
+  border-radius: 3px;
   padding: 0 0.35rem;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+}
+
+/* The segment an AI Note's quote or a search result points to. */
+.segment.highlighted {
+  background: #fff4c2;
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 3px #fff4c2;
 }
 
 .speaker-mapping {
   border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 0.6rem 0.75rem;
-  margin-bottom: 0.75rem;
+  border-radius: var(--radius);
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.65rem;
   font-size: 0.85rem;
+  background: #fafbfd;
 }
 
 .speaker-mapping.folded {
@@ -673,7 +1362,7 @@ button.danger {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.35rem 0.75rem;
+  padding: 0.3rem 0.7rem;
 }
 
 .speaker-mapping-confirmed {
@@ -721,11 +1410,16 @@ button.danger {
 }
 
 button.role-choice {
-  background: var(--surface);
   color: var(--text);
-  font-size: 0.8rem;
-  padding: 0.2rem 0.55rem;
+  background: var(--surface);
+  border-color: var(--line-strong);
+  font-size: 0.78rem;
+  padding: 0.18rem 0.55rem;
   border-radius: 0;
+}
+
+button.role-choice:hover:not(:disabled) {
+  background: var(--page);
 }
 
 button.role-choice + button.role-choice {
@@ -733,16 +1427,18 @@ button.role-choice + button.role-choice {
 }
 
 button.role-choice:first-child {
-  border-radius: 6px 0 0 6px;
+  border-radius: var(--radius) 0 0 var(--radius);
 }
 
 button.role-choice:last-child {
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
 }
 
-button.role-choice.chosen {
-  background: var(--text);
-  color: var(--surface);
+button.role-choice.chosen,
+button.role-choice.chosen:hover:not(:disabled) {
+  color: #ffffff;
+  background: var(--navy);
+  border-color: var(--navy);
 }
 
 .speaker-mapping-actions {
@@ -755,17 +1451,9 @@ button.role-choice.chosen {
   color: var(--muted);
 }
 
-/* AI settings: opened from the app bar or from the AI Notes panel. */
-.ai-settings-button {
-  margin-left: auto;
-}
-
-.ai-settings-button + .language-switch {
-  margin-left: 0;
-}
-
+/* AI settings */
 .settings-dialog {
-  width: min(32rem, calc(100vw - 2rem));
+  width: min(34rem, calc(100vw - 2rem));
 }
 
 .settings-status {
@@ -784,20 +1472,17 @@ button.role-choice.chosen {
   flex-direction: column;
   gap: 0.25rem;
   flex: 1;
-  font-size: 0.85rem;
-}
-
-.settings-form input {
-  font: inherit;
-  padding: 0.4rem 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .settings-privacy {
   margin-top: 1rem;
   padding: 0.6rem 0.75rem;
   background: var(--page);
-  border-radius: 6px;
-  font-size: 0.85rem;
+  border-radius: var(--radius);
+  font-size: 0.83rem;
 }
 
 .settings-privacy p {
@@ -815,7 +1500,7 @@ button.role-choice.chosen {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.65rem;
 }
 
 .ai-notes-generate .hint,
@@ -837,18 +1522,18 @@ button.role-choice.chosen {
 }
 
 .ai-note {
-  padding: 0.6rem 0.75rem;
+  padding: 0.55rem 0.7rem;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-card);
 }
 
 .ai-note + .ai-note {
-  margin-top: 0.5rem;
+  margin-top: 0.45rem;
 }
 
 .ai-note-statement {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.3rem;
 }
 
 .ai-note-quote {
@@ -856,20 +1541,22 @@ button.role-choice.chosen {
   align-items: baseline;
   gap: 0.4rem;
   width: 100%;
-  margin: 0 0 0.35rem;
-  padding: 0.2rem 0.4rem;
-  font: inherit;
-  font-size: 0.85rem;
+  margin: 0 0 0.3rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.83rem;
+  font-weight: 400;
   text-align: left;
+  white-space: normal;
   color: var(--text);
   background: var(--page);
   border: none;
-  border-radius: 4px;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
   cursor: pointer;
 }
 
-.ai-note-quote:hover {
-  background: var(--line);
+.ai-note-quote:hover:not(:disabled) {
+  background: var(--accent-tint);
 }
 
 .ai-note-quote-mark {
@@ -888,28 +1575,21 @@ button.role-choice.chosen {
 }
 
 .review-state {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--muted);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 3px;
   padding: 0 0.35rem;
 }
 
-/* The segment an AI Note's quote points to. */
-.segment.highlighted {
-  background: #fff4c2;
-  border-radius: 4px;
-  box-shadow: 0 0 0 4px #fff4c2;
-}
-
 .ai-note.stale {
-  border-color: #e0b84c;
+  border-color: var(--warn-line);
 }
 
 .stale-warning {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.3rem;
   font-size: 0.8rem;
-  color: #8a5a00;
+  color: var(--warn);
 }
 
 /* AI Note review: the actions sit on one line with the Review State. */
@@ -922,94 +1602,7 @@ button.role-choice.chosen {
 }
 
 .ai-note-original {
-  margin: 0 0 0.35rem;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-/* Evidence search: one bar for the CV and Transcripts, with its results under it. */
-.evidence-search {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-}
-
-.evidence-search-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
-}
-
-.evidence-search-form input[type="search"] {
-  font: inherit;
-  flex: 1 1 14rem;
-  min-width: 0;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
-
-.evidence-candidate-only {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.9rem;
-}
-
-.evidence-results {
-  margin-top: 0.75rem;
-}
-
-.evidence-results .hint {
-  margin-left: 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.evidence-summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 0.75rem;
-  margin: 0 0 0.5rem;
-}
-
-/* The list scrolls on its own, so many results do not push the panels far down. */
-.evidence-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-height: 16rem;
-  overflow-y: auto;
-  border-top: 1px solid var(--line);
-}
-
-.evidence-list li + li {
-  border-top: 1px solid var(--line);
-}
-
-.evidence-result {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  width: 100%;
-  padding: 0.5rem 0.25rem;
-  border: none;
-  background: none;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-
-.evidence-result:hover,
-.evidence-result:focus-visible {
-  background: var(--page);
-}
-
-.evidence-place {
+  margin: 0 0 0.3rem;
   font-size: 0.8rem;
   color: var(--muted);
 }
@@ -1021,7 +1614,6 @@ button.role-choice.chosen {
 .ai-note-edit textarea {
   width: 100%;
   margin-bottom: 0.3rem;
-  font: inherit;
 }
 
 .ai-note.dismissed {
@@ -1029,17 +1621,129 @@ button.role-choice.chosen {
 }
 
 .stale-banner {
-  margin: 0 0 0.75rem;
-  padding: 0.4rem 0.6rem;
-  font-size: 0.85rem;
-  color: #8a5a00;
-  background: #fff8e1;
-  border: 1px solid #e0b84c;
-  border-radius: 6px;
+  margin: 0 0 0.65rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.83rem;
+  color: var(--warn);
+  background: var(--warn-tint);
+  border: 1px solid var(--warn-line);
+  border-radius: var(--radius);
 }
 
 .ai-notes-dismissed-toggle {
   margin-top: 0.5rem;
+}
+
+/* Evidence search: in the Workspace bar; the results open under it, over the panels. */
+/* When the bar is too narrow for the whole search, it moves to a line of its own. */
+.evidence-search {
+  position: relative;
+  flex: 1 1 34rem;
+  min-width: min(34rem, 100%);
+}
+
+.evidence-search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+}
+
+.evidence-search-form input[type="search"] {
+  flex: 1 1 10rem;
+  min-width: 8rem;
+}
+
+.evidence-search-form select {
+  flex: none;
+}
+
+.evidence-candidate-only {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.evidence-candidate-only input {
+  accent-color: var(--accent-strong);
+}
+
+.evidence-results {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  box-sizing: border-box;
+  max-height: min(34rem, 65vh);
+  overflow-y: auto;
+  padding: 0.65rem 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-raised);
+}
+
+.evidence-close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+}
+
+.evidence-results p {
+  margin: 0 2rem 0.4rem 0;
+}
+
+.evidence-results .hint {
+  margin-left: 0;
+  font-size: 0.83rem;
+  color: var(--muted);
+}
+
+.evidence-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+
+.evidence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.evidence-list li + li {
+  border-top: 1px solid var(--line);
+}
+
+.evidence-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.45rem 0.35rem;
+  font-weight: 400;
+  text-align: left;
+  white-space: normal;
+  color: var(--text);
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.evidence-result:hover:not(:disabled),
+.evidence-result:focus-visible {
+  background: var(--accent-tint);
+}
+
+.evidence-place {
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 .evidence-excerpt {
@@ -1047,7 +1751,7 @@ button.role-choice.chosen {
 }
 
 mark {
-  background: #ffe28a;
+  background: var(--mark);
   color: inherit;
   border-radius: 2px;
 }
@@ -1099,7 +1803,7 @@ mark {
 
 /* Suggested Questions: collapsed under the Saved Questions, with the AI look of AI Notes. */
 .suggestions {
-  margin-top: 0.75rem;
+  margin-top: 0.65rem;
 }
 
 .suggestions-toggle {
@@ -1108,9 +1812,10 @@ mark {
 
 .suggestions-body {
   margin-top: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.65rem;
   background: var(--ai-surface);
-  border-radius: 8px;
+  border: 1px solid var(--accent-tint);
+  border-radius: var(--radius-card);
 }
 
 .suggestions-generate {
@@ -1118,7 +1823,7 @@ mark {
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.5rem 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.65rem;
 }
 
 .suggestions-generate .hint {
@@ -1131,8 +1836,8 @@ mark {
   flex-direction: column;
   gap: 0.2rem;
   flex: 1;
-  min-width: 14rem;
-  font-size: 0.85rem;
+  min-width: 12rem;
+  font-size: 0.82rem;
 }
 
 .suggestion-label {
@@ -1141,19 +1846,19 @@ mark {
 }
 
 .suggestion-reason {
-  margin: 0 0 0.35rem;
-  font-size: 0.85rem;
+  margin: 0 0 0.3rem;
+  font-size: 0.83rem;
   color: var(--muted);
 }
 
 .suggestion-evidence-toggle {
-  font-size: 0.95rem;
+  font-size: 0.93rem;
 }
 
 .suggestion-quote {
   cursor: default;
 }
 
-.suggestion-quote:hover {
+.suggestion-quote:hover:not(:disabled) {
   background: var(--page);
 }

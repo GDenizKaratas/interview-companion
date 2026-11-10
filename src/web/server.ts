@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
@@ -23,7 +24,13 @@ try {
 }
 const app = new Hono();
 
-app.route("/api", createApi(core));
+app.route(
+  "/api",
+  createApi(core, {
+    mcpServerPath: fileURLToPath(new URL("../mcp/server.ts", import.meta.url)),
+    dataDir: process.env.DATA_DIR ? resolve(process.env.DATA_DIR) : undefined,
+  }),
+);
 
 if (existsSync(indexHtml)) {
   app.use("/*", serveStatic({ root: clientDir }));

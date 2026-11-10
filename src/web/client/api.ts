@@ -5,6 +5,7 @@ import type {
   AiNote,
   AiNoteGeneration,
   Candidate,
+  CandidateOverview,
   Cv,
   CvPage,
   EvidenceResult,
@@ -27,7 +28,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, Candidate, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, Candidate, CandidateOverview, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -80,6 +81,8 @@ function sendJson(method: string, body: unknown): RequestInit {
 
 export const api = {
   listCandidates: () => request<Candidate[]>("/candidates"),
+  listCandidateOverviews: () => request<CandidateOverview[]>("/candidate-overviews"),
+  getMcpSetup: () => request<{ command: string | null }>("/mcp-setup"),
   listCandidateRoles: () => request<string[]>("/candidate-roles"),
   getCandidate: (id: string) => request<Candidate>(`/candidates/${encodeURIComponent(id)}`),
   createCandidate: (input: NewCandidate) => request<Candidate>("/candidates", sendJson("POST", input)),

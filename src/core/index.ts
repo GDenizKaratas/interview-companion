@@ -71,6 +71,7 @@ export interface Core {
   deleteCandidate(id: string): void;
   loadDemoCandidate(): Promise<candidates.Candidate>;
   loadDemoCandidateOnFirstStart(): Promise<candidates.Candidate | undefined>;
+  loadDemoCandidates(): Promise<candidates.Candidate[]>;
   listCandidateRoles(): string[];
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
@@ -168,6 +169,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     deleteCandidate: (id) => cv.deleteCandidateAndCv(db, cvFolder, id),
     loadDemoCandidate: () => demoCandidate.loadDemoCandidate(db, cvFolder, today, now),
     loadDemoCandidateOnFirstStart: () => demoCandidate.loadDemoCandidateOnFirstStart(db, cvFolder, today, now),
+    loadDemoCandidates: () => demoCandidate.loadDemoCandidates(db, cvFolder, today, now),
     listCandidateRoles: () => candidates.listCandidateRoles(db),
     addInterview: (input) => interviews.addInterview(db, today, input),
     listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),
