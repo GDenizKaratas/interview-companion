@@ -66,6 +66,10 @@ _Avoid_: Recommendation, generated question
 A question on the Interviewer's own list, either written by hand or copied from a Suggested Question on acceptance. Regenerating suggestions never changes it.
 _Avoid_: Accepted question, follow-up
 
+**AI client**:
+An AI application the Interviewer runs outside the app, such as Claude Code or Claude Desktop, connected to it through MCP. It can read; when the Interviewer allows it, it can also save AI Notes and Suggested Questions, which core checks like the app's own.
+_Avoid_: Agent, assistant, bot
+
 **Candidate Brief**:
 A single document about one Candidate that an external AI client writes from the application's data, with the reason and Evidence for each statement listed at the end. It is not stored in the application.
 _Avoid_: Report, profile, summary

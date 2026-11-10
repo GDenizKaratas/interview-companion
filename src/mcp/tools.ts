@@ -3,6 +3,11 @@ import { z } from "zod";
 import { candidateBriefPrompt } from "./candidate-brief.ts";
 import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, type AiClientCore } from "../core/index.ts";
 
+// Bounds on what the AI client can save in one call, so a runaway client cannot flood the
+// Workspace. They are generous for a real Interview.
+const limits = { notes: 40, suggestions: 25, evidence: 8 };
+const text = { long: 2000 };
+
 // Every tool that is about one Candidate takes their id, as list_candidates gives it.
 const candidateId = z.string().min(1).describe("The Candidate's id, as given by list_candidates.");
 
@@ -149,17 +154,19 @@ export function createMcpServer(core: AiClientCore): McpServer {
         notes: z
           .array(
             z.object({
-              statement: z.string().describe("One short, neutral statement, in the Interviewer's language."),
+              statement: z.string().max(text.long).describe("One short, neutral statement, in the Interviewer's language."),
               evidence: z
                 .array(
                   z.object({
                     segmentNumber: z.number().int().positive().describe("The segment's number, from get_transcript."),
-                    quote: z.string().describe("Words copied exactly from that segment."),
+                    quote: z.string().max(text.long).describe("Words copied exactly from that segment."),
                   }),
                 )
-                .min(1),
+                .min(1)
+                .max(limits.evidence),
             }),
           )
+          .max(limits.notes)
           .describe("The notes, in the order to show them."),
       },
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
@@ -182,25 +189,26 @@ export function createMcpServer(core: AiClientCore): McpServer {
         suggestions: z
           .array(
             z.object({
-              question: z.string().describe("The question, in the Interviewer's language."),
-              reason: z.string().describe("One short line on why it is worth asking."),
+              question: z.string().max(text.long).describe("The question, in the Interviewer's language."),
+              reason: z.string().max(text.long).describe("One short line on why it is worth asking."),
               evidence: z.array(
                 z.discriminatedUnion("source", [
                   z.object({
                     source: z.literal("cv"),
                     page: z.number().int().positive().describe("The CV page number, from get_cv."),
-                    quote: z.string().describe("Words copied exactly from that page."),
+                    quote: z.string().max(text.long).describe("Words copied exactly from that page."),
                   }),
                   z.object({
                     source: z.literal("transcript"),
                     interviewId: z.string().min(1),
                     segmentNumber: z.number().int().positive().describe("The segment's number, from get_transcript."),
-                    quote: z.string().describe("Words copied exactly from that segment."),
+                    quote: z.string().max(text.long).describe("Words copied exactly from that segment."),
                   }),
                 ]),
-              ),
+              ).max(limits.evidence),
             }),
           )
+          .max(limits.suggestions)
           .describe("The suggestions, in the order to show them."),
       },
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },

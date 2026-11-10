@@ -154,3 +154,42 @@ describe("The AI client's view of core", () => {
     expect(Object.keys(view)).not.toContain("deleteCandidate");
   });
 });
+
+describe("The switch for writes from the AI client", () => {
+  it("is read on every save, so turning it off stops the next save at once", () => {
+    confirmRoles(importTranscript());
+    core.allowAiClientWrites(true);
+    expect(core.saveAiNotesFromClient(interview.id, [backedNote]).notes).toHaveLength(1);
+
+    core.allowAiClientWrites(false);
+
+    expect(() => core.saveAiNotesFromClient(interview.id, [backedNote])).toThrow(
+      expect.objectContaining({ reason: "aiClientWritesOff" }),
+    );
+  });
+});
+
+describe("Quotes in the AI client's suggestions", () => {
+  it("cannot come from another Candidate's Transcript or an unknown Interview", () => {
+    confirmRoles(importTranscript());
+    core.allowAiClientWrites(true);
+    const other = core.createCandidate({ name: "Can Aksoy", role: "Data Engineer" });
+
+    const saved = core.saveSuggestedQuestionsFromClient(other.id, [
+      {
+        question: "BullMQ?",
+        reason: "Quotes Ece's Transcript.",
+        evidence: [{ source: "transcript", interviewId: interview.id, segmentNumber: 2, quote: "BullMQ" }],
+      },
+      {
+        question: "Kafka?",
+        reason: "Quotes an Interview that does not exist.",
+        evidence: [{ source: "transcript", interviewId: "no-such-interview", segmentNumber: 1, quote: "Kafka" }],
+      },
+    ]);
+
+    expect(saved.dropped).toBe(2);
+    expect(saved.suggestions).toEqual([]);
+  });
+});
+

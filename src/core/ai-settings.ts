@@ -26,9 +26,9 @@ export function readApiKey(db: DatabaseSync): string | undefined {
   return getSetting(db, settingKey);
 }
 
-// Whether the AI client (through MCP) may save AI Notes, Suggested Questions, and Candidate
-// Briefs. Off until the Interviewer turns it on in AI Settings. Only the web interface can
-// change it: the AI client's view of core does not hold the switch.
+// Whether the AI client (through MCP) may save AI Notes and Suggested Questions. Off until the
+// Interviewer turns it on in AI Settings. Only the web interface can change it: the AI client's
+// view of core does not hold the switch.
 const aiClientWritesKey = "ai_client_writes";
 
 export function aiClientWritesAllowed(db: DatabaseSync): boolean {

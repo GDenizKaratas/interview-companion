@@ -45,7 +45,9 @@ A plain web API could serve the same data, for example `GET /candidates/:id/evid
 
 ## The tools
 
-All tools but two only read. The two that write, `save_ai_notes` and `save_suggested_questions`, refuse until you turn on "Saving from your AI client" in AI Settings. Even then they go through the same core code as the app's own AI: a note or suggestion whose quote is not found word for word in its source is dropped, a Transcript is quoted only after its Speaker Mapping is confirmed, and everything arrives Unreviewed, marked as from the AI client. The server gets a view of core, `aiClientCore`, that holds every read and only these two writes; the switch is not in it, so the client cannot turn writing on itself. Your Interviewer Notes, Saved Questions, Candidates, CVs, and Transcripts cannot be changed through MCP.
+All tools but two only read. The two that write, `save_ai_notes` and `save_suggested_questions`, refuse until you turn on "Saving from your AI client" in AI Settings. Even then they go through the same core code as the app's own AI: a note or suggestion whose quote is not found word for word in its source is dropped, a Transcript is quoted only after its Speaker Mapping is confirmed, and everything arrives Unreviewed, marked as from the AI client. The server gets a view of core, `aiClientCore`, that holds every read and only these two writes; the switch is not in it, so the client cannot turn writing on itself. Your Interviewer Notes, Saved Questions, Candidates, CVs, and Transcripts cannot be changed through MCP. Saving follows the same replace rules as generating in the app: new AI Notes replace the Interview's Unreviewed ones, whoever wrote them, and new suggestions replace those not yet accepted; anything you reviewed or accepted stays. One call can save at most 40 notes or 25 suggestions, each with at most 8 quotes.
+
+The switch protects the MCP connection. Like everything in the app (ADR 0001), the local web interface has no login, so any program on this computer that can reach it could change the switch; an AI client with a shell is such a program.
 
 | Tool | Arguments | Returns |
 |---|---|---|

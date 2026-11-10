@@ -96,11 +96,11 @@ export function saveAiNotesFromClient(db: DatabaseSync, now: Now, interviewId: s
 function requireConfirmedTranscript(db: DatabaseSync, interviewId: string): Transcript {
   requireInterview(db, interviewId);
   const transcript = getTranscript(db, interviewId);
-  if (!transcript) throw new PreconditionError("noTranscript", "Import a Transcript before generating AI Notes.");
+  if (!transcript) throw new PreconditionError("noTranscript", "Import a Transcript before making AI Notes.");
   if (transcript.speakerMappingConfirmedAt === null) {
     throw new PreconditionError(
       "speakerMappingNotConfirmed",
-      "Confirm who is speaking before generating AI Notes.",
+      "Confirm who is speaking before making AI Notes.",
     );
   }
   return transcript;

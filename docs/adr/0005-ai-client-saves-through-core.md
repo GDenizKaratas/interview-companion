@@ -23,5 +23,8 @@ We now let the AI client save AI Notes and Suggested Questions through MCP. They
 ## Consequences
 
 - "An external client cannot change your data" becomes: unless the Interviewer allows it, the AI client can only read; when allowed, it can only add AI Notes and Suggested Questions that pass core's checks, and replace the Unreviewed or unaccepted ones. Interviewer Notes, Saved Questions, Candidates, CVs, and Transcripts stay read-only for it.
+- The switch guards the MCP channel, not the computer: the local web interface has no login (ADR 0001), so a program on the same computer, including an AI client with a shell, could change it there.
+- New saves replace Unreviewed notes and unaccepted suggestions whoever wrote them, the app or the client, as regenerating does.
+- One call is bounded (40 notes, 25 suggestions, 8 quotes each, 2000 characters per text), so a runaway client cannot flood the Workspace.
 - The MCP server needs the full Transcript and CV text to quote from, so `get_transcript` and `get_cv` are added.
 - ADR 0002 still holds for the two modes; its "MCP is read-only" consequence is replaced by this ADR.

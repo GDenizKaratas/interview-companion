@@ -415,6 +415,8 @@ describe("MCP server", () => {
 
     expect(await refusal("save_ai_notes", { interviewId: interview.id, notes: [{ statement: "No evidence" }] })).toContain("evidence");
     expect(await refusal("save_suggested_questions", { candidateId: candidate.id, suggestions: "none" })).toContain("suggestions");
+    const tooMany = Array.from({ length: 41 }, () => redisNote);
+    expect(await refusal("save_ai_notes", { interviewId: interview.id, notes: tooMany })).toContain("notes");
   });
 });
 
