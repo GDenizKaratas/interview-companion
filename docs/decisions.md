@@ -113,12 +113,11 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 
 | 77 | A Workspace panel grows with its content up to a fixed height and then scrolls inside. In My Notes the box stays in place and only the list scrolls. The note box grows to about six lines and then scrolls inside too. | One long panel or a long paste must not push the rest of the Workspace off the screen. Asked for by the owner. | Panels and the box that grow without limit. |
 
-
 ## 2026-11-10 — #5 follow-up: notes hidden by the Interview filter
 
 | # | Decision | Why | Rejected alternative |
 |---|---|---|---|
-| 78 | When a note is saved or re-tagged to an Interview other than the selected one, it leaves the list, and My Notes says where it went ("Saved to Second Interview. It is not shown while another Interview is selected.") with a "Show all notes" button that switches the header to All. The browser finds this by checking whether core's new list still contains the note, not by repeating the filter rule. The notice goes away on the next change or when the selection changes. | Without it, the note looks deleted. Asked for by the owner. Checking core's answer keeps the filter rule only in core (decision 70). | No notice; keeping the note on screen until the next reload; repeating the filter in the browser. |
+| 78 | When a note is saved or re-tagged to an Interview other than the selected one, it leaves the list, and My Notes says where it went ("Saved under Second Interview. Notes of other Interviews are hidden while one is selected.") with a "Show all notes" button that switches the header to All. The browser finds this by checking whether core's new list still contains the note, not by repeating the filter rule. Every note saved or re-tagged since the list was last filled is checked against the newest list, so a quick later change cannot drop the notice. The notice goes away on the next change, when the selection changes, or when the list cannot be loaded. | Without it, the note looks deleted. Asked for by the owner. Checking core's answer keeps the filter rule only in core (decision 70). | No notice; keeping the note on screen until the next reload; repeating the filter in the browser. |
 
 ## Open questions
 

@@ -71,7 +71,7 @@ const text = {
       deleteFailed: "Note could not be deleted.",
       loadFailed: "Notes could not be loaded.",
       // {interview} is replaced by the Interview's name.
-      hiddenByFilter: "Saved to {interview}. It is not shown while another Interview is selected.",
+      hiddenByFilter: "Saved under {interview}. Notes of other Interviews are hidden while one is selected.",
       showAll: "Show all notes",
     },
     transcript: { title: "Transcript", empty: "No transcript available." },

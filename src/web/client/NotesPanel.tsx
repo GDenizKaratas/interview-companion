@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { api, ApiError, type Interview, type InterviewerNote } from "./api.ts";
 import { interviewName } from "./interview-names.ts";
-import type { Text } from "./languages.ts";
+import { fill, type Text } from "./languages.ts";
 import { useText } from "./text.tsx";
 
 // The "My Notes" panel: a box that saves on Enter, and the Candidate's Interviewer Notes below it.
@@ -29,11 +29,11 @@ export function NotesPanel({
   // adjusting state when a prop changes, without an extra render from an effect).
   const [followedSelection, setFollowedSelection] = useState(selectedInterviewId);
   // The Interview a just-saved or re-tagged note went to, when the current filter hides it.
-  const [hiddenTo, setHiddenTo] = useState<string | null>(null);
+  const [hiddenInterviewId, setHiddenInterviewId] = useState<string | null>(null);
   if (followedSelection !== selectedInterviewId) {
     setFollowedSelection(selectedInterviewId);
     setTag(selectedInterviewId);
-    setHiddenTo(null);
+    setHiddenInterviewId(null);
   }
   const [saveError, setSaveError] = useState<unknown>();
   const box = useRef<HTMLTextAreaElement>(null);
@@ -44,31 +44,40 @@ export function NotesPanel({
   const saveAgain = useRef(false);
   // Only the newest list request may fill the list, so a slow older answer cannot overwrite it.
   const latestLoad = useRef(0);
+  // Notes saved or re-tagged since the list was last filled. They are checked against whichever
+  // list request answers last, so a newer request cannot drop the notice for an earlier save.
+  const changedSinceLoad = useRef<InterviewerNote[]>([]);
+  // The selection as it is now. A save that finishes after the selection changed must fetch
+  // the list for the new selection, not the one it started under.
+  const selectionNow = useRef(selectedInterviewId);
 
   useEffect(() => {
-    loadNotes(candidateId, selectedInterviewId);
+    selectionNow.current = selectedInterviewId;
+    changedSinceLoad.current = [];
+    loadNotes(candidateId);
   }, [candidateId, selectedInterviewId]);
 
-  // changed: notes just saved or re-tagged. If core's list leaves one out, the filter hides it,
-  // and the panel says so instead of letting the note seem to vanish.
-  function loadNotes(id: string, interviewId: string | null, changed: InterviewerNote[] = []) {
+  // If core's new list leaves out a note that was just saved or re-tagged, the filter hides it,
+  // and the panel says where it went instead of letting the note seem to vanish.
+  function loadNotes(id: string, changed: InterviewerNote[] = []) {
+    changedSinceLoad.current = [...changedSinceLoad.current, ...changed];
     const thisLoad = ++latestLoad.current;
-    api.listInterviewerNotes(id, interviewId).then(
+    api.listInterviewerNotes(id, selectionNow.current).then(
       (list) => {
         if (thisLoad !== latestLoad.current) return;
         setNotes(list);
         setLoadFailed(false);
-        const hidden = changed.find((note) => !list.some((shown) => shown.id === note.id));
-        setHiddenTo(hidden?.interviewId ?? null);
+        const hidden = changedSinceLoad.current.find((note) => !list.some((shown) => shown.id === note.id));
+        changedSinceLoad.current = [];
+        setHiddenInterviewId(hidden?.interviewId ?? null);
       },
       () => {
-        if (thisLoad === latestLoad.current) setLoadFailed(true);
+        if (thisLoad !== latestLoad.current) return;
+        changedSinceLoad.current = [];
+        setLoadFailed(true);
+        setHiddenInterviewId(null);
       },
     );
-  }
-
-  function reload(changed: InterviewerNote[] = []) {
-    loadNotes(candidateId, selectedInterviewId, changed);
   }
 
   function changeDraft(value: string) {
@@ -92,7 +101,7 @@ export function NotesPanel({
       changeDraft(current.startsWith(sent) ? current.slice(sent.length).replace(/^\r?\n/, "") : current);
       setSaveError(undefined);
       saved = true;
-      reload(added);
+      loadNotes(candidateId, added);
     } catch (error) {
       setSaveError(error);
     } finally {
@@ -115,13 +124,13 @@ export function NotesPanel({
   }
 
   // After a note is edited, re-tagged, or deleted, the list is fetched again and the box is
-  // ready for the next note.
+  // ready for the next note. changed is the note as it is now, unless it was deleted.
   function handleNoteChanged(changed?: InterviewerNote) {
-    reload(changed ? [changed] : []);
+    loadNotes(candidateId, changed ? [changed] : []);
     box.current?.focus();
   }
 
-  const hiddenInterview = interviews.find((interview) => interview.id === hiddenTo);
+  const hiddenInterview = interviews.find((interview) => interview.id === hiddenInterviewId);
 
   const lineCount = draft.split("\n").length;
 
@@ -149,7 +158,7 @@ export function NotesPanel({
       </div>
       {hiddenInterview && (
         <p className="notice" role="status">
-          {text.panels.interviewerNotes.hiddenByFilter.replace("{interview}", interviewName(text, hiddenInterview))}{" "}
+          {fill(text.panels.interviewerNotes.hiddenByFilter, { interview: interviewName(text, hiddenInterview) })}{" "}
           <button type="button" className="link-button" onClick={onShowAll}>
             {text.panels.interviewerNotes.showAll}
           </button>
@@ -182,12 +191,12 @@ function NoteItem({
   const [error, setError] = useState<string>();
 
   // Changing the tag leaves an open edit alone, so unsaved text is not lost.
-  async function run(change: () => Promise<InterviewerNote | void>, failed: string, { closeEditor = true } = {}) {
+  async function run(change: () => Promise<InterviewerNote | undefined>, failed: string, { closeEditor = true } = {}) {
     try {
       const changed = await change();
       setError(undefined);
       if (closeEditor) setEditing(false);
-      onChanged(changed ?? undefined);
+      onChanged(changed);
     } catch (caught) {
       setError(refusalMessage(text, caught, failed));
     }
@@ -211,7 +220,10 @@ function NoteItem({
 
   function handleDelete() {
     if (!window.confirm(text.panels.interviewerNotes.confirmDelete)) return;
-    void run(() => api.deleteInterviewerNote(note.id), text.panels.interviewerNotes.deleteFailed);
+    void run(
+      () => api.deleteInterviewerNote(note.id).then(() => undefined),
+      text.panels.interviewerNotes.deleteFailed,
+    );
   }
 
   return (

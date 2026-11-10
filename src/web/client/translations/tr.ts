@@ -69,7 +69,7 @@ const translation: TranslationFile = {
         saveFailed: "Not kaydedilemedi.",
         deleteFailed: "Not silinemedi.",
         loadFailed: "Notlar yüklenemedi.",
-        hiddenByFilter: "{interview} için kaydedildi. Başka bir mülakat seçiliyken görünmez.",
+        hiddenByFilter: "{interview} altına kaydedildi. Bir mülakat seçiliyken diğer mülakatların notları gizlenir.",
         showAll: "Tüm notları göster",
       },
       transcript: { title: "Transkript", empty: "Transkript yok." },
