@@ -64,6 +64,10 @@ const translation: TranslationFile = {
       deleteCandidateFailed: "Aday silinemedi.",
       openBrief: "Özet",
       openBriefHint: "AI istemcinizin kaydettiği Aday Özeti",
+      copyBriefCommand: "Özet komutunu kopyala",
+      copyBriefCommandHint: "Claude Code komutunu kopyalar. Bu adayın özetini yazıp kaydetmek için oraya yapıştırın.",
+      briefCommandCopied: "Kopyalandı",
+      briefCommandCopyFailed: "Kopyalanamadı",
     },
     brief: {
       title: "Aday Özeti",
@@ -71,7 +75,7 @@ const translation: TranslationFile = {
       loadFailed: "Özet yüklenemedi. Uygulamanın hâlâ çalıştığını kontrol edin.",
       none: "Bu aday için henüz kaydedilmiş bir Aday Özeti yok.",
       noneHint:
-        "AI Ayarları'nda AI istemcinizden kaydetmeyi açın, sonra Claude Code veya Claude Desktop'tan candidate_brief komutuyla bir özet isteyin. Özet buraya kaydedilir.",
+        "AI Ayarları'nda AI istemcinizden kaydetmeyi açın, sonra Özet komutunu kopyala düğmesine basıp komutu Claude Code'a yapıştırın. Özet buraya kaydedilir.",
       fromAiClient: "AI istemciniz yazdı",
       savedAt: "Kaydedilme: {date}",
       notChecked:
@@ -142,7 +146,8 @@ const translation: TranslationFile = {
       copy: "Kopyala",
       copied: "Kopyalandı",
       stepAsk: "2. Claude Code'u açıp örneğin şunu sorun: “Deniz Redis hakkında ne dedi? Interview Companion'ı kullan.”",
-      stepBrief: "3. Tam bir özet için /mcp__interview-companion__candidate_brief yazıp adayın adını verin.",
+      // {command} is replaced by the brief command.
+      stepBrief: "3. Tam bir özet için adayın çalışma alanında Özet komutunu kopyala düğmesine basıp komutu Claude Code'a yapıştırın ya da {command} yazıp adayın adını verin.",
       desktop: "Claude Desktop için proje klasöründeki docs/mcp.md dosyasına bakın.",
       readOnly: "AI Ayarları'nda izin vermediğiniz sürece istemci yalnızca okuyabilir ve arayabilir. İzin verirseniz uygulamanın kontrol ettiği AI Notları ve önerilen sorular da kaydedebilir; kendi notlarınızı, sorularınızı ve adaylarınızı asla değiştiremez. Aday Özeti buraya kaydedildiğinde uygulama alıntılarının CV'de veya bir transkriptte bulunduğunu kontrol eder; yalnızca sohbette kalan bir özet kontrol edilmez.",
     },

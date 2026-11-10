@@ -3,6 +3,7 @@ import { AiNotesPanel } from "./AiNotesPanel.tsx";
 import { CandidateBriefDialog } from "./CandidateBriefDialog.tsx";
 import { api, ApiError, type Candidate, type EvidenceResult, type Interview } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { CopyBriefCommand } from "./CopyBriefCommand.tsx";
 import { CvPanel } from "./CvPanel.tsx";
 import type { CvFocus } from "./evidence-focus.ts";
 import { EvidenceSearch } from "./EvidenceSearch.tsx";
@@ -142,6 +143,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             {text.workspace.openBrief}
           </button>
         )}
+        {load.state === "ready" && <CopyBriefCommand candidateName={load.candidate.name} />}
         {load.state === "ready" && (
           <button
             type="button"

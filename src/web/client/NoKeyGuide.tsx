@@ -1,5 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { api } from "./api.ts";
+import { briefCommandName } from "./brief-command.ts";
+import { fill } from "./languages.ts";
 import { useText } from "./text.tsx";
 
 // How to use AI without an API key: connect an AI client to the read-only MCP server. The
@@ -46,7 +48,7 @@ export function NoKeyGuide({ className, withTitle = true }: { className?: string
         </div>
       )}
       <p className="no-key-step">{t.stepAsk}</p>
-      <p className="no-key-step">{t.stepBrief}</p>
+      <p className="no-key-step">{fill(t.stepBrief, { command: briefCommandName })}</p>
       <p className="no-key-note">{t.desktop}</p>
       <p className="no-key-note">{t.readOnly}</p>
     </section>

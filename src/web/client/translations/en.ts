@@ -65,6 +65,10 @@ const text = {
     deleteCandidateFailed: "The Candidate could not be deleted.",
     openBrief: "Brief",
     openBriefHint: "The Candidate Brief your AI client saved",
+    copyBriefCommand: "Copy brief command",
+    copyBriefCommandHint: "Copies the command for Claude Code. Paste it there to write and save this Candidate's brief.",
+    briefCommandCopied: "Copied",
+    briefCommandCopyFailed: "Could not copy",
   },
   brief: {
     title: "Candidate Brief",
@@ -72,7 +76,7 @@ const text = {
     loadFailed: "The brief could not be loaded. Check that the app is still running.",
     none: "No Candidate Brief is saved for this Candidate yet.",
     noneHint:
-      "Turn on saving from your AI client in AI Settings, then ask Claude Code or Claude Desktop for a brief with the candidate_brief prompt. It saves the brief here.",
+      "Turn on saving from your AI client in AI Settings, then click Copy brief command and paste the command into Claude Code. It saves the brief here.",
     fromAiClient: "Written by your AI client",
     savedAt: "Saved {date}",
     notChecked:
@@ -146,7 +150,8 @@ const text = {
     copy: "Copy",
     copied: "Copied",
     stepAsk: "2. Start Claude Code and ask, for example: “What did Deniz say about Redis? Use Interview Companion.”",
-    stepBrief: "3. For a full brief, type /mcp__interview-companion__candidate_brief and give the Candidate's name.",
+    // {command} is replaced by the brief command.
+    stepBrief: "3. For a full brief, click Copy brief command in a Candidate's Workspace and paste it into Claude Code, or type {command} and the Candidate's name.",
     desktop: "For Claude Desktop, see docs/mcp.md in the project folder.",
     readOnly: "Unless you allow it in AI Settings, the AI client can only read and search. Allowed, it can also save AI Notes and Suggested Questions, which the app checks; it can never change your own notes, questions, or Candidates. When a Candidate Brief is saved here, the app checks that its quotes are in the CV or a Transcript; a brief kept only in the chat is not checked.",
   },

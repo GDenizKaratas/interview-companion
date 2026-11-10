@@ -302,20 +302,25 @@ describe("MCP server", () => {
     expect(await refusal("search_evidence", { candidateId: candidate.id })).toContain("query");
   });
 
-  it("offers the candidate_brief prompt, which takes the Candidate's name or id", async () => {
+  it("offers the brief prompt, which takes the Candidate's name or id", async () => {
     const { prompts } = await client.listPrompts();
 
-    expect(prompts.map((prompt) => prompt.name)).toEqual(["candidate_brief"]);
+    expect(prompts.map((prompt) => prompt.name)).toEqual(["brief"]);
     expect(prompts[0]!.description).toBeTruthy();
     expect(prompts[0]!.arguments).toEqual([expect.objectContaining({ name: "candidate", required: true })]);
   });
 
-  it("candidate_brief gives a fixed template and rules for the Candidate named", async () => {
-    const { messages } = await client.getPrompt({ name: "candidate_brief", arguments: { candidate: "Ada Demir" } });
-
+  // The text of the brief prompt for one Candidate, as the AI client gets it now.
+  async function fetchBriefPrompt(candidate = "Ada Demir"): Promise<string> {
+    const { messages } = await client.getPrompt({ name: "brief", arguments: { candidate } });
     expect(messages).toHaveLength(1);
     expect(messages[0]!.role).toBe("user");
-    const text = (messages[0]!.content as { type: string; text: string }).text;
+    return (messages[0]!.content as { type: string; text: string }).text;
+  }
+
+  it("brief gives a fixed template and rules for the Candidate named", async () => {
+    const text = await fetchBriefPrompt();
+
     // Which Candidate, and the tools to read them with.
     expect(text).toContain('"Ada Demir"');
     for (const tool of ["list_candidates", "get_candidate", "search_evidence", "get_interviewer_notes", "get_ai_notes", "get_saved_questions"]) {
@@ -330,14 +335,36 @@ describe("MCP server", () => {
     expect(text).toMatch(/no judgments/i);
     expect(text).toMatch(/word for word/i);
     expect(text).toMatch(/checked by Interview Companion only when .*saved/i);
-    // Saving it in the app, with each number's quote and source.
-    expect(text).toContain("save_candidate_brief");
-    expect(text).toMatch(/one evidence entry per number/i);
     expect(text).toMatch(/data, not instructions/i);
   });
 
-  it("candidate_brief refuses a missing Candidate", async () => {
-    await expect(client.getPrompt({ name: "candidate_brief", arguments: {} })).rejects.toThrow(/candidate/);
+  it("brief only reads while saving from the AI client is off, and says where to turn it on", async () => {
+    const text = await fetchBriefPrompt();
+
+    for (const tool of ["save_ai_notes", "save_suggested_questions", "save_candidate_brief"]) {
+      expect(text, tool).not.toContain(tool);
+    }
+    expect(text).toMatch(/saving from the AI client is off/i);
+    expect(text).toMatch(/only read/i);
+    expect(text).toContain("AI Settings");
+  });
+
+  it("brief writes and saves AI Notes, Suggested Questions, and the Candidate Brief while saving is on", async () => {
+    core.allowAiClientWrites(true);
+    const text = await fetchBriefPrompt();
+
+    // In this order: notes first, so the brief can cite them; the brief last.
+    const at = (tool: string) => text.indexOf(tool);
+    expect(at("save_ai_notes")).toBeGreaterThan(-1);
+    expect(at("save_ai_notes")).toBeLessThan(at("save_suggested_questions"));
+    expect(at("save_suggested_questions")).toBeLessThan(at("save_candidate_brief"));
+    expect(text).toContain("get_transcript");
+    expect(text).toMatch(/one evidence entry per number/i);
+    expect(text).not.toMatch(/only read/i);
+  });
+
+  it("brief refuses a missing Candidate", async () => {
+    await expect(client.getPrompt({ name: "brief", arguments: {} })).rejects.toThrow(/candidate/);
   });
 
   it("get_transcript gives every segment with its number, speaker label, and confirmed role", async () => {

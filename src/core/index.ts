@@ -143,11 +143,12 @@ const readOperations = [
   "listAiNotes",
   "searchEvidence",
   "getCandidateBrief",
+  "aiClientWritesAllowed",
 ] as const satisfies readonly (keyof Core)[];
 
 export type ReadOnlyCore = Pick<Core, (typeof readOperations)[number]>;
 
-// The writes the AI client may make through MCP, each going through core's checks and refused while the Interviewer has not allowed it. The switch itself is not here.
+// The writes the AI client may make through MCP, each going through core's checks and refused while the Interviewer has not allowed it. The client can read the switch (a read operation above) but cannot turn it.
 const aiClientWriteOperations = [
   "saveAiNotesFromClient",
   "saveSuggestedQuestionsFromClient",
