@@ -57,7 +57,14 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 42 | The Candidate list shows the newest Candidate first. A Candidate needs a name and a role; spaces around them are removed. | The Interviewer usually works on the Candidate they added most recently. | Alphabetical order. |
 | 43 | A lint rule enforces the module boundary: `web` and `mcp` import core only through `src/core/index.ts`, and the browser code never imports core. | The rule "no business rule is written twice" is checked by a tool, not only by review. | Relying on code review alone. |
 | 44 | Workspace panels show only their empty-state message for now. Upload, import, and input controls arrive with the tickets that make them work. | A button that does nothing is misleading. | Disabled placeholder buttons. |
+| 45 | Candidate ids are random UUIDs stored as text. Times are stored as ISO 8601 text in UTC. | Ids do not reveal how many Candidates exist or in what order, and ISO text sorts correctly and reads clearly in the database. | Auto-increment integer ids; Unix timestamps. |
+| 46 | The browser interface uses a small hand-written router with two pages: the Candidate list and the Workspace. | Two routes do not justify a dependency. | A routing library such as React Router. |
+| 47 | The browser imports only types from core (`import type` from `src/core/index.ts`). The lint rule allows nothing else. | One definition of each shape, with no core code in the browser bundle. | A second copy of each type in the browser code. |
+| 48 | Until #3 adds translation files, all interface text lives in one file, `src/web/client/text.ts`. | #3 then only has to turn one file into translation files. | Text written directly in components. |
+| 49 | `npm start` prints the address; it does not open a browser by itself. | Opening a browser differs per operating system and is unwanted when the app is restarted often. To be confirmed by the owner. | Opening the default browser automatically. |
+| 50 | The browser form does not check required fields itself. Core's message is shown instead. | The rule "a Candidate needs a name and a role" stays in one place. | The HTML `required` attribute as a second copy of the rule. |
 
 ## Open questions
 
 - The exact format of Google Meet transcripts. To be researched at the start of Milestone 2.
+- GLOSSARY lists "My note" and "personal note" as terms to avoid, but the wireframe titles the panel "My Notes" with the empty state "No personal notes yet." The code uses the wireframe text for now, under the identifier `interviewerNotes`.

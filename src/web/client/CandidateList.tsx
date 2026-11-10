@@ -45,11 +45,11 @@ export function CandidateList() {
       <form className="candidate-form" onSubmit={handleSubmit}>
         <label>
           {text.candidates.nameLabel}
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
+          <input value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <label>
           {text.candidates.roleLabel}
-          <input value={role} onChange={(e) => setRole(e.target.value)} required />
+          <input value={role} onChange={(e) => setRole(e.target.value)} />
         </label>
         <button type="submit" disabled={saving}>
           {text.candidates.add}

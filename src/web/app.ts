@@ -8,11 +8,12 @@ export function createApi(core: Core): Hono {
   api.get("/candidates", (c) => c.json(core.listCandidates()));
 
   api.post("/candidates", async (c) => {
-    const body = await c.req.json().catch(() => ({}));
+    const body: unknown = await c.req.json().catch(() => undefined);
+    const fields = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
     try {
       const candidate = core.createCandidate({
-        name: typeof body.name === "string" ? body.name : "",
-        role: typeof body.role === "string" ? body.role : "",
+        name: typeof fields.name === "string" ? fields.name : "",
+        role: typeof fields.role === "string" ? fields.role : "",
       });
       return c.json(candidate, 201);
     } catch (error) {

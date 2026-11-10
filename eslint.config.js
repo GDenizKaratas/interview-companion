@@ -35,15 +35,22 @@ export default tseslint.config(
   },
   {
     // The browser cannot open the database. It talks to the local server over /api.
+    // Type-only imports from core's public interface are allowed; they are erased.
     files: ["src/web/client/**/*.{ts,tsx}"],
     rules: {
-      "no-restricted-imports": [
+      "no-restricted-imports": "off",
+      "@typescript-eslint/no-restricted-imports": [
         "error",
         {
           patterns: [
             {
-              group: ["**/core/**", "**/core"],
-              message: "The browser talks to core through the /api server, not by import.",
+              group: ["**/core/*", "!**/core/index.ts"],
+              message: "Import core only through src/core/index.ts.",
+            },
+            {
+              group: ["**/core/index.ts"],
+              allowTypeImports: true,
+              message: "The browser may import only types from core. It talks to core through the /api server.",
             },
           ],
         },

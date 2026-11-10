@@ -1,9 +1,13 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
-import { api, type Candidate } from "./api.ts";
+import { api, ApiError, type Candidate } from "./api.ts";
 import { navigate } from "./navigation.ts";
 import { text } from "./text.ts";
 
-type Load = { state: "loading" } | { state: "ready"; candidate: Candidate } | { state: "missing" };
+type Load =
+  | { state: "loading" }
+  | { state: "ready"; candidate: Candidate }
+  | { state: "notFound" }
+  | { state: "failed" };
 
 export function Workspace({ candidateId }: { candidateId: string }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
@@ -11,7 +15,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   useEffect(() => {
     api.getCandidate(candidateId).then(
       (candidate) => setLoad({ state: "ready", candidate }),
-      () => setLoad({ state: "missing" }),
+      (error) => setLoad({ state: error instanceof ApiError && error.status === 404 ? "notFound" : "failed" }),
     );
   }, [candidateId]);
 
@@ -33,14 +37,15 @@ export function Workspace({ candidateId }: { candidateId: string }) {
         )}
       </header>
       {load.state === "loading" && <p>{text.workspace.loading}</p>}
-      {load.state === "missing" && <p className="error">{text.workspace.notFound}</p>}
+      {load.state === "notFound" && <p className="error">{text.workspace.notFound}</p>}
+      {load.state === "failed" && <p className="error">{text.workspace.loadFailed}</p>}
       {load.state === "ready" && (
         <div className="panels">
           <Panel area="cv" title={text.panels.cv.title}>
             <p className="empty">{text.panels.cv.empty}</p>
           </Panel>
-          <Panel area="notes" title={text.panels.myNotes.title}>
-            <p className="empty">{text.panels.myNotes.empty}</p>
+          <Panel area="notes" title={text.panels.interviewerNotes.title}>
+            <p className="empty">{text.panels.interviewerNotes.empty}</p>
           </Panel>
           <Panel area="transcript" title={text.panels.transcript.title}>
             <p className="empty">{text.panels.transcript.empty}</p>
