@@ -1,5 +1,9 @@
 # Private working notes and reports. Never published.
 private/
+CLAUDE.local.md
+
+# Agent worktrees
+.claude/worktrees/
 
 # Local data: database and uploaded CV files
 data/

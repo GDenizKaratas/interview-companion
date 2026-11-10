@@ -40,6 +40,9 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 30 | Tests go through core's public interface with a real temporary SQLite file. AI tests use a fake provider. MCP gets a thin test through an in-memory client. The interface has no automated tests in the MVP. | Rules live in core, so testing there covers them once. A fake provider makes AI tests repeatable and free. | Database mocks; browser tests. |
 | 31 | The repository starts private and becomes public once a working version exists. | Private to public is one step; the reverse cannot be undone. | Public from the first commit. |
 | 32 | The full MVP spec is tracked as a GitHub issue and will be split into one issue per milestone. | One place for the agreed scope; small issues for the actual work. | Spec only as a file in the repository. |
+| 33 | Each ticket is built on its own branch in its own worktree and reaches `main` as one squash-merged pull request, only after the owner approves. | Work branches can hold any number of commits; `main` stays clean and fully reviewed. | Direct commits to `main`. |
+| 34 | Work runs in two parallel lanes (two chats): one for tickets where learning matters, one for mechanical tickets. | The owner's review time is the bottleneck, and early tickets touch shared files, so more lanes would add conflicts and waiting, not speed. | One lane; four lanes. |
+| 35 | Every ticket is built test-first and reviewed with the code-review skill before it is shown to the owner. | The owner reviews a finished, tested change, not a draft. | Review only at milestone end. |
 
 ## Open questions
 
