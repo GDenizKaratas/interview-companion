@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type Mou
 import { AddButton } from "./AddButton.tsx";
 import { api, ApiError, type CandidateOverview } from "./api.ts";
 import { cvRefusalMessage } from "./cv-refusal.ts";
+import { CvPreviewDialog } from "./CvPreviewDialog.tsx";
 import { ExpandableCard } from "./ExpandableCard.tsx";
 import { InterviewCalendar } from "./InterviewCalendar.tsx";
 import { interviewName } from "./interview-names.ts";
@@ -16,6 +17,8 @@ export function CandidateList() {
   const { text } = useText();
   const [candidates, setCandidates] = useState<CandidateOverview[] | undefined>();
   const [filter, setFilter] = useState("");
+  // The Candidate whose CV is open over the list.
+  const [cvOf, setCvOf] = useState<CandidateOverview["candidate"] | undefined>();
   const [roles, setRoles] = useState<string[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [name, setName] = useState("");
@@ -165,11 +168,12 @@ export function CandidateList() {
             </thead>
             <tbody>
               {shown.map((overview) => (
-                <CandidateRow key={overview.candidate.id} overview={overview} />
+                <CandidateRow key={overview.candidate.id} overview={overview} onViewCv={() => setCvOf(overview.candidate)} />
               ))}
             </tbody>
           </table>
         )}
+        {cvOf && <CvPreviewDialog candidate={cvOf} onClose={() => setCvOf(undefined)} onChanged={loadCandidates} />}
       </section>
       <aside className="home-side">
         {candidates && <InterviewCalendar overviews={candidates} />}
@@ -183,7 +187,7 @@ export function CandidateList() {
 
 // One Candidate in the table. The whole row opens the Workspace; the name is the real link,
 // so it also works with the keyboard and opens in a new tab.
-function CandidateRow({ overview }: { overview: CandidateOverview }) {
+function CandidateRow({ overview, onViewCv }: { overview: CandidateOverview; onViewCv: () => void }) {
   const { text, languageCode } = useText();
   const t = text.home;
   const { candidate, cv, interviews } = overview;
@@ -201,7 +205,7 @@ function CandidateRow({ overview }: { overview: CandidateOverview }) {
         <span className="candidate-role">{candidate.role}</span>
       </td>
       <td>
-        {interviews.length}
+        <Count value={interviews.length} />
         {planned.length > 0 && <span className="pill planned">{fill(t.plannedCount, { count: String(planned.length) })}</span>}
       </td>
       <td>
@@ -216,21 +220,41 @@ function CandidateRow({ overview }: { overview: CandidateOverview }) {
       </td>
       <td>
         {cv ? (
-          <span>{cv.pageCount === 1 ? t.cvOnePage : fill(t.cvPages, { count: String(cv.pageCount) })}</span>
+          <button type="button" className="quiet cv-shortcut" title={cv.fileName} onClick={onViewCv}>
+            <DocumentIcon />
+            {t.viewCv}
+          </button>
         ) : (
-          <span className="muted">{t.noCv}</span>
+          <Count value={0} />
         )}
       </td>
-      <td className="number">{overview.interviewerNoteCount}</td>
-      <td className="number">{overview.savedQuestionCount}</td>
+      <td className="number">
+        <Count value={overview.interviewerNoteCount} />
+      </td>
+      <td className="number">
+        <Count value={overview.savedQuestionCount} />
+      </td>
     </tr>
   );
 }
 
+// A number in the table, or a quiet dash for none, so the eye finds what is there.
+function Count({ value }: { value: number }) {
+  return value === 0 ? <span className="muted">—</span> : <>{value}</>;
+}
+
+function DocumentIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M4 1.75h5.25L12.5 5v9.25H4zM9 1.75V5.25h3.5M6 8.25h4.5M6 10.75h4.5" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 // A click anywhere on a row opens the Workspace, like its name link: with Ctrl or Cmd in a new
-// tab. A click that ends a text selection, or one on the link itself, does nothing more.
+// tab. A click that ends a text selection, or one on a link or button in the row, does nothing more.
 function openRow(event: MouseEvent, path: string) {
-  if ((event.target as Element).closest("a") || window.getSelection()?.toString()) return;
+  if ((event.target as Element).closest("a, button") || window.getSelection()?.toString()) return;
   if (event.metaKey || event.ctrlKey) window.open(path, "_blank");
   else navigate(path);
 }

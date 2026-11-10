@@ -90,11 +90,9 @@ const text = {
     columns: { candidate: "Candidate", interviews: "Interviews", next: "Next Interview", cv: "CV", notes: "My Notes", questions: "Questions" },
     // {count} is replaced by a number.
     plannedCount: "{count} planned",
+    viewCv: "View CV",
+    closeCv: "Close the CV",
     noNext: "None planned",
-    // {count} is replaced by the number of pages.
-    cvPages: "{count} pages",
-    cvOnePage: "1 page",
-    noCv: "No CV",
   },
   calendar: {
     title: "Interview calendar",
