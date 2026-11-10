@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, type Candidate, type Interview } from "./api.ts";
+import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { InterviewSelector } from "./InterviewSelector.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
-import { linkTo } from "./navigation.ts";
+import { linkTo, navigate } from "./navigation.ts";
 import { SavedQuestions } from "./SavedQuestions.tsx";
 import { useText } from "./text.tsx";
 
@@ -19,6 +20,9 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [interviewId, setInterviewId] = useState<string | null>(null);
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [interviewsFailed, setInterviewsFailed] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function loadInterviews(id: string): Promise<void> {
     return api.listInterviews(id).then(
@@ -43,6 +47,26 @@ export function Workspace({ candidateId }: { candidateId: string }) {
     setInterviewId(added.id);
   }
 
+  // After the Candidate is deleted there is nothing left to show, so the app goes back to the list.
+  // A 404 means the Candidate is already gone, for example deleted in another tab, so it counts
+  // as deleted too.
+  async function confirmDelete() {
+    setConfirmingDelete(false);
+    setDeleteFailed(false);
+    setDeleting(true);
+    try {
+      await api.deleteCandidate(candidateId);
+      navigate("/");
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        navigate("/");
+      } else {
+        setDeleteFailed(true);
+        setDeleting(false);
+      }
+    }
+  }
+
   useEffect(() => {
     api.getCandidate(candidateId).then(
       (candidate) => setLoad({ state: "ready", candidate }),
@@ -61,7 +85,32 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             {load.candidate.name} · <span className="role">{load.candidate.role}</span>
           </h1>
         )}
+        {load.state === "ready" && (
+          <button
+            type="button"
+            className="quiet delete-candidate"
+            disabled={deleting}
+            onClick={() => setConfirmingDelete(true)}
+          >
+            {text.workspace.deleteCandidate}
+          </button>
+        )}
       </header>
+      {deleteFailed && <p className="error">{text.workspace.deleteCandidateFailed}</p>}
+      {confirmingDelete && load.state === "ready" && (
+        <ConfirmDialog
+          title={text.workspace.confirmDeleteCandidate}
+          confirmLabel={text.workspace.delete}
+          cancelLabel={text.workspace.cancel}
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        >
+          <p>
+            <strong>{load.candidate.name}</strong> · {load.candidate.role}
+          </p>
+          <p>{text.workspace.deleteCandidateDetails}</p>
+        </ConfirmDialog>
+      )}
       {load.state === "ready" && (
         <InterviewSelector
           interviews={interviews}

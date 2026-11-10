@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { requireCandidate } from "./candidates.ts";
+import { inTransaction } from "./database.ts";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
 
 export interface Interview {
@@ -38,8 +39,7 @@ export function addInterview(db: DatabaseSync, today: Today, input: NewInterview
   const date = optionalDate(input.date);
   const id = randomUUID();
   // The order is read and used in one transaction, so two Interviews never get the same one.
-  db.exec("BEGIN");
-  try {
+  inTransaction(db, () => {
     db.prepare("INSERT INTO interview (id, candidate_id, added_order, date, created_at) VALUES (?, ?, ?, ?, ?)").run(
       id,
       input.candidateId,
@@ -47,11 +47,7 @@ export function addInterview(db: DatabaseSync, today: Today, input: NewInterview
       date,
       new Date().toISOString(),
     );
-    db.exec("COMMIT");
-  } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
-  }
+  });
   // The new Interview's number depends on the dates of the others, so it is read from the
   // same list that numbers them, instead of being worked out a second time here.
   return listInterviews(db, today, input.candidateId).find((interview) => interview.id === id)!;

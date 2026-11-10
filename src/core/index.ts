@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as candidates from "./candidates.ts";
 import { openDatabase } from "./database.ts";
+import * as demoCandidate from "./demo-candidate.ts";
 import * as interfaceLanguage from "./interface-language.ts";
 import * as interviewerNotes from "./interviewer-notes.ts";
 import * as interviews from "./interviews.ts";
@@ -19,6 +20,8 @@ export interface Core {
   createCandidate(input: candidates.NewCandidate): candidates.Candidate;
   listCandidates(): candidates.Candidate[];
   getCandidate(id: string): candidates.Candidate | undefined;
+  deleteCandidate(id: string): void;
+  loadDemoCandidate(): candidates.Candidate;
   listCandidateRoles(): string[];
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
@@ -54,6 +57,8 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     createCandidate: (input) => candidates.createCandidate(db, input),
     listCandidates: () => candidates.listCandidates(db),
     getCandidate: (id) => candidates.getCandidate(db, id),
+    deleteCandidate: (id) => candidates.deleteCandidate(db, id),
+    loadDemoCandidate: () => demoCandidate.loadDemoCandidate(db, today, now),
     listCandidateRoles: () => candidates.listCandidateRoles(db),
     addInterview: (input) => interviews.addInterview(db, today, input),
     listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),
