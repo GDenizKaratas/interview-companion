@@ -47,7 +47,6 @@ export function getCandidate(db: DatabaseSync, id: string): Candidate | undefine
   return row ? toCandidate(row as unknown as CandidateRow) : undefined;
 }
 
-// Every Candidate role used so far, once each, in alphabetical order. Suggested when a Candidate is added.
 // Refuses with NotFoundError when the Candidate does not exist.
 export function requireCandidate(db: DatabaseSync, id: string): void {
   if (!getCandidate(db, id)) {
@@ -55,6 +54,7 @@ export function requireCandidate(db: DatabaseSync, id: string): void {
   }
 }
 
+// Every Candidate role used so far, once each, in alphabetical order. Suggested when a Candidate is added.
 export function listCandidateRoles(db: DatabaseSync): string[] {
   const alphabetical = new Intl.Collator("en", { sensitivity: "accent" });
   return rolesInOrderWritten(db).sort(alphabetical.compare);

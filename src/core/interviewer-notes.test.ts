@@ -109,6 +109,15 @@ describe("Interviewer Notes", () => {
     expect(() => core.listInterviewerNotes("no-such-id")).toThrow(NotFoundError);
   });
 
+  it("refuses to list notes for an Interview that does not exist or belongs to another Candidate", () => {
+    const other = core.createCandidate({ name: "Can Aksoy", role: "Data Engineer" });
+    const othersInterview = core.addInterview({ candidateId: other.id });
+
+    for (const interviewId of ["no-such-id", othersInterview.id]) {
+      expect(() => core.listInterviewerNotes(candidate.id, { interviewId })).toThrow(NotFoundError);
+    }
+  });
+
   it("lists, for one Interview, the notes tagged with it and the untagged notes", () => {
     const first = core.addInterview({ candidateId: candidate.id });
     const second = core.addInterview({ candidateId: candidate.id });

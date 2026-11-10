@@ -55,15 +55,17 @@ export function createApi(core: Core): Hono {
     );
   });
 
-  // Sends "text" to edit a note, or "interviewId" (null for none) to change its tag.
-  api.patch("/notes/:id", async (c) => {
+  api.put("/notes/:id/text", async (c) => {
     const fields = await jsonFields(c);
-    return respondOrRefuse(c, () => {
-      const id = c.req.param("id");
-      let note = "text" in fields ? core.editInterviewerNote(id, stringField(fields, "text")) : undefined;
-      if ("interviewId" in fields) note = core.tagInterviewerNote(id, idField(fields, "interviewId"));
-      return note ? c.json(note) : c.json({ error: "Nothing to change." }, 400);
-    });
+    return respondOrRefuse(c, () => c.json(core.editInterviewerNote(c.req.param("id"), stringField(fields, "text"))));
+  });
+
+  // The Interview a note is tagged with; a missing or empty interviewId removes the tag.
+  api.put("/notes/:id/interview", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.tagInterviewerNote(c.req.param("id"), idField(fields, "interviewId"))),
+    );
   });
 
   api.delete("/notes/:id", (c) =>

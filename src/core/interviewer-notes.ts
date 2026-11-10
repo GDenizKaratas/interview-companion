@@ -39,10 +39,7 @@ export function addInterviewerNotes(db: DatabaseSync, now: Now, input: NewInterv
   requireCandidate(db, input.candidateId);
   const interviewId = input.interviewId ?? null;
   if (interviewId !== null) requireInterviewOf(db, input.candidateId, interviewId);
-  const lines = noteLines(input.text);
-  if (lines.length === 0) {
-    throw new InvalidInputError("text", "required", "A note needs some text.");
-  }
+  const lines = requireText(noteLines(input.text));
   const savedAt = now().toISOString();
   const insert = db.prepare(
     "INSERT INTO interviewer_note (id, candidate_id, interview_id, text, saved_at, position) VALUES (?, ?, ?, ?, ?, ?)",
@@ -77,6 +74,7 @@ export interface NoteFilter {
 export function listInterviewerNotes(db: DatabaseSync, candidateId: string, filter: NoteFilter = {}): InterviewerNote[] {
   requireCandidate(db, candidateId);
   const interviewId = filter.interviewId ?? null;
+  if (interviewId !== null) requireInterviewOf(db, candidateId, interviewId);
   const rows = db
     .prepare(
       `SELECT ${columns} FROM interviewer_note
@@ -90,10 +88,7 @@ export function listInterviewerNotes(db: DatabaseSync, candidateId: string, filt
 // Changes the text of one note. An edited note stays one note, so its lines are joined with
 // spaces. The time it was saved does not change: it still says when the note was first written.
 export function editInterviewerNote(db: DatabaseSync, id: string, text: string): InterviewerNote {
-  const joined = noteLines(text).join(" ");
-  if (joined === "") {
-    throw new InvalidInputError("text", "required", "A note needs some text.");
-  }
+  const joined = requireText(noteLines(text)).join(" ");
   const row = requireNote(db, id);
   db.prepare("UPDATE interviewer_note SET text = ? WHERE id = ?").run(joined, id);
   return toNote({ ...row, text: joined });
@@ -120,6 +115,14 @@ function requireNote(db: DatabaseSync, id: string): NoteRow {
     throw new NotFoundError("This note does not exist.");
   }
   return row;
+}
+
+// Refuses text that has no non-blank line.
+function requireText(lines: string[]): string[] {
+  if (lines.length === 0) {
+    throw new InvalidInputError("text", "required", "A note needs some text.");
+  }
+  return lines;
 }
 
 function noteLines(text: string): string[] {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { api, ApiError, type Interview, type InterviewerNote } from "./api.ts";
-import { interviewName } from "./InterviewSelector.tsx";
+import { interviewName } from "./interview-names.ts";
 import type { Text } from "./languages.ts";
 import { useText } from "./text.tsx";
 
@@ -30,19 +30,30 @@ export function NotesPanel({
     setTag(selectedInterviewId);
   }
   const [saveError, setSaveError] = useState<unknown>();
+  const box = useRef<HTMLTextAreaElement>(null);
+  // The box text, also kept outside React state so a save that finishes can read what is there now.
+  const draftNow = useRef("");
   const saving = useRef(false);
+  // Enter was pressed while a save was running; save again when it finishes.
+  const saveAgain = useRef(false);
+  // Only the newest list request may fill the list, so a slow older answer cannot overwrite it.
+  const latestLoad = useRef(0);
 
   useEffect(() => {
     loadNotes(candidateId, selectedInterviewId);
   }, [candidateId, selectedInterviewId]);
 
   function loadNotes(id: string, interviewId: string | null) {
+    const thisLoad = ++latestLoad.current;
     api.listInterviewerNotes(id, interviewId).then(
       (list) => {
+        if (thisLoad !== latestLoad.current) return;
         setNotes(list);
         setLoadFailed(false);
       },
-      () => setLoadFailed(true),
+      () => {
+        if (thisLoad === latestLoad.current) setLoadFailed(true);
+      },
     );
   }
 
@@ -50,22 +61,38 @@ export function NotesPanel({
     loadNotes(candidateId, selectedInterviewId);
   }
 
+  function changeDraft(value: string) {
+    draftNow.current = value;
+    setDraft(value);
+  }
+
   // The box is never disabled while saving, so it keeps focus and the Interviewer can keep typing.
   // Only the text that was sent is removed; anything typed meanwhile stays.
   async function save() {
-    if (saving.current) return;
+    if (saving.current) {
+      saveAgain.current = true;
+      return;
+    }
     saving.current = true;
-    const sent = draft;
+    const sent = draftNow.current;
+    let saved = false;
     try {
       await api.addInterviewerNotes({ candidateId, interviewId: tag, text: sent });
-      setDraft((current) => (current.startsWith(sent) ? current.slice(sent.length).replace(/^\r?\n/, "") : current));
+      const current = draftNow.current;
+      changeDraft(current.startsWith(sent) ? current.slice(sent.length).replace(/^\r?\n/, "") : current);
       setSaveError(undefined);
+      saved = true;
       reload();
     } catch (error) {
       setSaveError(error);
     } finally {
       saving.current = false;
     }
+    if (saved && saveAgain.current) {
+      saveAgain.current = false;
+      if (draftNow.current.trim() !== "") void save();
+    }
+    saveAgain.current = false;
   }
 
   // Enter saves. Shift+Enter starts a new line, which becomes its own note. Enter that confirms
@@ -77,31 +104,42 @@ export function NotesPanel({
     }
   }
 
+  // After a note is edited, re-tagged, or deleted, the list is fetched again and the box is
+  // ready for the next note.
+  function handleNoteChanged() {
+    reload();
+    box.current?.focus();
+  }
+
   const lineCount = draft.split("\n").length;
 
   return (
     <div className="notes">
       <div className="note-entry">
         <textarea
+          ref={box}
           className="note-box"
           value={draft}
           rows={Math.min(Math.max(lineCount, 1), 6)}
           placeholder={text.panels.interviewerNotes.placeholder}
           aria-label={text.panels.interviewerNotes.placeholder}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            changeDraft(e.target.value);
+            setSaveError(undefined);
+          }}
           onKeyDown={handleKeyDown}
         />
         <div className="note-entry-meta">
           <TagSelect text={text} interviews={interviews} value={tag} onChange={setTag} />
           <span className="hint">{text.panels.interviewerNotes.hint}</span>
         </div>
-        {saveError !== undefined && <p className="error">{refusalMessage(text, saveError)}</p>}
+        {saveError !== undefined && <p className="error">{refusalMessage(text, saveError, text.panels.interviewerNotes.saveFailed)}</p>}
       </div>
       {loadFailed && <p className="error">{text.panels.interviewerNotes.loadFailed}</p>}
       {!loadFailed && notes.length === 0 && <p className="empty">{text.panels.interviewerNotes.empty}</p>}
       <ul className="note-list">
         {notes.map((note) => (
-          <NoteItem key={note.id} note={note} interviews={interviews} onChanged={reload} />
+          <NoteItem key={note.id} note={note} interviews={interviews} onChanged={handleNoteChanged} />
         ))}
       </ul>
     </div>
@@ -122,14 +160,15 @@ function NoteItem({
   const [editText, setEditText] = useState(note.text);
   const [error, setError] = useState<string>();
 
-  async function run(change: () => Promise<unknown>, failed: string) {
+  // Changing the tag leaves an open edit alone, so unsaved text is not lost.
+  async function run(change: () => Promise<unknown>, failed: string, { closeEditor = true } = {}) {
     try {
       await change();
       setError(undefined);
-      setEditing(false);
+      if (closeEditor) setEditing(false);
       onChanged();
     } catch (caught) {
-      setError(caught instanceof ApiError && caught.rule === "required" ? text.panels.interviewerNotes.required : failed);
+      setError(refusalMessage(text, caught, failed));
     }
   }
 
@@ -174,7 +213,9 @@ function NoteItem({
           interviews={interviews}
           value={note.interviewId}
           onChange={(interviewId) =>
-            void run(() => api.tagInterviewerNote(note.id, interviewId), text.panels.interviewerNotes.saveFailed)
+            void run(() => api.tagInterviewerNote(note.id, interviewId), text.panels.interviewerNotes.saveFailed, {
+              closeEditor: false,
+            })
           }
         />
         <time dateTime={note.savedAt} title={text.panels.interviewerNotes.savedAt}>
@@ -236,9 +277,10 @@ function formatSavedAt(savedAt: string): string {
   return day(saved) === day(new Date()) ? time : `${day(saved)} ${time}`;
 }
 
-function refusalMessage(text: Text, error: unknown): string {
+// Core decides whether a note's text is valid; this only says why, in the current language.
+function refusalMessage(text: Text, error: unknown, fallback: string): string {
   if (error instanceof ApiError && error.field === "text" && error.rule === "required") {
     return text.panels.interviewerNotes.required;
   }
-  return text.panels.interviewerNotes.saveFailed;
+  return fallback;
 }

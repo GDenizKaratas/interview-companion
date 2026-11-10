@@ -65,8 +65,8 @@ export const api = {
   addInterviewerNotes: ({ candidateId, ...fields }: NewInterviewerNotes) =>
     request<InterviewerNote[]>(`/candidates/${encodeURIComponent(candidateId)}/notes`, sendJson("POST", fields)),
   editInterviewerNote: (id: string, text: string) =>
-    request<InterviewerNote>(`/notes/${encodeURIComponent(id)}`, sendJson("PATCH", { text })),
+    request<InterviewerNote>(`/notes/${encodeURIComponent(id)}/text`, sendJson("PUT", { text })),
   tagInterviewerNote: (id: string, interviewId: string | null) =>
-    request<InterviewerNote>(`/notes/${encodeURIComponent(id)}`, sendJson("PATCH", { interviewId })),
+    request<InterviewerNote>(`/notes/${encodeURIComponent(id)}/interview`, sendJson("PUT", { interviewId })),
   deleteInterviewerNote: (id: string) => request<void>(`/notes/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };

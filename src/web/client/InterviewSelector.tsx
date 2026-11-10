@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
 import { api, ApiError, type Interview } from "./api.ts";
+import { interviewLabel } from "./interview-names.ts";
 import type { Text } from "./languages.ts";
 import { useText } from "./text.tsx";
 
@@ -50,19 +51,6 @@ export function InterviewSelector({
       {loadError && <p className="error">{text.interviews.loadFailed}</p>}
     </div>
   );
-}
-
-// "First Interview", "Interview 11".
-export function interviewName(text: Text, interview: Interview): string {
-  const ordinals: Record<string, string> = text.interviews.ordinal;
-  return ordinals[String(interview.number)] ?? text.interviews.numbered.replace("{number}", String(interview.number));
-}
-
-// "First interview · 2026-11-20 · planned", "Second interview · no date".
-function interviewLabel(text: Text, interview: Interview): string {
-  const name = interviewName(text, interview);
-  if (interview.date === null) return `${name} · ${text.interviews.noDate}`;
-  return interview.planned ? `${name} · ${interview.date} · ${text.interviews.planned}` : `${name} · ${interview.date}`;
 }
 
 function NewInterviewForm({
