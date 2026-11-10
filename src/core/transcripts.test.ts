@@ -42,8 +42,7 @@ function timedSegmentsOf(transcript: Transcript | undefined): [string, string, n
 
 // Each segment as "label: text", so a test reads like the file it imported.
 function linesOf(transcript: Transcript | undefined): string[] {
-  const labels = new Map(transcript?.speakers.map((speaker) => [speaker.id, speaker.label]));
-  return (transcript?.segments ?? []).map((segment) => `${labels.get(segment.speakerId)}: ${segment.text}`);
+  return timedSegmentsOf(transcript).map(([label, text]) => `${label}: ${text}`);
 }
 
 describe("Plain-text Transcript import", () => {
@@ -225,6 +224,17 @@ describe("WebVTT Transcript import", () => {
       ["Ece Yalın", "Evet.", 1_000, 2_500],
     ]);
   });
+
+  it("keeps a speaker named in an empty cue, a lone \"<\", a new speaker on a cue's second line, and loose timings", () => {
+    const transcript = core.importTranscript(interview.id, fixture("edge-cases.vtt"));
+
+    expect(timedSegmentsOf(transcript)).toEqual([
+      ["Ayşe & Ekip", "Başlayalım mı? 5 < 6 değil mi?", 1_000, 2_000],
+      ["Ece Yalın", "Evet, hazırım.", 4_000, 6_000],
+      ["Ayşe Demir", "Peki.", 3_600_000, 3_602_000],
+      ["Ece Yalın", "Teşekkürler.", 3_600_000, 3_602_000],
+    ]);
+  });
 });
 
 describe("Refused Transcript files", () => {
@@ -262,6 +272,8 @@ describe("Refused Transcript files", () => {
       textFile("t.vtt", "1\n00:00:01,000 --> 00:00:02,000\nAyşe: Merhaba"),
       fixture("no-speaker.vtt"),
       textFile("t.vtt", broken),
+      // No blank line after the header, so the cue would be read as header and lost.
+      textFile("t.vtt", "WEBVTT\n00:00:01.000 --> 00:00:02.000\n<v Ayşe>Merhaba\n\n00:00:03.000 --> 00:00:04.000\n<v Ece>Merhaba"),
     ]) {
       expect(() => core.importTranscript(interview.id, file)).toThrow(
         expect.objectContaining({
