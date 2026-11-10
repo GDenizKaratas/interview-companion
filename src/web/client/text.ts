@@ -1,7 +1,7 @@
 // All interface text in one place. Issue #3 turns this into translation files.
 export const text = {
   appName: "Interview Companion",
-  tagline: "Prepare, take notes, and find what was said.",
+  tagline: "Your interviews, all in one place.",
   candidates: {
     title: "Candidates",
     empty: "No Candidates yet. Add the first one above.",
