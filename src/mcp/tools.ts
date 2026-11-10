@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { InvalidInputError, NotFoundError, type ReadOnlyCore } from "../core/index.ts";
+import { candidateBriefPrompt } from "./candidate-brief.ts";
+import { evidenceSources, InvalidInputError, NotFoundError, type ReadOnlyCore } from "../core/index.ts";
 
 // Every tool that is about one Candidate takes their id, as list_candidates gives it.
 const candidateId = z.string().min(1).describe("The Candidate's id, as given by list_candidates.");
@@ -79,6 +80,51 @@ export function createMcpServer(core: ReadOnlyCore): McpServer {
       annotations: readOnly,
     },
     ({ interviewId }) => toolResult(() => core.listAiNotes(interviewId)),
+  );
+  server.registerTool(
+    "search_evidence",
+    {
+      description:
+        "Search one Candidate's CV and Transcripts for a word or words, with the same search as the app. " +
+        "Each result is Evidence: an exact excerpt, a CV line with its page, or a whole Transcript segment with " +
+        "its Interview, segment number, speaker label, and speakerRole from the Speaker Mapping (null while the " +
+        "mapping is not confirmed: then no speaker is known to be the Candidate). Each search word matches the " +
+        "start of a word, ignoring case by Turkish rules, so \"Redis\" also finds \"Redis'i\" and \"REDİS\". " +
+        "highlights give the match's character positions in the excerpt. It is a keyword search: \"caching\" " +
+        "does not find \"Redis\", so try other words too. No result means nothing was found in the indexed " +
+        "sources, not that the Candidate lacks the skill. With candidateOnly, only segments the Candidate said " +
+        "in a confirmed Speaker Mapping are searched; unconfirmedInterviewIds lists the Interviews left out.",
+      inputSchema: {
+        candidateId,
+        query: z.string().describe("The word or words to search for. Several words must appear in this order."),
+        sources: z
+          .enum(evidenceSources)
+          .default("all")
+          .describe("Optional. Which sources to search; all by default."),
+        candidateOnly: z
+          .boolean()
+          .default(false)
+          .describe("Optional. true keeps only what the Candidate said in a confirmed Speaker Mapping. The CV is always searched."),
+      },
+      annotations: readOnly,
+    },
+    ({ candidateId, query, sources, candidateOnly }) =>
+      toolResult(() => core.searchEvidence(candidateId, { query, sources, candidateOnly })),
+  );
+  server.registerPrompt(
+    "candidate_brief",
+    {
+      title: "Candidate Brief",
+      description:
+        "Write a Candidate Brief: one document about a Candidate in which every statement cites Evidence, " +
+        "with no judgments, and the reasons and quotes listed at the end. The brief is not stored in the app.",
+      argsSchema: {
+        candidate: z.string().min(1).describe("The Candidate's name or id, as list_candidates gives it."),
+      },
+    },
+    ({ candidate }) => ({
+      messages: [{ role: "user", content: { type: "text", text: candidateBriefPrompt(candidate) } }],
+    }),
   );
   return server;
 }
