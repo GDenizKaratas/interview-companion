@@ -37,8 +37,43 @@ a {
   padding: 1.5rem 1rem;
 }
 
-.page-header {
-  margin-bottom: 1.5rem;
+.app-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--text);
+  flex: none;
+}
+
+.brand-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.tagline {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.page-title {
+  margin-bottom: 1rem;
 }
 
 .candidate-form {
@@ -49,7 +84,12 @@ a {
   margin-bottom: 1rem;
 }
 
+.candidate-form input {
+  width: 100%;
+}
+
 .candidate-form label {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -59,6 +99,7 @@ a {
 
 input,
 button {
+  box-sizing: border-box;
   font: inherit;
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--line);

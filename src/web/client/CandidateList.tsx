@@ -42,10 +42,7 @@ export function CandidateList() {
 
   return (
     <main className="page">
-      <header className="page-header">
-        <h1>{text.appName}</h1>
-      </header>
-      <h2>{text.candidates.title}</h2>
+      <h1 className="page-title">{text.candidates.title}</h1>
       <form className="candidate-form" onSubmit={handleSubmit}>
         <label>
           {text.candidates.nameLabel}
