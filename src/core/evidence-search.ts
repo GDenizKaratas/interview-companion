@@ -6,7 +6,8 @@ import { listInterviews, type Today } from "./interviews.ts";
 import { getTranscript, type SpeakerRole } from "./transcripts.ts";
 import { sameLetter } from "./turkish-letters.ts";
 
-const evidenceSources = ["all", "cv", "transcripts"] as const;
+// Which sources a search covers. Exported so the MCP tool can list the same choices in its schema.
+export const evidenceSources = ["all", "cv", "transcripts"] as const;
 export type EvidenceSources = (typeof evidenceSources)[number];
 
 export interface EvidenceQuery {

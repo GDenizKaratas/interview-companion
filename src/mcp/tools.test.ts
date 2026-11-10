@@ -59,6 +59,7 @@ describe("MCP server", () => {
       "get_interviewer_notes",
       "get_saved_questions",
       "list_candidates",
+      "search_evidence",
     ]);
     for (const tool of tools) {
       expect(tool.annotations?.readOnlyHint, tool.name).toBe(true);
@@ -214,5 +215,96 @@ describe("MCP server", () => {
     expect(await call("get_ai_notes", { interviewId: interview.id })).toEqual([]);
     expect(await refusal("get_ai_notes", { interviewId: "no-such-interview" })).toContain("get_candidate");
     expect(await refusal("get_ai_notes", { interviewId: "" })).toBeTruthy();
+  });
+
+  it("search_evidence gives exact excerpts from the Transcripts with their Interview, segment, and speaker", async () => {
+    const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    core.importTranscript(interview.id, {
+      fileName: "t.txt",
+      bytes: new TextEncoder().encode("Ayşe: Which queue did you use?\nAda: We used Redis'i with BullMQ."),
+    });
+
+    expect(await call("search_evidence", { candidateId: candidate.id, query: "redis" })).toEqual({
+      results: [
+        {
+          source: "transcript",
+          interviewId: interview.id,
+          segmentNumber: 2,
+          speakerLabel: "Ada",
+          speakerRole: null,
+          startMs: null,
+          endMs: null,
+          excerpt: "We used Redis'i with BullMQ.",
+          highlights: [{ start: 8, end: 13 }],
+        },
+      ],
+      foundIn: { cv: false, interviewIds: [interview.id] },
+      unconfirmedInterviewIds: [],
+    });
+  });
+
+  it("search_evidence limited to the Candidate finds nothing when only the Interviewer said the word", async () => {
+    const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    const transcript = core.importTranscript(interview.id, {
+      fileName: "t.txt",
+      bytes: new TextEncoder().encode("Ayşe: Did you use Redis?\nAda: We used a database table."),
+    });
+
+    expect(
+      await call("search_evidence", { candidateId: candidate.id, query: "Redis", candidateOnly: true }),
+    ).toEqual({ results: [], foundIn: { cv: false, interviewIds: [] }, unconfirmedInterviewIds: [interview.id] });
+
+    core.confirmSpeakerMapping(
+      interview.id,
+      Object.fromEntries(transcript.speakers.map((s) => [s.id, s.label === "Ada" ? "candidate" : "interviewer"] as const)),
+    );
+    expect(
+      await call("search_evidence", { candidateId: candidate.id, query: "Redis", candidateOnly: true, sources: "transcripts" }),
+    ).toEqual({ results: [], foundIn: { cv: false, interviewIds: [] }, unconfirmedInterviewIds: [] });
+  });
+
+  it("search_evidence refuses an empty search, unknown sources, and an unknown Candidate", async () => {
+    expect(await refusal("search_evidence", { candidateId: candidate.id, query: " ,. " })).toContain("Type a word");
+    expect(await refusal("search_evidence", { candidateId: candidate.id, query: "Redis", sources: "notes" })).toContain(
+      "sources",
+    );
+    expect(await refusal("search_evidence", { candidateId: "no-such-candidate", query: "Redis" })).toContain(
+      "list_candidates",
+    );
+    expect(await refusal("search_evidence", { candidateId: candidate.id })).toContain("query");
+  });
+
+  it("offers the candidate_brief prompt, which takes the Candidate's name or id", async () => {
+    const { prompts } = await client.listPrompts();
+
+    expect(prompts.map((prompt) => prompt.name)).toEqual(["candidate_brief"]);
+    expect(prompts[0]!.description).toBeTruthy();
+    expect(prompts[0]!.arguments).toEqual([expect.objectContaining({ name: "candidate", required: true })]);
+  });
+
+  it("candidate_brief gives a fixed template and rules for the Candidate named", async () => {
+    const { messages } = await client.getPrompt({ name: "candidate_brief", arguments: { candidate: "Ada Demir" } });
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0]!.role).toBe("user");
+    const text = (messages[0]!.content as { type: string; text: string }).text;
+    // Which Candidate, and the tools to read them with.
+    expect(text).toContain('"Ada Demir"');
+    for (const tool of ["list_candidates", "get_candidate", "search_evidence", "get_interviewer_notes", "get_ai_notes", "get_saved_questions"]) {
+      expect(text, tool).toContain(tool);
+    }
+    // The template: sections in a fixed order, with the reasons and quotes at the end.
+    const headings = [...text.matchAll(/^## (.+)$/gm)].map((match) => match[1]);
+    expect(headings.at(-1)).toBe("Reasons and Evidence");
+    expect(headings.length).toBeGreaterThan(3);
+    // The rules.
+    expect(text).toMatch(/every statement .*cites? .*Evidence/i);
+    expect(text).toMatch(/no judgments/i);
+    expect(text).toMatch(/word for word/i);
+    expect(text).toMatch(/not checked by Interview Companion/i);
+  });
+
+  it("candidate_brief refuses a missing Candidate", async () => {
+    await expect(client.getPrompt({ name: "candidate_brief", arguments: {} })).rejects.toThrow(/candidate/);
   });
 });
