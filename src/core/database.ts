@@ -65,3 +65,19 @@ function migrate(db: DatabaseSync): void {
     }
   }
 }
+
+// Runs work so that all of its changes are saved together or not at all. It uses a savepoint
+// instead of BEGIN, so one operation can call others that also use it, such as loading the
+// demo Candidate, which adds Interviews and notes.
+export function inTransaction<T>(db: DatabaseSync, work: () => T): T {
+  db.exec("SAVEPOINT work");
+  try {
+    const result = work();
+    db.exec("RELEASE work");
+    return result;
+  } catch (error) {
+    db.exec("ROLLBACK TO work");
+    db.exec("RELEASE work");
+    throw error;
+  }
+}

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { requireCandidate } from "./candidates.ts";
+import { inTransaction } from "./database.ts";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
 import { requireInterviewOf } from "./interviews.ts";
 
@@ -44,8 +45,7 @@ export function addInterviewerNotes(db: DatabaseSync, now: Now, input: NewInterv
   const insert = db.prepare(
     "INSERT INTO interviewer_note (id, candidate_id, interview_id, text, saved_at, position) VALUES (?, ?, ?, ?, ?, ?)",
   );
-  db.exec("BEGIN");
-  try {
+  return inTransaction(db, () => {
     const rows = lines.map((text, position): NoteRow => {
       const row: NoteRow = {
         id: randomUUID(),
@@ -57,12 +57,8 @@ export function addInterviewerNotes(db: DatabaseSync, now: Now, input: NewInterv
       insert.run(row.id, row.candidate_id, row.interview_id, row.text, row.saved_at, position);
       return row;
     });
-    db.exec("COMMIT");
     return rows.map(toNote);
-  } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
-  }
+  });
 }
 
 export interface NoteFilter {

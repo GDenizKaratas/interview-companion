@@ -22,8 +22,13 @@ interface CandidateRow {
 }
 
 export function createCandidate(db: DatabaseSync, input: NewCandidate): Candidate {
+  return insertCandidate(db, randomUUID(), input);
+}
+
+// Creates a Candidate under a given id. Only the demo Candidate needs a fixed id.
+export function insertCandidate(db: DatabaseSync, id: string, input: NewCandidate): Candidate {
   const candidate: Candidate = {
-    id: randomUUID(),
+    id,
     name: requireText("name", input.name),
     role: existingSpelling(db, collapseSpaces(requireText("role", input.role))),
     createdAt: new Date().toISOString(),
@@ -45,6 +50,15 @@ export function listCandidates(db: DatabaseSync): Candidate[] {
 export function getCandidate(db: DatabaseSync, id: string): Candidate | undefined {
   const row = db.prepare("SELECT id, name, role, created_at FROM candidate WHERE id = ?").get(id);
   return row ? toCandidate(row as unknown as CandidateRow) : undefined;
+}
+
+// Deletes the Candidate and everything about them. The database removes their Interviews,
+// Interviewer Notes, and Saved Questions with them (ON DELETE CASCADE).
+export function deleteCandidate(db: DatabaseSync, id: string): void {
+  const result = db.prepare("DELETE FROM candidate WHERE id = ?").run(id);
+  if (result.changes === 0) {
+    throw new NotFoundError("This Candidate does not exist.");
+  }
 }
 
 // Refuses with NotFoundError when the Candidate does not exist.
