@@ -142,6 +142,12 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 90 | "Delete Candidate" is a quiet button at the far right of the Workspace header. It opens `ConfirmDialog` (decision 82) with the Candidate's name and role and says their Interviews, notes, questions, and files go too. After deleting, the app returns to the Candidate list. | The Interviewer is looking at the Candidate they delete, and the button is away from everyday controls. | A delete button on every row of the Candidate list, where a click can land on the wrong row. |
 | 91 | Every database connection waits up to five seconds for a lock (`timeout: 5000`) instead of failing at once. | `npm run demo` writes to the file while the web server and the MCP server may have it open. | No timeout, which fails with "database is locked" whenever two processes touch the file at the same moment. |
 
+## 2026-11-10 — Demo Candidate on the first start (follow-up to #7)
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 92 | The web server loads the demo Candidate by itself on the first start, when there are no Candidates. This happens only once: core remembers the first start in the `setting` table. After that, only `npm run demo` loads it. This replaces the part of decision 87 that kept the demo out of `npm start`. Chosen by the owner. | A new user starts the app with one command and sees the demo Candidate, as Milestone 1 asks. Doing it only once means a demo Candidate the Interviewer deleted does not come back, and an Interviewer who deletes all of their own Candidates does not get it either. | Loading it on every start with an empty database, which brings back a deleted demo Candidate; only the separate command. |
+
 ## Open questions
 
 - The exact format of Google Meet transcripts. To be researched at the start of Milestone 2.

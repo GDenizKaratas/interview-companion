@@ -96,3 +96,46 @@ describe("Demo Candidate", () => {
     ]);
   });
 });
+
+describe("Demo Candidate on the first start", () => {
+  it("loads the demo Candidate when the app starts for the first time with no Candidates", () => {
+    const demo = core.loadDemoCandidateOnFirstStart();
+
+    expect(demo).toBeDefined();
+    expect(core.listCandidates()).toEqual([demo]);
+  });
+
+  it("loads nothing when the Interviewer already has Candidates", () => {
+    const own = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+
+    expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
+    expect(core.listCandidates()).toEqual([own]);
+  });
+
+  it("does not bring the demo Candidate back on a later start after it was deleted", () => {
+    const demo = core.loadDemoCandidateOnFirstStart()!;
+    core.deleteCandidate(demo.id);
+    core.close();
+
+    core = openCore(dbPath);
+
+    expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
+    expect(core.listCandidates()).toEqual([]);
+  });
+
+  it("does not load the demo Candidate later when the Interviewer deletes all of their own Candidates", () => {
+    const own = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+    core.loadDemoCandidateOnFirstStart();
+    core.deleteCandidate(own.id);
+
+    expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
+    expect(core.listCandidates()).toEqual([]);
+  });
+
+  it("still loads the demo Candidate when asked for by the demo command", () => {
+    const demo = core.loadDemoCandidateOnFirstStart()!;
+    core.deleteCandidate(demo.id);
+
+    expect(core.loadDemoCandidate()).toEqual(expect.objectContaining({ name: demo.name }));
+  });
+});

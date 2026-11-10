@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { deleteCandidateIfExists, insertCandidate, type Candidate } from "./candidates.ts";
+import { deleteCandidateIfExists, insertCandidate, listCandidates, type Candidate } from "./candidates.ts";
 import { inTransaction } from "./database.ts";
 import { addInterviewerNotes, type Now } from "./interviewer-notes.ts";
 import { addInterview, type Today } from "./interviews.ts";
@@ -15,6 +15,23 @@ export function loadDemoCandidate(db: DatabaseSync, today: Today, now: Now): Can
   return inTransaction(db, () => {
     deleteCandidateIfExists(db, demoCandidateId);
     return addDemoContent(db, today, now);
+  });
+}
+
+// Remembers that the first start has happened, so the demo Candidate is offered only once.
+const firstStartSetting = "first_start_done";
+
+// Loads the demo Candidate the first time the app starts with no Candidates, so a new
+// Interviewer sees something to explore. It happens only once: a demo Candidate the Interviewer
+// deleted does not come back, and neither does one for an Interviewer who deletes all of their
+// own Candidates later. Returns the demo Candidate, or undefined when nothing was loaded.
+export function loadDemoCandidateOnFirstStart(db: DatabaseSync, today: Today, now: Now): Candidate | undefined {
+  return inTransaction(db, () => {
+    const firstStart = db
+      .prepare("INSERT INTO setting (key, value) VALUES (?, 'yes') ON CONFLICT (key) DO NOTHING")
+      .run(firstStartSetting).changes > 0;
+    if (!firstStart || listCandidates(db).length > 0) return undefined;
+    return loadDemoCandidate(db, today, now);
   });
 }
 

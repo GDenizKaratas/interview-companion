@@ -22,6 +22,7 @@ export interface Core {
   getCandidate(id: string): candidates.Candidate | undefined;
   deleteCandidate(id: string): void;
   loadDemoCandidate(): candidates.Candidate;
+  loadDemoCandidateOnFirstStart(): candidates.Candidate | undefined;
   listCandidateRoles(): string[];
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
@@ -59,6 +60,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     getCandidate: (id) => candidates.getCandidate(db, id),
     deleteCandidate: (id) => candidates.deleteCandidate(db, id),
     loadDemoCandidate: () => demoCandidate.loadDemoCandidate(db, today, now),
+    loadDemoCandidateOnFirstStart: () => demoCandidate.loadDemoCandidateOnFirstStart(db, today, now),
     listCandidateRoles: () => candidates.listCandidateRoles(db),
     addInterview: (input) => interviews.addInterview(db, today, input),
     listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),

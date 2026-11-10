@@ -11,6 +11,11 @@ const clientDir = fileURLToPath(new URL("../../dist/client", import.meta.url));
 const indexHtml = `${clientDir}/index.html`;
 
 const core = openCore(defaultDatabasePath());
+// A new Interviewer sees the demo Candidate the first time the app starts.
+const demo = core.loadDemoCandidateOnFirstStart();
+if (demo) {
+  console.log(`First start: loaded the demo Candidate, ${demo.name}. Delete them from their Workspace at any time.`);
+}
 const app = new Hono();
 
 app.route("/api", createApi(core));
