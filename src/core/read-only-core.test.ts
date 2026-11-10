@@ -24,31 +24,18 @@ describe("Read-only view of core", () => {
     expect(readOnlyCore(core).listCandidates()).toEqual([candidate]);
   });
 
-  it("holds no operation that changes data, not even behind a type cast", () => {
-    const view = readOnlyCore(core) as unknown as Record<string, unknown>;
-
-    for (const write of [
-      "createCandidate",
-      "createCandidateWithCv",
-      "deleteCandidate",
-      "loadDemoCandidate",
-      "loadDemoCandidateOnFirstStart",
-      "addInterview",
-      "addInterviewerNotes",
-      "editInterviewerNote",
-      "tagInterviewerNote",
-      "deleteInterviewerNote",
-      "setInterfaceLanguage",
-      "addSavedQuestion",
-      "editSavedQuestion",
-      "deleteSavedQuestion",
-      "moveSavedQuestion",
-      "attachCv",
-      "importTranscript",
-      "confirmSpeakerMapping",
-      "close",
-    ]) {
-      expect(view[write], write).toBeUndefined();
-    }
+  it("holds only the read operations, so no write is reachable, not even behind a type cast", () => {
+    expect(Object.keys(readOnlyCore(core)).sort()).toEqual([
+      "getCandidate",
+      "getCandidateOverview",
+      "getCv",
+      "getTranscript",
+      "listCandidateRoles",
+      "listCandidates",
+      "listInterviewerNotes",
+      "listInterviews",
+      "listSavedQuestions",
+      "listTranscriptFormats",
+    ]);
   });
 });

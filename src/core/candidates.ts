@@ -69,11 +69,13 @@ export function hasAnyCandidate(db: DatabaseSync): boolean {
   return db.prepare("SELECT 1 FROM candidate LIMIT 1").get() !== undefined;
 }
 
-// Refuses with NotFoundError when the Candidate does not exist.
-export function requireCandidate(db: DatabaseSync, id: string): void {
-  if (!getCandidate(db, id)) {
+// Returns the Candidate, or refuses with NotFoundError when they do not exist.
+export function requireCandidate(db: DatabaseSync, id: string): Candidate {
+  const candidate = getCandidate(db, id);
+  if (!candidate) {
     throw new NotFoundError("This Candidate does not exist.");
   }
+  return candidate;
 }
 
 // Every Candidate role used so far, once each, in alphabetical order. Suggested when a Candidate is added.

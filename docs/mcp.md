@@ -39,8 +39,8 @@ All tools only read. The server gets a view of core that holds only the read ope
 
 | Tool | Arguments | Returns |
 |---|---|---|
-| `list_candidates` | none | Every Candidate with id, name, role, and number of Interviews. |
-| `get_candidate` | `candidateId` | One Candidate's overview: the CV (file name and page count), the Interviews in order with each Transcript's state and whether its Speaker Mapping is confirmed, and the number of Interviewer Notes and Saved Questions. |
+| `list_candidates` | none | Every Candidate, newest first, with id, name, role, the time they were added, and their number of Interviews. |
+| `get_candidate` | `candidateId` | One Candidate's overview: the CV's file name, upload time, and page count (or `null`); each Interview in order with its number, date, and Planned flag, and its Transcript's file name, format, number of segments, and whether the Speaker Mapping is confirmed (or `null`); and the number of Interviewer Notes and Saved Questions. No full texts. |
 | `get_interviewer_notes` | `candidateId`, optional `interviewId` | The Interviewer Notes, newest save first. With `interviewId`, only that Interview's notes and the untagged ones. |
 | `get_saved_questions` | `candidateId` | The Saved Questions in the Interviewer's order. |
 

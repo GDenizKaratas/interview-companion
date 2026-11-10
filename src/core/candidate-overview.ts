@@ -1,7 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
-import { getCandidate, type Candidate } from "./candidates.ts";
+import { requireCandidate, type Candidate } from "./candidates.ts";
 import { getCv } from "./cv.ts";
-import { NotFoundError } from "./errors.ts";
 import { listInterviewerNotes } from "./interviewer-notes.ts";
 import { listInterviews, type Interview, type Today } from "./interviews.ts";
 import { listSavedQuestions } from "./saved-questions.ts";
@@ -29,10 +28,7 @@ export interface InterviewOverview extends Interview {
 }
 
 export function getCandidateOverview(db: DatabaseSync, today: Today, candidateId: string): CandidateOverview {
-  const candidate = getCandidate(db, candidateId);
-  if (!candidate) {
-    throw new NotFoundError("This Candidate does not exist.");
-  }
+  const candidate = requireCandidate(db, candidateId);
   const cv = getCv(db, candidateId);
   return {
     candidate,

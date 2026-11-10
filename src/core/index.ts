@@ -58,7 +58,7 @@ export interface Core {
   close(): void;
 }
 
-// The operations that only read. The MCP server gets this view of core, so it cannot change data.
+// The operations that only read. A caller that must never change data gets only these.
 const readOperations = [
   "listCandidates",
   "getCandidate",

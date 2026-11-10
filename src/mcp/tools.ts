@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { NotFoundError, type ReadOnlyCore } from "../core/index.ts";
+import { InvalidInputError, NotFoundError, type ReadOnlyCore } from "../core/index.ts";
 
 // Every tool that is about one Candidate takes their id, as list_candidates gives it.
 const candidateId = z.string().min(1).describe("The Candidate's id, as given by list_candidates.");
@@ -15,7 +15,7 @@ export function createMcpServer(core: ReadOnlyCore): McpServer {
     "list_candidates",
     { description: "List every Candidate with their role and number of Interviews.", annotations: readOnly },
     () =>
-      json(() =>
+      toolResult(() =>
         core
           .listCandidates()
           .map((candidate) => ({ ...candidate, interviewCount: core.listInterviews(candidate.id).length })),
@@ -31,7 +31,7 @@ export function createMcpServer(core: ReadOnlyCore): McpServer {
       inputSchema: { candidateId },
       annotations: readOnly,
     },
-    ({ candidateId }) => json(() => core.getCandidateOverview(candidateId)),
+    ({ candidateId }) => toolResult(() => core.getCandidateOverview(candidateId)),
   );
   server.registerTool(
     "get_interviewer_notes",
@@ -50,7 +50,7 @@ export function createMcpServer(core: ReadOnlyCore): McpServer {
       },
       annotations: readOnly,
     },
-    ({ candidateId, interviewId }) => json(() => core.listInterviewerNotes(candidateId, { interviewId })),
+    ({ candidateId, interviewId }) => toolResult(() => core.listInterviewerNotes(candidateId, { interviewId })),
   );
   server.registerTool(
     "get_saved_questions",
@@ -60,20 +60,26 @@ export function createMcpServer(core: ReadOnlyCore): McpServer {
       inputSchema: { candidateId },
       annotations: readOnly,
     },
-    ({ candidateId }) => json(() => core.listSavedQuestions(candidateId)),
+    ({ candidateId }) => toolResult(() => core.listSavedQuestions(candidateId)),
   );
   return server;
 }
 
-// Runs a read and returns its result as JSON text. When the read names something that does not
-// exist, the AI client gets core's message and a hint on where valid ids come from.
-function json(read: () => unknown) {
+// Runs a read and turns it into a tool result: the answer as JSON text, or an error result with
+// core's message when core refuses. When something named does not exist, the message also says
+// where valid ids come from, so the AI client can correct itself.
+function toolResult(read: () => unknown) {
   try {
     return { content: [{ type: "text" as const, text: JSON.stringify(read(), null, 2) }] };
   } catch (error) {
-    if (!(error instanceof NotFoundError)) throw error;
-    return { isError: true, content: [{ type: "text" as const, text: `${error.message} ${idHint}` }] };
+    if (error instanceof NotFoundError) return errorResult(`${error.message} ${idHint}`);
+    if (error instanceof InvalidInputError) return errorResult(error.message);
+    throw error;
   }
+}
+
+function errorResult(message: string) {
+  return { isError: true, content: [{ type: "text" as const, text: message }] };
 }
 
 const idHint = "Candidate ids come from list_candidates, and Interview ids from get_candidate.";

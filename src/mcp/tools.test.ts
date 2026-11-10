@@ -90,10 +90,17 @@ describe("MCP server", () => {
     expect(message).toContain("list_candidates");
   });
 
-  it("get_candidate refuses a missing or empty Candidate id", async () => {
-    expect(await refusal("get_candidate", {})).toContain("candidateId");
-    expect(await refusal("get_candidate", { candidateId: "" })).toContain("candidateId");
-    expect(await refusal("get_candidate", { candidateId: 42 })).toContain("candidateId");
+  it("every tool about one Candidate refuses a missing, empty, or non-text Candidate id", async () => {
+    for (const tool of ["get_candidate", "get_interviewer_notes", "get_saved_questions"]) {
+      expect(await refusal(tool, {}), tool).toContain("candidateId");
+      expect(await refusal(tool, { candidateId: "" }), tool).toContain("candidateId");
+      expect(await refusal(tool, { candidateId: 42 }), tool).toContain("candidateId");
+    }
+  });
+
+  it("get_interviewer_notes refuses an empty or non-text Interview id", async () => {
+    expect(await refusal("get_interviewer_notes", { candidateId: candidate.id, interviewId: "" })).toContain("interviewId");
+    expect(await refusal("get_interviewer_notes", { candidateId: candidate.id, interviewId: 7 })).toContain("interviewId");
   });
 
   it("get_interviewer_notes gives the Candidate's notes, newest save first", async () => {
