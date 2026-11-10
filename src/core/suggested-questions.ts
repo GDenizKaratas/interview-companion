@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
-import type { AiProviderFactory, ProposedQuestion, QuestionRequest } from "./ai-provider.ts";
+import type { AiProviderFactory, ProposedQuestion, ProposedQuestionEvidence, QuestionRequest } from "./ai-provider.ts";
 import { readApiKey } from "./ai-settings.ts";
 import { requireCandidate } from "./candidates.ts";
 import { getCv } from "./cv.ts";
@@ -13,10 +13,9 @@ import { listInterviews, type Today } from "./interviews.ts";
 import { insertSavedQuestion, listSavedQuestions, type SavedQuestion } from "./saved-questions.ts";
 import { getTranscript } from "./transcripts.ts";
 
-// One exact excerpt a Suggested Question cites: a line of a CV page or a Transcript segment.
-export type SuggestionEvidence =
-  | { source: "cv"; page: number; quote: string }
-  | { source: "transcript"; interviewId: string; segmentNumber: number; quote: string };
+// One exact excerpt a Suggested Question cites: part of a CV page or of a Transcript segment.
+// It has the same shape as what the model proposes; only checked quotes are stored.
+export type SuggestionEvidence = ProposedQuestionEvidence;
 
 export interface SuggestedQuestion {
   id: string;
@@ -137,8 +136,15 @@ function transcriptStamp(importedAt: string, confirmedAt: string | null): string
   return `${importedAt}|${confirmedAt}`;
 }
 
+// What identifies the version of each source: the CV's upload time, and for each Interview its
+// Transcript's import time with its Speaker Mapping's confirmation time.
+interface SourceStamps {
+  cv: string | undefined;
+  transcripts: Map<string, string>;
+}
+
 // The stamps of the sources as they are now, after the model answered.
-function currentStamps(db: DatabaseSync, candidateId: string): { cv: string | undefined; transcripts: Map<string, string> } {
+function currentStamps(db: DatabaseSync, candidateId: string): SourceStamps {
   const rows = db
     .prepare(
       `SELECT transcript.interview_id, imported_at, speaker_mapping_confirmed_at FROM transcript
@@ -159,7 +165,7 @@ function currentStamps(db: DatabaseSync, candidateId: string): { cv: string | un
 function isBacked(
   suggestion: ProposedQuestion,
   sent: SentSources,
-  current: { cv: string | undefined; transcripts: Map<string, string> },
+  current: SourceStamps,
 ): boolean {
   if (suggestion.question.trim() === "" || suggestion.reason.trim() === "") return false;
   return suggestion.evidence.every((evidence) => {
@@ -233,9 +239,10 @@ function requireOpen(suggestion: SuggestedQuestion): void {
 export function acceptSuggestedQuestion(db: DatabaseSync, now: Now, id: string): SavedQuestion {
   const suggestion = getSuggestedQuestion(db, id);
   requireOpen(suggestion);
+  const acceptedAt = now().toISOString();
   return inTransaction(db, () => {
-    db.prepare("UPDATE suggested_question SET accepted_at = ? WHERE id = ?").run(now().toISOString(), id);
-    return insertSavedQuestion(db, suggestion.candidateId, suggestion.text, "suggestion");
+    db.prepare("UPDATE suggested_question SET accepted_at = ? WHERE id = ?").run(acceptedAt, id);
+    return insertSavedQuestion(db, suggestion.candidateId, suggestion.text, "suggestion", acceptedAt);
   });
 }
 

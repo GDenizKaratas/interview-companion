@@ -33,7 +33,7 @@ const columns = "id, candidate_id, text, origin, created_at";
 // Adds a hand-written question at the end of the Candidate's list.
 export function addSavedQuestion(db: DatabaseSync, input: NewSavedQuestion): SavedQuestion {
   requireCandidate(db, input.candidateId);
-  return insertSavedQuestion(db, input.candidateId, input.text, "written");
+  return insertSavedQuestion(db, input.candidateId, input.text, "written", new Date().toISOString());
 }
 
 // Adds a question at the end of the Candidate's list. Core uses it to copy an accepted
@@ -43,13 +43,14 @@ export function insertSavedQuestion(
   candidateId: string,
   text: string,
   origin: QuestionOrigin,
+  createdAt: string,
 ): SavedQuestion {
   const row: SavedQuestionRow = {
     id: randomUUID(),
     candidate_id: candidateId,
     text: requireText(text),
     origin,
-    created_at: new Date().toISOString(),
+    created_at: createdAt,
   };
   db.prepare(
     `INSERT INTO saved_question (${columns}, position)

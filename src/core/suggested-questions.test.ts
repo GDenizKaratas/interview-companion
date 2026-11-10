@@ -186,6 +186,42 @@ describe("Suggested Question generation", () => {
     expect(fake.questionRequests).toEqual([]);
   });
 
+  it("drops a suggestion whose source was replaced while the model was answering", async () => {
+    await ready();
+    const answer = [
+      { question: "Kept", reason: "r", evidence: [] },
+      {
+        question: "Quotes the old Transcript",
+        reason: "r",
+        evidence: [{ source: "transcript" as const, interviewId: interview.id, segmentNumber: 2, quote: "Redis ile BullMQ" }],
+      },
+      { question: "Quotes the old CV", reason: "r", evidence: [{ source: "cv" as const, page: 1, quote: "BullMQ" }] },
+    ];
+    // The Interviewer replaces both files while the model is still answering.
+    const slowCore = openCore(join(dir, "test.sqlite"), {
+      today: () => "2026-11-10",
+      now: () => new Date("2026-11-10T09:31:00Z"),
+      aiProvider: () => ({
+        proposeAiNotes: async () => [],
+        proposeQuestions: async () => {
+          confirmRoles(importTranscript());
+          await core.attachCv(candidate.id, { fileName: "cv.pdf", bytes: cv });
+          return answer;
+        },
+      }),
+    });
+    clock = new Date("2026-11-10T09:32:00Z");
+
+    try {
+      const result = await slowCore.generateSuggestedQuestions(candidate.id);
+
+      expect(result.suggestions.map((s) => s.text)).toEqual(["Kept"]);
+      expect(result.dropped).toBe(2);
+    } finally {
+      slowCore.close();
+    }
+  });
+
   it("changes nothing when the model call fails", async () => {
     await ready();
     fake.questions = [{ question: "First", reason: "r", evidence: [] }];
@@ -236,7 +272,12 @@ describe("Accepting, editing, and dismissing a Suggested Question", () => {
 
     const saved = core.acceptSuggestedQuestion(first.id);
 
-    expect(saved).toMatchObject({ candidateId: candidate.id, text: "About BullMQ?", origin: "suggestion" });
+    expect(saved).toMatchObject({
+      candidateId: candidate.id,
+      text: "About BullMQ?",
+      origin: "suggestion",
+      createdAt: "2026-11-10T09:30:00.000Z",
+    });
     expect(core.listSavedQuestions(candidate.id).map((q) => [q.text, q.origin])).toEqual([
       ["How did you test the payment service?", "written"],
       ["About BullMQ?", "suggestion"],

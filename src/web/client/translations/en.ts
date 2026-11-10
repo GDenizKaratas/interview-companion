@@ -121,7 +121,7 @@ const text = {
       next: "Next page",
       confirmReplace: "Replace the CV?",
       // {current} and {new} are replaced by file names.
-      confirmReplaceDetail: "{current} and its text will be removed and replaced by {new}.",
+      confirmReplaceDetail: "{current} and its text will be removed and replaced by {new}. Suggested Questions that quote it are removed too; your saved questions stay.",
       replaceConfirm: "Replace",
       cancel: "Cancel",
       refused: {
@@ -185,7 +185,7 @@ const text = {
       confirmReplace: "Replace the Transcript?",
       // {interview}, {current}, and {new} are replaced by the Interview's name and file names.
       confirmReplaceDetail:
-        "For the {interview}, {current} and its text will be removed and replaced by {new}. Its AI Notes are removed too, including the ones you reviewed.",
+        "For the {interview}, {current} and its text will be removed and replaced by {new}. Its AI Notes are removed too, including the ones you reviewed, and so are Suggested Questions that quote it.",
       replaceConfirm: "Replace",
       cancel: "Cancel",
       refused: {
@@ -321,6 +321,7 @@ const text = {
         regenerateConfirm: "Suggest again",
         required: "A question needs text.",
         changeFailed: "The change could not be saved.",
+        gone: "This suggestion is gone, because a file it quoted was replaced.",
         loadFailed: "Suggestions could not be loaded.",
         reasons: {
           suggestionAccepted: "This suggestion is already in your questions.",

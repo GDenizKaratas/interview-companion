@@ -114,7 +114,7 @@ const translation: TranslationFile = {
         previous: "Önceki sayfa",
         next: "Sonraki sayfa",
         confirmReplace: "CV değiştirilsin mi?",
-        confirmReplaceDetail: "{current} ve metni silinecek, yerine {new} gelecek.",
+        confirmReplaceDetail: "{current} ve metni silinecek, yerine {new} gelecek. Ondan alıntı yapan önerilen sorular da silinir; kayıtlı sorularınız kalır.",
         replaceConfirm: "Değiştir",
         cancel: "Vazgeç",
         refused: {
@@ -174,7 +174,7 @@ const translation: TranslationFile = {
         },
         confirmReplace: "Transkript değiştirilsin mi?",
         confirmReplaceDetail:
-          "{interview} için {current} ve metni silinecek, yerine {new} gelecek. Bu mülakatın AI Notları da, incelediğiniz notlar dahil, silinir.",
+          "{interview} için {current} ve metni silinecek, yerine {new} gelecek. Bu mülakatın AI Notları da, incelediğiniz notlar dahil, ve ondan alıntı yapan önerilen sorular da silinir.",
         replaceConfirm: "Değiştir",
         cancel: "Vazgeç",
         refused: {
@@ -300,6 +300,7 @@ const translation: TranslationFile = {
           regenerateConfirm: "Yeniden öner",
           required: "Soru boş olamaz.",
           changeFailed: "Değişiklik kaydedilemedi.",
+          gone: "Bu öneri artık yok, çünkü alıntı yaptığı dosya değiştirildi.",
           loadFailed: "Öneriler yüklenemedi.",
           reasons: {
             suggestionAccepted: "Bu öneri zaten sorularınızda.",

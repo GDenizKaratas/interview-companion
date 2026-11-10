@@ -9,9 +9,10 @@ import { useText } from "./text.tsx";
 interface SuggestedQuestionsProps {
   candidateId: string;
   interviews: Interview[];
-  // Changes whenever a Transcript is imported or its speakers confirmed. A replaced Transcript
-  // removes the suggestions that quote it, so the list loads again.
-  transcriptVersion: number;
+  // Changes whenever a CV is uploaded or a Transcript imported or re-mapped. A replaced source
+  // removes the suggestions that quote it, and the notes about the last generation no longer
+  // apply, so the list loads again and those notes are cleared.
+  sourceVersion: number;
   // Called after a suggestion was copied into Saved Questions, so that list loads again.
   onAccepted: () => void;
 }
@@ -32,7 +33,7 @@ export function SuggestedQuestions(props: SuggestedQuestionsProps) {
   );
 }
 
-function OpenSuggestions({ candidateId, interviews, transcriptVersion, onAccepted }: SuggestedQuestionsProps) {
+function OpenSuggestions({ candidateId, interviews, sourceVersion, onAccepted }: SuggestedQuestionsProps) {
   const { text } = useText();
   const t = text.panels.questions.suggestions;
   const [apiKeySaved, setApiKeySaved] = useState<boolean | undefined>();
@@ -69,8 +70,11 @@ function OpenSuggestions({ candidateId, interviews, transcriptVersion, onAccepte
   );
 
   useEffect(() => {
-    void reload();
-  }, [reload, transcriptVersion]);
+    void reload().then(() => {
+      setDropped(0);
+      setLeftOut([]);
+    });
+  }, [reload, sourceVersion]);
 
   async function generate() {
     setConfirmingReplace(false);
@@ -94,6 +98,9 @@ function OpenSuggestions({ candidateId, interviews, transcriptVersion, onAccepte
   // Runs one change to a suggestion, then shows the list as core has it.
   async function change(run: () => Promise<unknown>): Promise<boolean> {
     setChangeError(undefined);
+    setGenerateError(undefined);
+    setDropped(0);
+    setLeftOut([]);
     setBusy(true);
     let ok = true;
     try {
@@ -332,6 +339,7 @@ function generationErrorMessage(text: Text, error: unknown): string {
 function changeErrorMessage(t: Text["panels"]["questions"]["suggestions"], error: unknown): string {
   if (error instanceof ApiError) {
     if (error.field === "text" && error.rule === "required") return t.required;
+    if (error.status === 404) return t.gone;
     if (error.reason === "suggestionAccepted" || error.reason === "suggestionDismissed") return t.reasons[error.reason];
   }
   return t.changeFailed;

@@ -8,13 +8,14 @@ import { useText } from "./text.tsx";
 interface SavedQuestionsProps {
   candidateId: string;
   interviews: Interview[];
-  transcriptVersion: number;
+  // Changes whenever a CV or Transcript changes.
+  sourceVersion: number;
 }
 
 // The Interviewer's own question list for one Candidate, with the collapsed Suggested Questions
 // under it. Core keeps the order; after every change the list is fetched again, so the screen
 // always shows what core has saved.
-export function SavedQuestions({ candidateId, interviews, transcriptVersion }: SavedQuestionsProps) {
+export function SavedQuestions({ candidateId, interviews, sourceVersion }: SavedQuestionsProps) {
   const { text } = useText();
   const t = text.panels.questions;
   const [questions, setQuestions] = useState<SavedQuestion[] | undefined>();
@@ -121,7 +122,7 @@ export function SavedQuestions({ candidateId, interviews, transcriptVersion }: S
       <SuggestedQuestions
         candidateId={candidateId}
         interviews={interviews}
-        transcriptVersion={transcriptVersion}
+        sourceVersion={sourceVersion}
         onAccepted={() => void reload()}
       />
       {toDelete && (
