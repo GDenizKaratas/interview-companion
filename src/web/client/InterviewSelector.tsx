@@ -24,8 +24,8 @@ export function InterviewSelector({
     loadInterviews(candidateId);
   }, [candidateId]);
 
-  function loadInterviews(id: string) {
-    api.listInterviews(id).then(
+  function loadInterviews(id: string): Promise<void> {
+    return api.listInterviews(id).then(
       (list) => {
         setInterviews(list);
         setLoadError(false);
@@ -34,12 +34,14 @@ export function InterviewSelector({
     );
   }
 
-  // The new Interview is shown at once, then the list is fetched again because core decides the order.
-  function handleAdded(added: Interview) {
+  // Adding an Interview can change the numbers of the others, and core decides them, so the
+  // list is fetched again before the new Interview is selected. If that fails, the new one is
+  // still shown and selected, next to the load error.
+  async function handleAdded(added: Interview) {
     setAdding(false);
-    setInterviews((current) => [...current, added]);
+    await loadInterviews(candidateId);
+    setInterviews((current) => (current.some((i) => i.id === added.id) ? current : [...current, added]));
     onSelect(added.id);
-    loadInterviews(candidateId);
   }
 
   return (

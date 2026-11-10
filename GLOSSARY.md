@@ -17,7 +17,7 @@ _Avoid_: Applicant, interviewee
 ### Sources
 
 **Interview**:
-One conversation with a Candidate. Interviews are numbered in the order they are added (First Interview, Second Interview) and may have a date. It may have a Transcript.
+One conversation with a Candidate. Interviews may have a date and are numbered by it (First Interview, Second Interview); those without a date come after the dated ones, in the order they were added. It may have a Transcript.
 _Avoid_: Meeting, session, round
 
 **Planned**:

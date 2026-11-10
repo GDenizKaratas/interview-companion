@@ -6,7 +6,9 @@ import { InvalidInputError, NotFoundError } from "./errors.ts";
 export interface Interview {
   id: string;
   candidateId: string;
-  // 1 for the Candidate's first Interview, 2 for the second, in the order they were added.
+  // The Interview's place among the Candidate's Interviews: 1 for the earliest date. Interviews
+  // without a date come after the dated ones, in the order they were added. Adding an Interview
+  // with an earlier date moves the later ones up by one.
   number: number;
   // A calendar day, YYYY-MM-DD, or null when the Interview has no date yet.
   date: string | null;
@@ -23,7 +25,7 @@ export interface NewInterview {
 interface InterviewRow {
   id: string;
   candidate_id: string;
-  number: number;
+  added_order: number;
   date: string | null;
   created_at: string;
 }
@@ -34,29 +36,25 @@ export type Today = () => string;
 export function addInterview(db: DatabaseSync, today: Today, input: NewInterview): Interview {
   requireCandidate(db, input.candidateId);
   const date = optionalDate(input.date);
-  // The number is read and used in one transaction, so two Interviews never get the same one.
+  const id = randomUUID();
+  // The order is read and used in one transaction, so two Interviews never get the same one.
   db.exec("BEGIN");
   try {
-    const row: InterviewRow = {
-      id: randomUUID(),
-      candidate_id: input.candidateId,
-      number: nextNumber(db, input.candidateId),
+    db.prepare("INSERT INTO interview (id, candidate_id, added_order, date, created_at) VALUES (?, ?, ?, ?, ?)").run(
+      id,
+      input.candidateId,
+      nextAddedOrder(db, input.candidateId),
       date,
-      created_at: new Date().toISOString(),
-    };
-    db.prepare("INSERT INTO interview (id, candidate_id, number, date, created_at) VALUES (?, ?, ?, ?, ?)").run(
-      row.id,
-      row.candidate_id,
-      row.number,
-      row.date,
-      row.created_at,
+      new Date().toISOString(),
     );
     db.exec("COMMIT");
-    return toInterview(row, today());
   } catch (error) {
     db.exec("ROLLBACK");
     throw error;
   }
+  // The new Interview's number depends on the dates of the others, so it is read from the
+  // same list that numbers them, instead of being worked out a second time here.
+  return listInterviews(db, today, input.candidateId).find((interview) => interview.id === id)!;
 }
 
 // Earliest date first. Interviews without a date come last, in the order they were added.
@@ -64,13 +62,13 @@ export function listInterviews(db: DatabaseSync, today: Today, candidateId: stri
   requireCandidate(db, candidateId);
   const rows = db
     .prepare(
-      `SELECT id, candidate_id, number, date, created_at FROM interview
+      `SELECT id, candidate_id, added_order, date, created_at FROM interview
        WHERE candidate_id = ?
-       ORDER BY date IS NULL, date, number`,
+       ORDER BY date IS NULL, date, added_order`,
     )
     .all(candidateId) as unknown as InterviewRow[];
   const day = today();
-  return rows.map((row) => toInterview(row, day));
+  return rows.map((row, index) => toInterview(row, index + 1, day));
 }
 
 function requireCandidate(db: DatabaseSync, candidateId: string): void {
@@ -79,9 +77,9 @@ function requireCandidate(db: DatabaseSync, candidateId: string): void {
   }
 }
 
-function nextNumber(db: DatabaseSync, candidateId: string): number {
+function nextAddedOrder(db: DatabaseSync, candidateId: string): number {
   const row = db
-    .prepare("SELECT COALESCE(MAX(number), 0) + 1 AS next FROM interview WHERE candidate_id = ?")
+    .prepare("SELECT COALESCE(MAX(added_order), 0) + 1 AS next FROM interview WHERE candidate_id = ?")
     .get(candidateId) as { next: number };
   return row.next;
 }
@@ -100,11 +98,11 @@ function optionalDate(value: string | null | undefined): string | null {
 }
 
 // Days written as YYYY-MM-DD sort like text, so a plain comparison tells which is later.
-function toInterview(row: InterviewRow, today: string): Interview {
+function toInterview(row: InterviewRow, number: number, today: string): Interview {
   return {
     id: row.id,
     candidateId: row.candidate_id,
-    number: row.number,
+    number,
     date: row.date,
     planned: row.date !== null && row.date > today,
     createdAt: row.created_at,
