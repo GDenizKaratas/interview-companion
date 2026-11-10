@@ -923,6 +923,9 @@ button.role-choice.chosen {
 
 .ai-note-original {
   margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
 
 /* Evidence search: one bar for the CV and Transcripts, with its results under it. */
 .evidence-search {
@@ -1037,6 +1040,7 @@ button.role-choice.chosen {
 
 .ai-notes-dismissed-toggle {
   margin-top: 0.5rem;
+}
 
 .evidence-excerpt {
   white-space: pre-wrap;
