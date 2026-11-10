@@ -35,6 +35,46 @@ export function createApi(core: Core): Hono {
     );
   });
 
+  api.get("/candidates/:id/notes", (c) =>
+    respondOrRefuse(c, () =>
+      c.json(core.listInterviewerNotes(c.req.param("id"), { interviewId: c.req.query("interviewId") || null })),
+    ),
+  );
+
+  api.post("/candidates/:id/notes", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(
+        core.addInterviewerNotes({
+          candidateId: c.req.param("id"),
+          interviewId: idField(fields, "interviewId"),
+          text: stringField(fields, "text"),
+        }),
+        201,
+      ),
+    );
+  });
+
+  api.put("/notes/:id/text", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => c.json(core.editInterviewerNote(c.req.param("id"), stringField(fields, "text"))));
+  });
+
+  // The Interview a note is tagged with; a missing or empty interviewId removes the tag.
+  api.put("/notes/:id/interview", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.tagInterviewerNote(c.req.param("id"), idField(fields, "interviewId"))),
+    );
+  });
+
+  api.delete("/notes/:id", (c) =>
+    respondOrRefuse(c, () => {
+      core.deleteInterviewerNote(c.req.param("id"));
+      return c.body(null, 204);
+    }),
+  );
+
   api.get("/interface-language", (c) => c.json({ language: core.getInterfaceLanguage() }));
 
   api.put("/interface-language", async (c) => {
@@ -87,6 +127,11 @@ async function jsonFields(c: Context): Promise<Record<string, unknown>> {
 function stringField(fields: Record<string, unknown>, key: string): string {
   const value = fields[key];
   return typeof value === "string" ? value : "";
+}
+
+// An optional id: a missing or empty value means none.
+function idField(fields: Record<string, unknown>, key: string): string | null {
+  return stringField(fields, key) || null;
 }
 
 // Runs a core call and turns a refused input into a 400 response the interface can translate,

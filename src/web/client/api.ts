@@ -1,8 +1,17 @@
 // The browser's only way to reach core: the local server's /api routes.
 // Only types come from core; they are erased before the code reaches the browser.
-import type { Candidate, InputRule, Interview, NewCandidate, NewInterview, SavedQuestion } from "../../core/index.ts";
+import type {
+  Candidate,
+  InputRule,
+  Interview,
+  InterviewerNote,
+  NewCandidate,
+  NewInterview,
+  NewInterviewerNotes,
+  SavedQuestion,
+} from "../../core/index.ts";
 
-export type { Candidate, Interview, SavedQuestion };
+export type { Candidate, Interview, InterviewerNote, SavedQuestion };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -20,7 +29,7 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, init);
-  // A 204 answer has no body; that is not an error.
+  if (response.status === 204) return undefined as T;
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new ApiError(
@@ -49,13 +58,25 @@ export const api = {
     request<Interview[]>(`/candidates/${encodeURIComponent(candidateId)}/interviews`),
   addInterview: ({ candidateId, ...fields }: NewInterview) =>
     request<Interview>(`/candidates/${encodeURIComponent(candidateId)}/interviews`, sendJson("POST", fields)),
+  listInterviewerNotes: (candidateId: string, interviewId: string | null) =>
+    request<InterviewerNote[]>(
+      `/candidates/${encodeURIComponent(candidateId)}/notes` +
+        (interviewId ? `?interviewId=${encodeURIComponent(interviewId)}` : ""),
+    ),
+  addInterviewerNotes: ({ candidateId, ...fields }: NewInterviewerNotes) =>
+    request<InterviewerNote[]>(`/candidates/${encodeURIComponent(candidateId)}/notes`, sendJson("POST", fields)),
+  editInterviewerNote: (id: string, text: string) =>
+    request<InterviewerNote>(`/notes/${encodeURIComponent(id)}/text`, sendJson("PUT", { text })),
+  tagInterviewerNote: (id: string, interviewId: string | null) =>
+    request<InterviewerNote>(`/notes/${encodeURIComponent(id)}/interview`, sendJson("PUT", { interviewId })),
+  deleteInterviewerNote: (id: string) => request<void>(`/notes/${encodeURIComponent(id)}`, { method: "DELETE" }),
   listSavedQuestions: (candidateId: string) =>
     request<SavedQuestion[]>(`/candidates/${encodeURIComponent(candidateId)}/saved-questions`),
   addSavedQuestion: (candidateId: string, text: string) =>
     request<SavedQuestion>(`/candidates/${encodeURIComponent(candidateId)}/saved-questions`, sendJson("POST", { text })),
   editSavedQuestion: (id: string, text: string) =>
     request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}`, sendJson("PUT", { text })),
-  deleteSavedQuestion: (id: string) => request<unknown>(`/saved-questions/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  deleteSavedQuestion: (id: string) => request<void>(`/saved-questions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   moveSavedQuestion: (id: string, position: number) =>
-    request<unknown>(`/saved-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position })),
+    request<void>(`/saved-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position })),
 };

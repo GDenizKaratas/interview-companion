@@ -47,7 +47,7 @@ export function getCandidate(db: DatabaseSync, id: string): Candidate | undefine
   return row ? toCandidate(row as unknown as CandidateRow) : undefined;
 }
 
-// Refuses an operation on a Candidate that does not exist.
+// Refuses with NotFoundError when the Candidate does not exist.
 export function requireCandidate(db: DatabaseSync, id: string): void {
   if (!getCandidate(db, id)) {
     throw new NotFoundError("This Candidate does not exist.");

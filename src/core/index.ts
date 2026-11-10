@@ -5,11 +5,13 @@ import { fileURLToPath } from "node:url";
 import * as candidates from "./candidates.ts";
 import { openDatabase } from "./database.ts";
 import * as interfaceLanguage from "./interface-language.ts";
+import * as interviewerNotes from "./interviewer-notes.ts";
 import * as interviews from "./interviews.ts";
 import * as savedQuestions from "./saved-questions.ts";
 
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export { InvalidInputError, NotFoundError, type InputRule } from "./errors.ts";
+export type { InterviewerNote, NewInterviewerNotes, NoteFilter } from "./interviewer-notes.ts";
 export type { Interview, NewInterview } from "./interviews.ts";
 export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
 
@@ -20,6 +22,11 @@ export interface Core {
   listCandidateRoles(): string[];
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
+  addInterviewerNotes(input: interviewerNotes.NewInterviewerNotes): interviewerNotes.InterviewerNote[];
+  editInterviewerNote(id: string, text: string): interviewerNotes.InterviewerNote;
+  tagInterviewerNote(id: string, interviewId: string | null): interviewerNotes.InterviewerNote;
+  deleteInterviewerNote(id: string): void;
+  listInterviewerNotes(candidateId: string, filter?: interviewerNotes.NoteFilter): interviewerNotes.InterviewerNote[];
   getInterfaceLanguage(): string;
   setInterfaceLanguage(language: string): void;
   addSavedQuestion(input: savedQuestions.NewSavedQuestion): savedQuestions.SavedQuestion;
@@ -33,6 +40,8 @@ export interface Core {
 export interface CoreOptions {
   // Today as YYYY-MM-DD. Defaults to the day on this computer's clock; tests fix it.
   today?: interviews.Today;
+  // The current time, used as the time a note is saved. Defaults to the system clock; tests fix it.
+  now?: interviewerNotes.Now;
 }
 
 // Opens (and creates, if needed) the database file at dbPath and brings its schema up to date.
@@ -40,6 +49,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
   mkdirSync(dirname(dbPath), { recursive: true });
   const db = openDatabase(dbPath);
   const today = options.today ?? localToday;
+  const now = options.now ?? (() => new Date());
   return {
     createCandidate: (input) => candidates.createCandidate(db, input),
     listCandidates: () => candidates.listCandidates(db),
@@ -47,6 +57,11 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listCandidateRoles: () => candidates.listCandidateRoles(db),
     addInterview: (input) => interviews.addInterview(db, today, input),
     listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),
+    addInterviewerNotes: (input) => interviewerNotes.addInterviewerNotes(db, now, input),
+    editInterviewerNote: (id, text) => interviewerNotes.editInterviewerNote(db, id, text),
+    tagInterviewerNote: (id, interviewId) => interviewerNotes.tagInterviewerNote(db, id, interviewId),
+    deleteInterviewerNote: (id) => interviewerNotes.deleteInterviewerNote(db, id),
+    listInterviewerNotes: (candidateId, filter) => interviewerNotes.listInterviewerNotes(db, candidateId, filter),
     getInterfaceLanguage: () => interfaceLanguage.getInterfaceLanguage(db),
     setInterfaceLanguage: (language) => interfaceLanguage.setInterfaceLanguage(db, language),
     addSavedQuestion: (input) => savedQuestions.addSavedQuestion(db, input),

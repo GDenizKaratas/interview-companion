@@ -1,45 +1,33 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
 import { api, ApiError, type Interview } from "./api.ts";
+import { interviewLabel } from "./interview-names.ts";
 import type { Text } from "./languages.ts";
 import { useText } from "./text.tsx";
 
 // The Interview row of the Workspace header: choose "All" or one Interview, or add a new one.
 export function InterviewSelector({
+  interviews,
+  loadError,
   candidateId,
   selected,
   onSelect,
+  onAdded,
 }: {
+  interviews: Interview[];
+  loadError: boolean;
   candidateId: string;
   // One Interview's id, or null for all Interviews.
   selected: string | null;
   onSelect: (interviewId: string | null) => void;
+  onAdded: (interview: Interview) => void;
 }) {
   const { text } = useText();
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [loadError, setLoadError] = useState(false);
   const [adding, setAdding] = useState(false);
 
-  useEffect(() => {
-    loadInterviews(candidateId);
-  }, [candidateId]);
-
-  function loadInterviews(id: string) {
-    api.listInterviews(id).then(
-      (list) => {
-        setInterviews(list);
-        setLoadError(false);
-      },
-      () => setLoadError(true),
-    );
-  }
-
-  // The new Interview is shown at once, then the list is fetched again because core decides the order.
   function handleAdded(added: Interview) {
     setAdding(false);
-    setInterviews((current) => [...current, added]);
-    onSelect(added.id);
-    loadInterviews(candidateId);
+    onAdded(added);
   }
 
   return (
@@ -63,14 +51,6 @@ export function InterviewSelector({
       {loadError && <p className="error">{text.interviews.loadFailed}</p>}
     </div>
   );
-}
-
-// "First interview · 2026-11-20 · planned", "Second interview · no date".
-function interviewLabel(text: Text, interview: Interview): string {
-  const ordinals: Record<string, string> = text.interviews.ordinal;
-  const name = ordinals[String(interview.number)] ?? text.interviews.numbered.replace("{number}", String(interview.number));
-  if (interview.date === null) return `${name} · ${text.interviews.noDate}`;
-  return interview.planned ? `${name} · ${interview.date} · ${text.interviews.planned}` : `${name} · ${interview.date}`;
 }
 
 function NewInterviewForm({
