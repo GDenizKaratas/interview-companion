@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
-import { InvalidInputError } from "./errors.ts";
+import { InvalidInputError, NotFoundError } from "./errors.ts";
 
 export interface Candidate {
   id: string;
@@ -48,6 +48,13 @@ export function getCandidate(db: DatabaseSync, id: string): Candidate | undefine
 }
 
 // Every Candidate role used so far, once each, in alphabetical order. Suggested when a Candidate is added.
+// Refuses with NotFoundError when the Candidate does not exist.
+export function requireCandidate(db: DatabaseSync, id: string): void {
+  if (!getCandidate(db, id)) {
+    throw new NotFoundError("This Candidate does not exist.");
+  }
+}
+
 export function listCandidateRoles(db: DatabaseSync): string[] {
   const alphabetical = new Intl.Collator("en", { sensitivity: "accent" });
   return rolesInOrderWritten(db).sort(alphabetical.compare);

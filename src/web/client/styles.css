@@ -262,6 +262,97 @@ button.secondary {
   padding: 0.05rem 0.35rem;
 }
 
+/* My Notes: the box is always ready to type in; each note is plain text with its tag and time. */
+.note-entry {
+  margin-bottom: 0.75rem;
+}
+
+textarea,
+select {
+  font: inherit;
+}
+
+.note-box {
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.note-entry-meta,
+.note-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.hint {
+  margin-left: auto;
+}
+
+.note-tag {
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.1rem 0.2rem;
+  cursor: pointer;
+}
+
+.note-tag:hover,
+.note-tag:focus {
+  border-color: var(--line);
+}
+
+.note-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.note {
+  padding: 0.5rem 0;
+}
+
+.note + .note {
+  border-top: 1px solid var(--line);
+}
+
+.note-text {
+  margin: 0 0 0.2rem;
+  overflow-wrap: anywhere;
+}
+
+.note-edit {
+  width: 100%;
+  margin-bottom: 0.2rem;
+}
+
+.note .error,
+.note-entry .error {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+}
+
+button.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+
+button.link-button:hover {
+  color: var(--text);
+}
+
 /* Narrow screen: My Notes first, because it is the panel used during an interview. */
 @media (max-width: 760px) {
   .panels {

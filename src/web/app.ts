@@ -35,6 +35,44 @@ export function createApi(core: Core): Hono {
     );
   });
 
+  api.get("/candidates/:id/notes", (c) =>
+    respondOrRefuse(c, () =>
+      c.json(core.listInterviewerNotes(c.req.param("id"), { interviewId: c.req.query("interviewId") || null })),
+    ),
+  );
+
+  api.post("/candidates/:id/notes", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(
+        core.addInterviewerNotes({
+          candidateId: c.req.param("id"),
+          interviewId: idField(fields, "interviewId"),
+          text: stringField(fields, "text"),
+        }),
+        201,
+      ),
+    );
+  });
+
+  // Sends "text" to edit a note, or "interviewId" (null for none) to change its tag.
+  api.patch("/notes/:id", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => {
+      const id = c.req.param("id");
+      let note = "text" in fields ? core.editInterviewerNote(id, stringField(fields, "text")) : undefined;
+      if ("interviewId" in fields) note = core.tagInterviewerNote(id, idField(fields, "interviewId"));
+      return note ? c.json(note) : c.json({ error: "Nothing to change." }, 400);
+    });
+  });
+
+  api.delete("/notes/:id", (c) =>
+    respondOrRefuse(c, () => {
+      core.deleteInterviewerNote(c.req.param("id"));
+      return c.body(null, 204);
+    }),
+  );
+
   api.get("/interface-language", (c) => c.json({ language: core.getInterfaceLanguage() }));
 
   api.put("/interface-language", async (c) => {
@@ -56,6 +94,11 @@ async function jsonFields(c: Context): Promise<Record<string, unknown>> {
 function stringField(fields: Record<string, unknown>, key: string): string {
   const value = fields[key];
   return typeof value === "string" ? value : "";
+}
+
+// An optional id: a missing or empty value means none.
+function idField(fields: Record<string, unknown>, key: string): string | null {
+  return stringField(fields, key) || null;
 }
 
 // Runs a core call and turns a refused input into a 400 response the interface can translate,

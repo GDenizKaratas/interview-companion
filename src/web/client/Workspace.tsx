@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { api, ApiError, type Candidate } from "./api.ts";
+import { api, ApiError, type Candidate, type Interview } from "./api.ts";
 import { InterviewSelector } from "./InterviewSelector.tsx";
+import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo } from "./navigation.ts";
 import { useText } from "./text.tsx";
 
@@ -13,9 +14,32 @@ type Load =
 export function Workspace({ candidateId }: { candidateId: string }) {
   const { text } = useText();
   const [load, setLoad] = useState<Load>({ state: "loading" });
-  // The panels will show only this Interview's content once they have content (#5, #9).
-  // The selected Interview's id, or null for all Interviews.
+  // The selected Interview's id, or null for all Interviews. The panels show only its content.
   const [interviewId, setInterviewId] = useState<string | null>(null);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [interviewsFailed, setInterviewsFailed] = useState(false);
+
+  function loadInterviews(id: string) {
+    api.listInterviews(id).then(
+      (list) => {
+        setInterviews(list);
+        setInterviewsFailed(false);
+      },
+      () => setInterviewsFailed(true),
+    );
+  }
+
+  useEffect(() => {
+    loadInterviews(candidateId);
+  }, [candidateId]);
+
+  // The new Interview is shown and selected at once, then the list is fetched again
+  // because core decides the order.
+  function handleInterviewAdded(added: Interview) {
+    setInterviews((current) => [...current, added]);
+    setInterviewId(added.id);
+    loadInterviews(candidateId);
+  }
 
   useEffect(() => {
     api.getCandidate(candidateId).then(
@@ -37,7 +61,14 @@ export function Workspace({ candidateId }: { candidateId: string }) {
         )}
       </header>
       {load.state === "ready" && (
-        <InterviewSelector candidateId={candidateId} selected={interviewId} onSelect={setInterviewId} />
+        <InterviewSelector
+          interviews={interviews}
+          loadError={interviewsFailed}
+          candidateId={candidateId}
+          selected={interviewId}
+          onSelect={setInterviewId}
+          onAdded={handleInterviewAdded}
+        />
       )}
       {load.state === "loading" && <p>{text.workspace.loading}</p>}
       {load.state === "notFound" && <p className="error">{text.workspace.notFound}</p>}
@@ -48,7 +79,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             <p className="empty">{text.panels.cv.empty}</p>
           </Panel>
           <Panel area="notes" title={text.panels.interviewerNotes.title}>
-            <p className="empty">{text.panels.interviewerNotes.empty}</p>
+            <NotesPanel candidateId={candidateId} interviews={interviews} selectedInterviewId={interviewId} />
           </Panel>
           <Panel area="transcript" title={text.panels.transcript.title}>
             <p className="empty">{text.panels.transcript.empty}</p>
