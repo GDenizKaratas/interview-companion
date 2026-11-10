@@ -82,6 +82,24 @@ const migrations: string[] = [
    ) STRICT;`,
   // A speaker's role in the Speaker Mapping. NULL until the Interviewer confirms the mapping.
   `ALTER TABLE transcript_speaker ADD COLUMN role TEXT CHECK (role IN ('candidate', 'interviewer', 'other'));`,
+  // AI Notes belong to an Interview's Transcript: each quote points to one of its segments by
+  // number, so replacing the Transcript removes them. Evidence keeps the exact quote.
+  `CREATE TABLE ai_note (
+     id TEXT PRIMARY KEY,
+     interview_id TEXT NOT NULL REFERENCES transcript (interview_id) ON DELETE CASCADE,
+     statement TEXT NOT NULL,
+     review_state TEXT NOT NULL CHECK (review_state IN ('unreviewed', 'confirmed', 'corrected', 'dismissed')),
+     generated_at TEXT NOT NULL,
+     position INTEGER NOT NULL
+   ) STRICT;
+   CREATE INDEX ai_note_interview ON ai_note (interview_id, position);
+   CREATE TABLE ai_note_evidence (
+     ai_note_id TEXT NOT NULL REFERENCES ai_note (id) ON DELETE CASCADE,
+     position INTEGER NOT NULL,
+     segment_number INTEGER NOT NULL,
+     quote TEXT NOT NULL,
+     PRIMARY KEY (ai_note_id, position)
+   ) STRICT;`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

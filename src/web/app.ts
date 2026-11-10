@@ -1,5 +1,13 @@
 import { Hono, type Context } from "hono";
-import { InvalidInputError, NotFoundError, type Core, type CvFile, type SpeakerRole } from "../core/index.ts";
+import {
+  AiProviderError,
+  InvalidInputError,
+  NotFoundError,
+  PreconditionError,
+  type Core,
+  type CvFile,
+  type SpeakerRole,
+} from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
 export function createApi(core: Core): Hono {
@@ -69,6 +77,29 @@ export function createApi(core: Core): Hono {
       c.json(core.confirmSpeakerMapping(c.req.param("id"), roles as Record<string, SpeakerRole>)),
     );
   });
+
+  // Only whether a key is saved. The key itself never leaves core.
+  api.get("/ai/api-key", (c) => c.json({ saved: core.hasApiKey() }));
+
+  api.put("/ai/api-key", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => {
+      core.saveApiKey(stringField(fields, "apiKey"));
+      return c.json({ saved: true });
+    });
+  });
+
+  api.delete("/ai/api-key", (c) => {
+    core.removeApiKey();
+    return c.body(null, 204);
+  });
+
+  api.get("/interviews/:id/ai-notes", (c) => c.json(core.listAiNotes(c.req.param("id"))));
+
+  // Generates the Interview's AI Notes with the model. Only this route ever calls it.
+  api.post("/interviews/:id/ai-notes", (c) =>
+    respondOrRefuse(c, async () => c.json(await core.generateAiNotes(c.req.param("id")), 201)),
+  );
 
   api.get("/candidate-roles", (c) => c.json(core.listCandidateRoles()));
 
@@ -206,7 +237,8 @@ function idField(fields: Record<string, unknown>, key: string): string | null {
 }
 
 // Runs a core call and turns a refused input into a 400 response the interface can translate,
-// and a request for something that does not exist into a 404 response.
+// a request for something that does not exist into a 404 response, an action that must wait
+// for another step into 409, and a failed model call into 502.
 async function respondOrRefuse(c: Context, run: () => Response | Promise<Response>): Promise<Response> {
   try {
     return await run();
@@ -216,6 +248,13 @@ async function respondOrRefuse(c: Context, run: () => Response | Promise<Respons
     }
     if (error instanceof NotFoundError) {
       return c.json({ error: error.message }, 404);
+    }
+    if (error instanceof PreconditionError) {
+      return c.json({ error: error.message, reason: error.reason }, 409);
+    }
+    if (error instanceof AiProviderError) {
+      console.error("AI generation failed:", error.cause ?? error);
+      return c.json({ error: error.message, failure: error.failure }, 502);
     }
     throw error;
   }

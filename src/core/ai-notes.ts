@@ -1,0 +1,150 @@
+import { randomUUID } from "node:crypto";
+import type { DatabaseSync } from "node:sqlite";
+import type { AiProviderFactory, ProposedAiNote } from "./ai-provider.ts";
+import { readApiKey } from "./ai-settings.ts";
+import { inTransaction } from "./database.ts";
+import { AiProviderError, PreconditionError } from "./errors.ts";
+import { getInterfaceLanguage } from "./interface-language.ts";
+import type { Now } from "./interviewer-notes.ts";
+import { requireInterview } from "./interviews.ts";
+import { getTranscript } from "./transcripts.ts";
+
+export type ReviewState = "unreviewed" | "confirmed" | "corrected" | "dismissed";
+
+export interface AiNoteEvidence {
+  // The Transcript segment the quote comes from, numbered from 1.
+  segmentNumber: number;
+  // Exactly as it appears in that segment.
+  quote: string;
+}
+
+export interface AiNote {
+  id: string;
+  interviewId: string;
+  // One statement, in the interface language at the time it was generated.
+  statement: string;
+  reviewState: ReviewState;
+  generatedAt: string;
+  evidence: AiNoteEvidence[];
+}
+
+export interface AiNoteGeneration {
+  // The notes that passed the quote check and were saved, in the order the model gave them.
+  notes: AiNote[];
+  // How many proposed notes were dropped because a quote was not found in its source.
+  dropped: number;
+}
+
+export async function generateAiNotes(
+  db: DatabaseSync,
+  now: Now,
+  providerFor: AiProviderFactory,
+  interviewId: string,
+): Promise<AiNoteGeneration> {
+  requireInterview(db, interviewId);
+  const transcript = getTranscript(db, interviewId);
+  if (!transcript) throw new PreconditionError("noTranscript", "Import a Transcript before generating AI Notes.");
+  if (transcript.speakerMappingConfirmedAt === null) {
+    throw new PreconditionError(
+      "speakerMappingNotConfirmed",
+      "Confirm who is speaking before generating AI Notes.",
+    );
+  }
+  const apiKey = readApiKey(db);
+  if (apiKey === undefined) throw new PreconditionError("apiKeyMissing", "Add an API key to generate AI Notes.");
+  const roles = new Map(transcript.speakers.map((speaker) => [speaker.id, speaker.role!]));
+  let proposed: ProposedAiNote[];
+  try {
+    proposed = await providerFor(apiKey).proposeAiNotes({
+      language: getInterfaceLanguage(db),
+      segments: transcript.segments.map((segment) => ({
+        number: segment.number,
+        role: roles.get(segment.speakerId)!,
+        text: segment.text,
+      })),
+    });
+  } catch (error) {
+    throw error instanceof AiProviderError
+      ? error
+      : new AiProviderError("unavailable", "Generation failed. Your data was not changed.", { cause: error });
+  }
+  // The model takes a while. If the Transcript was replaced or its mapping confirmed again
+  // meanwhile, the answer rests on data that is gone, so it is not saved.
+  const current = getTranscript(db, interviewId);
+  if (
+    current?.importedAt !== transcript.importedAt ||
+    current.speakerMappingConfirmedAt !== transcript.speakerMappingConfirmedAt
+  ) {
+    throw new PreconditionError(
+      "transcriptChanged",
+      "The Transcript or its speakers changed during generation. Nothing was saved; generate again.",
+    );
+  }
+  const candidateSegments = new Map(
+    transcript.segments
+      .filter((segment) => roles.get(segment.speakerId) === "candidate")
+      .map((segment) => [segment.number, segment.text]),
+  );
+  const backed = proposed.filter((note) => isBacked(note, candidateSegments));
+  saveNotes(db, now, interviewId, backed);
+  return { notes: listAiNotes(db, interviewId), dropped: proposed.length - backed.length };
+}
+
+// The check that makes an AI Note trustworthy, done in code rather than asked of the model:
+// the note has a statement and at least one quote, and every quote appears word for word in
+// the segment it cites, which must be the Candidate's. A note that fails any part is dropped whole.
+function isBacked(note: ProposedAiNote, candidateSegments: Map<number, string>): boolean {
+  if (note.statement.trim() === "" || note.evidence.length === 0) return false;
+  return note.evidence.every((evidence) => {
+    const text = candidateSegments.get(evidence.segmentNumber);
+    return text !== undefined && evidence.quote.trim() !== "" && text.includes(evidence.quote);
+  });
+}
+
+function saveNotes(db: DatabaseSync, now: Now, interviewId: string, notes: ProposedAiNote[]): void {
+  const generatedAt = now().toISOString();
+  inTransaction(db, () => {
+    db.prepare("DELETE FROM ai_note WHERE interview_id = ?").run(interviewId);
+    const insertNote = db.prepare(
+      "INSERT INTO ai_note (id, interview_id, statement, review_state, generated_at, position) VALUES (?, ?, ?, 'unreviewed', ?, ?)",
+    );
+    const insertEvidence = db.prepare(
+      "INSERT INTO ai_note_evidence (ai_note_id, position, segment_number, quote) VALUES (?, ?, ?, ?)",
+    );
+    for (const [i, note] of notes.entries()) {
+      const id = randomUUID();
+      insertNote.run(id, interviewId, note.statement.trim(), generatedAt, i + 1);
+      for (const [j, evidence] of note.evidence.entries()) {
+        insertEvidence.run(id, j + 1, evidence.segmentNumber, evidence.quote);
+      }
+    }
+  });
+}
+
+export function listAiNotes(db: DatabaseSync, interviewId: string): AiNote[] {
+  const notes = db
+    .prepare(
+      "SELECT id, interview_id, statement, review_state, generated_at FROM ai_note WHERE interview_id = ? ORDER BY position",
+    )
+    .all(interviewId) as unknown as {
+    id: string;
+    interview_id: string;
+    statement: string;
+    review_state: ReviewState;
+    generated_at: string;
+  }[];
+  const evidenceOf = db.prepare(
+    "SELECT segment_number, quote FROM ai_note_evidence WHERE ai_note_id = ? ORDER BY position",
+  );
+  return notes.map((note) => ({
+    id: note.id,
+    interviewId: note.interview_id,
+    statement: note.statement,
+    reviewState: note.review_state,
+    generatedAt: note.generated_at,
+    evidence: (evidenceOf.all(note.id) as unknown as { segment_number: number; quote: string }[]).map((row) => ({
+      segmentNumber: row.segment_number,
+      quote: row.quote,
+    })),
+  }));
+}

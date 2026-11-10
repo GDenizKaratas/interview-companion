@@ -754,3 +754,150 @@ button.role-choice.chosen {
 .speaker-mapping-actions .hint {
   color: var(--muted);
 }
+
+/* AI settings: opened from the app bar or from the AI Notes panel. */
+.ai-settings-button {
+  margin-left: auto;
+}
+
+.ai-settings-button + .language-switch {
+  margin-left: 0;
+}
+
+.settings-dialog {
+  width: min(32rem, calc(100vw - 2rem));
+}
+
+.settings-status {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+}
+
+.settings-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.settings-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  font-size: 0.85rem;
+}
+
+.settings-form input {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+}
+
+.settings-privacy {
+  margin-top: 1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--page);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.settings-privacy p {
+  margin: 0;
+}
+
+.settings-privacy p + p {
+  margin-top: 0.4rem;
+}
+
+/* AI Notes: each note is a statement with its exact quotes; a quote opens its Transcript segment. */
+.ai-notes-empty,
+.ai-notes-generate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ai-notes-generate .hint,
+.ai-notes-empty .empty {
+  margin: 0;
+}
+
+.ai-notes-gate {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--error);
+  font-size: 0.85rem;
+}
+
+.ai-note-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ai-note {
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.ai-note + .ai-note {
+  margin-top: 0.5rem;
+}
+
+.ai-note-statement {
+  margin: 0 0 0.35rem;
+}
+
+.ai-note-quote {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  width: 100%;
+  margin: 0 0 0.35rem;
+  padding: 0.2rem 0.4rem;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--text);
+  background: var(--page);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ai-note-quote:hover {
+  background: var(--line);
+}
+
+.ai-note-quote-mark {
+  color: var(--muted);
+}
+
+.ai-note-quote-text {
+  flex: 1;
+  font-style: italic;
+}
+
+.ai-note-quote-where {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.review-state {
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 0.35rem;
+}
+
+/* The segment an AI Note's quote points to. */
+.segment.highlighted {
+  background: #fff4c2;
+  border-radius: 4px;
+  box-shadow: 0 0 0 4px #fff4c2;
+}

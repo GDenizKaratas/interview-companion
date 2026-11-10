@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { AiNotesPanel } from "./AiNotesPanel.tsx";
 import { api, ApiError, type Candidate, type Interview } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { CvPanel } from "./CvPanel.tsx";
@@ -25,6 +26,11 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // Counts changes to the selected Interview's Transcript, so the AI Notes panel loads again.
+  const [transcriptVersion, setTranscriptVersion] = useState(0);
+  // The Transcript segment an AI Note's quote points to. `request` changes on every click, so
+  // clicking the same quote again scrolls to it again.
+  const [highlight, setHighlight] = useState<{ interviewId: string; segmentNumber: number; request: number }>();
 
   function loadInterviews(id: string): Promise<void> {
     return api.listInterviews(id).then(
@@ -140,10 +146,22 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             />
           </Panel>
           <Panel area="transcript" title={text.panels.transcript.title}>
-            <TranscriptPanel interviews={interviews} selectedInterviewId={interviewId} />
+            <TranscriptPanel
+              interviews={interviews}
+              selectedInterviewId={interviewId}
+              highlight={highlight}
+              onChanged={() => setTranscriptVersion((version) => version + 1)}
+            />
           </Panel>
           <Panel area="ai" title={text.panels.aiNotes.title} label={text.panels.aiNotes.label}>
-            <p className="empty">{text.panels.aiNotes.empty}</p>
+            <AiNotesPanel
+              interviews={interviews}
+              selectedInterviewId={interviewId}
+              transcriptVersion={transcriptVersion}
+              onShowEvidence={(id, segmentNumber) =>
+                setHighlight((current) => ({ interviewId: id, segmentNumber, request: (current?.request ?? 0) + 1 }))
+              }
+            />
           </Panel>
           <Panel area="questions" title={text.panels.questions.title}>
             <SavedQuestions candidateId={load.candidate.id} />
