@@ -111,6 +111,8 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 
 | 76 | Editing a note's text and changing its tag are two HTTP routes, `PUT /api/notes/:id/text` and `PUT /api/notes/:id/interview`. | Each route calls one core function, so a request can never change the text and then fail on the tag halfway. | One `PATCH /api/notes/:id` route that accepts both fields. |
 
+| 77 | A Workspace panel grows with its content up to a fixed height and then scrolls inside. In My Notes the box stays in place and only the list scrolls. The note box grows to about six lines and then scrolls inside too. | One long panel or a long paste must not push the rest of the Workspace off the screen. Asked for by the owner. | Panels and the box that grow without limit. |
+
 ## Open questions
 
 - The exact format of Google Meet transcripts. To be researched at the start of Milestone 2.

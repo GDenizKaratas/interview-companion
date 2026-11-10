@@ -237,12 +237,19 @@ button.secondary {
     "questions questions";
 }
 
+/* A panel grows with its content up to a fixed height, then scrolls inside, so one long panel
+   never pushes the rest of the Workspace down. */
 .panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 1rem;
   min-height: 8rem;
+  max-height: 32rem;
+  overflow-y: auto;
 }
 
 .panel-cv { grid-area: cv; }
@@ -263,7 +270,20 @@ button.secondary {
 }
 
 /* My Notes: the box is always ready to type in; each note is plain text with its tag and time. */
+/* The box stays in place; only the list below it scrolls. */
+.notes {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.panel-notes {
+  overflow-y: hidden;
+}
+
 .note-entry {
+  flex: none;
   margin-bottom: 0.75rem;
 }
 
@@ -272,10 +292,13 @@ select {
   font: inherit;
 }
 
+/* Grows to about six lines, then scrolls inside. */
 .note-box {
   box-sizing: border-box;
   width: 100%;
-  resize: vertical;
+  max-height: 9.5rem;
+  overflow-y: auto;
+  resize: none;
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -314,6 +337,8 @@ select {
   list-style: none;
   padding: 0;
   margin: 0;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .note {
