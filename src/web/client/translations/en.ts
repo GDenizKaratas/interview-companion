@@ -121,7 +121,7 @@ const text = {
       next: "Next page",
       confirmReplace: "Replace the CV?",
       // {current} and {new} are replaced by file names.
-      confirmReplaceDetail: "{current} and its text will be removed and replaced by {new}.",
+      confirmReplaceDetail: "{current} and its text will be removed and replaced by {new}. Suggested Questions that quote it are removed too; your saved questions stay.",
       replaceConfirm: "Replace",
       cancel: "Cancel",
       refused: {
@@ -185,7 +185,7 @@ const text = {
       confirmReplace: "Replace the Transcript?",
       // {interview}, {current}, and {new} are replaced by the Interview's name and file names.
       confirmReplaceDetail:
-        "For the {interview}, {current} and its text will be removed and replaced by {new}. Its AI Notes are removed too, including the ones you reviewed.",
+        "For the {interview}, {current} and its text will be removed and replaced by {new}. Its AI Notes are removed too, including the ones you reviewed, and so are Suggested Questions that quote it.",
       replaceConfirm: "Replace",
       cancel: "Cancel",
       refused: {
@@ -279,6 +279,55 @@ const text = {
       saveFailed: "The question could not be saved.",
       changeFailed: "The change could not be saved.",
       loadFailed: "Questions could not be loaded.",
+      suggestions: {
+        open: "Suggest questions",
+        label: "AI-generated",
+        whatIsSent:
+          "Sends the CV, the Transcripts with confirmed speakers, your notes (My Notes), and your saved questions to Claude (Anthropic).",
+        focusLabel: "Focus (optional)",
+        focusPlaceholder: "For example: background jobs, testing",
+        generate: "Suggest",
+        regenerate: "Suggest again",
+        generating: "Suggesting…",
+        noApiKey: "Add an API key to get question suggestions here.",
+        addApiKey: "Add API key",
+        empty: "No suggestions yet.",
+        // {count} is replaced by a number.
+        dropped: "Suggestions dropped because a quote was not found word for word in the CV or a Transcript: {count}.",
+        // {interviews} is replaced by a list of Interview names.
+        leftOut: "Not sent, because its speakers are not confirmed: {interviews}.",
+        general: "general question",
+        generalHint: "Not based on the CV or a Transcript.",
+        showEvidence: "Show quotes",
+        hideEvidence: "Hide quotes",
+        // {page} is replaced by the CV page number.
+        cvPage: "CV, page {page}",
+        // {interview} and {number} are replaced by the Interview's name and the part's number.
+        segment: "{interview}, part {number}",
+        accept: "Add to my questions",
+        accepted: "added to your questions",
+        edit: "Edit",
+        save: "Save",
+        cancel: "Cancel",
+        dismiss: "Dismiss",
+        restore: "Show again",
+        // {count} is replaced by a number.
+        showDismissed: "Show dismissed suggestions ({count})",
+        hideDismissed: "Hide dismissed suggestions",
+        confirmRegenerate: "Suggest questions again?",
+        // {count} is replaced by a number.
+        confirmRegenerateDetail:
+          "The {count} suggestions you have not added to your questions will be replaced by new ones, including dismissed and edited ones. Your saved questions do not change.",
+        regenerateConfirm: "Suggest again",
+        required: "A question needs text.",
+        changeFailed: "The change could not be saved.",
+        gone: "This suggestion is gone, because a file it quoted was replaced.",
+        loadFailed: "Suggestions could not be loaded.",
+        reasons: {
+          suggestionAccepted: "This suggestion is already in your questions.",
+          suggestionDismissed: "This suggestion was dismissed. Show it again first.",
+        },
+      },
     },
   },
 };

@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), Transcript import through adapters (plain text and WebVTT), the Speaker Mapping, Evidence search over the CV and Transcripts, AI Note generation with an API key (Claude behind a provider interface, every quote checked before saving), AI Note review (Review States and the Stale flag), the six MCP tools and the `candidate_brief` prompt. Setup and an introduction to MCP are in [mcp.md](mcp.md).
+Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), Transcript import through adapters (plain text and WebVTT), the Speaker Mapping, Evidence search over the CV and Transcripts, AI Note generation with an API key (Claude behind a provider interface, every quote checked before saving), AI Note review (Review States and the Stale flag), Suggested Questions on request (accept, edit, dismiss, regenerate, every quote checked), the six MCP tools and the `candidate_brief` prompt. Setup and an introduction to MCP are in [mcp.md](mcp.md).
 
 Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md). Reasons for each choice are in the [decision log](decisions.md).
 
@@ -102,6 +102,8 @@ Notes on the model:
 | Changing a Speaker Mapping marks AI Notes Stale. | Core, in the mapping update. |
 | AI never edits an Interviewer Note. | Core exposes no such operation to AI code. |
 | Regenerating suggestions never changes Saved Questions. | Saved Questions are copies in a separate table. |
+| A Suggested Question's quotes must exist word for word in the CV or a Transcript. | Core, before a suggestion is saved. |
+| Replacing a CV or Transcript removes the suggestions that quote it. | The database, through a foreign key and a trigger. |
 | No generation without a request. | Generation is only reachable from explicit actions. |
 | The MCP server cannot write. | The MCP server gets `readOnlyCore(core)`, a view that holds only core's read operations. |
 

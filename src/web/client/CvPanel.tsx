@@ -13,10 +13,13 @@ const PdfPages = lazy(() => import("./PdfPages.tsx").then((module) => ({ default
 export function CvPanel({
   candidateId,
   focus,
+  onChanged,
 }: {
   candidateId: string;
   // A search result to open and mark in the CV.
   focus?: CvFocus;
+  // Called after a CV was uploaded or replaced, since that removes the suggestions quoting the old one.
+  onChanged?: () => void;
 }) {
   const { text } = useText();
   const t = text.panels.cv;
@@ -47,6 +50,7 @@ export function CvPanel({
     setUploadError(undefined);
     try {
       setCv(await api.uploadCv(candidateId, file));
+      onChanged?.();
     } catch (error) {
       setUploadError(error);
     } finally {

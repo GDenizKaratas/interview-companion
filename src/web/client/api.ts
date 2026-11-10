@@ -20,11 +20,14 @@ import type {
   Precondition,
   SavedQuestion,
   SpeakerRole,
+  SuggestedQuestion,
+  SuggestedQuestionGeneration,
+  SuggestionEvidence,
   Transcript,
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, Candidate, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, Candidate, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -142,4 +145,19 @@ export const api = {
   deleteSavedQuestion: (id: string) => request<void>(`/saved-questions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   moveSavedQuestion: (id: string, position: number) =>
     request<void>(`/saved-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position })),
+  listSuggestedQuestions: (candidateId: string) =>
+    request<SuggestedQuestion[]>(`/candidates/${encodeURIComponent(candidateId)}/suggested-questions`),
+  generateSuggestedQuestions: (candidateId: string, focus: string) =>
+    request<SuggestedQuestionGeneration>(
+      `/candidates/${encodeURIComponent(candidateId)}/suggested-questions`,
+      sendJson("POST", { focus }),
+    ),
+  acceptSuggestedQuestion: (id: string) =>
+    request<SavedQuestion>(`/suggested-questions/${encodeURIComponent(id)}/accept`, { method: "POST" }),
+  editSuggestedQuestion: (id: string, text: string) =>
+    request<SuggestedQuestion>(`/suggested-questions/${encodeURIComponent(id)}`, sendJson("PUT", { text })),
+  dismissSuggestedQuestion: (id: string) =>
+    request<SuggestedQuestion>(`/suggested-questions/${encodeURIComponent(id)}/dismiss`, { method: "POST" }),
+  restoreSuggestedQuestion: (id: string) =>
+    request<SuggestedQuestion>(`/suggested-questions/${encodeURIComponent(id)}/restore`, { method: "POST" }),
 };

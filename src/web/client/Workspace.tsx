@@ -30,6 +30,8 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [deleting, setDeleting] = useState(false);
   // Counts changes to the selected Interview's Transcript, so the AI Notes panel loads again.
   const [transcriptVersion, setTranscriptVersion] = useState(0);
+  // Counts CV uploads, so the Suggested Questions load again.
+  const [cvVersion, setCvVersion] = useState(0);
   // The Transcript segment an AI Note's quote points to. `request` changes on every click, so
   // clicking the same quote again scrolls to it again.
   const [highlight, setHighlight] = useState<SegmentHighlight>();
@@ -163,7 +165,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
       {load.state === "ready" && (
         <div className="panels">
           <Panel area="cv" title={text.panels.cv.title}>
-            <CvPanel candidateId={load.candidate.id} focus={cvFocus} />
+            <CvPanel candidateId={load.candidate.id} focus={cvFocus} onChanged={() => setCvVersion((version) => version + 1)} />
           </Panel>
           <Panel area="notes" title={text.panels.interviewerNotes.title}>
             <NotesPanel
@@ -196,7 +198,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             />
           </Panel>
           <Panel area="questions" title={text.panels.questions.title}>
-            <SavedQuestions candidateId={load.candidate.id} />
+            <SavedQuestions candidateId={load.candidate.id} interviews={interviews} sourceVersion={transcriptVersion + cvVersion} />
           </Panel>
         </div>
       )}
