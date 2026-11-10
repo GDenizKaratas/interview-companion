@@ -207,13 +207,16 @@ const text = {
       loadFailed: "The CV could not be loaded.",
       viewFailed: "The PDF could not be shown.",
     },
+    // The dropdown that tags an Interviewer Note or a Saved Question with an Interview.
+    interviewTag: {
+      label: "Interview",
+      none: "No interview",
+    },
     interviewerNotes: {
       title: "My Notes",
       empty: "No personal notes yet.",
       placeholder: "Write a note, Enter to save…",
       hint: "Each line becomes its own note.",
-      tagLabel: "Interview",
-      noInterview: "No interview",
       savedAt: "Saved at",
       edit: "Edit",
       cancel: "Cancel",
@@ -356,6 +359,9 @@ const text = {
       saveFailed: "The question could not be saved.",
       changeFailed: "The change could not be saved.",
       loadFailed: "Questions could not be loaded.",
+      // {interview} is replaced by the Interview's name.
+      hiddenByFilter: "Saved under {interview}. Questions of other Interviews are hidden while one is selected.",
+      showAll: "Show all questions",
       suggestions: {
         open: "Suggest questions",
         label: "AI-generated",

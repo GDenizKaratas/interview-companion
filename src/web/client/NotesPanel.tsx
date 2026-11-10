@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { api, ApiError, type Interview, type InterviewerNote } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { interviewName } from "./interview-names.ts";
+import { InterviewTagSelect } from "./InterviewTagSelect.tsx";
 import { fill, type Text } from "./languages.ts";
 import { useText } from "./text.tsx";
 
@@ -152,7 +153,7 @@ export function NotesPanel({
           onKeyDown={handleKeyDown}
         />
         <div className="note-entry-meta">
-          <TagSelect text={text} interviews={interviews} value={tag} onChange={setTag} />
+          <InterviewTagSelect interviews={interviews} value={tag} onChange={setTag} />
           <span className="hint">{text.panels.interviewerNotes.hint}</span>
         </div>
         {saveError !== undefined && <p className="error">{refusalMessage(text, saveError, text.panels.interviewerNotes.saveFailed)}</p>}
@@ -243,8 +244,7 @@ function NoteItem({
         <p className="note-text">{note.text}</p>
       )}
       <div className="note-meta">
-        <TagSelect
-          text={text}
+        <InterviewTagSelect
           interviews={interviews}
           value={note.interviewId}
           onChange={(interviewId) =>
@@ -282,35 +282,6 @@ function NoteItem({
         </ConfirmDialog>
       )}
     </li>
-  );
-}
-
-// The Interview a note is tagged with, shown as a small dropdown so it can be changed in one click.
-function TagSelect({
-  text,
-  interviews,
-  value,
-  onChange,
-}: {
-  text: Text;
-  interviews: Interview[];
-  value: string | null;
-  onChange: (interviewId: string | null) => void;
-}) {
-  return (
-    <select
-      className="note-tag"
-      value={value ?? ""}
-      aria-label={text.panels.interviewerNotes.tagLabel}
-      onChange={(e) => onChange(e.target.value || null)}
-    >
-      <option value="">{text.panels.interviewerNotes.noInterview}</option>
-      {interviews.map((interview) => (
-        <option key={interview.id} value={interview.id}>
-          {interviewName(text, interview)}
-        </option>
-      ))}
-    </select>
   );
 }
 

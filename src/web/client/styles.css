@@ -1130,6 +1130,17 @@ select.note-tag,
   gap: 0.35rem;
 }
 
+/* The Interview tag and the origin of a question, on one quiet line. */
+.question-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.question-entry-meta {
+  margin-top: 0.2rem;
+}
+
 .question-origin {
   color: var(--muted);
   font-size: 0.8rem;

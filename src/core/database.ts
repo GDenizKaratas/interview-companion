@@ -155,6 +155,9 @@ const migrations: string[] = [
      CHECK ((cv_page IS NOT NULL AND interview_id IS NULL AND segment_number IS NULL)
          OR (cv_page IS NULL AND interview_id IS NOT NULL AND segment_number IS NOT NULL))
    ) STRICT;`,
+  // A Saved Question may be tagged with one Interview of its Candidate. Deleting the Interview
+  // leaves the question untagged, as it does for Interviewer Notes.
+  `ALTER TABLE saved_question ADD COLUMN interview_id TEXT REFERENCES interview (id) ON DELETE SET NULL;`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

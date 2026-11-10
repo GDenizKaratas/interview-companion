@@ -214,7 +214,13 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             />
           </Panel>
           <Panel area="questions" title={text.panels.questions.title}>
-            <SavedQuestions candidateId={load.candidate.id} interviews={interviews} sourceVersion={transcriptVersion + cvVersion} />
+            <SavedQuestions
+              candidateId={load.candidate.id}
+              interviews={interviews}
+              selectedInterviewId={interviewId}
+              onShowAll={() => setInterviewId(null)}
+              sourceVersion={transcriptVersion + cvVersion}
+            />
           </Panel>
         </div>
       )}

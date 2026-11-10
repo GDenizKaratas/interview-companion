@@ -3,7 +3,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { requireCandidate } from "./candidates.ts";
 import { inTransaction } from "./database.ts";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
-import { requireInterviewOf } from "./interviews.ts";
+import { interviewFilterCondition, requireInterviewOf, type InterviewFilter } from "./interviews.ts";
 
 export interface InterviewerNote {
   id: string;
@@ -61,23 +61,17 @@ export function addInterviewerNotes(db: DatabaseSync, now: Now, input: NewInterv
   });
 }
 
-export interface NoteFilter {
-  // Show only this Interview's notes and the notes tagged with no Interview. Omit for all notes.
-  interviewId?: string | null;
-}
-
 // Newest save first. The lines of one save keep the order they were written in.
-export function listInterviewerNotes(db: DatabaseSync, candidateId: string, filter: NoteFilter = {}): InterviewerNote[] {
+export function listInterviewerNotes(db: DatabaseSync, candidateId: string, filter: InterviewFilter = {}): InterviewerNote[] {
   requireCandidate(db, candidateId);
-  const interviewId = filter.interviewId ?? null;
-  if (interviewId !== null) requireInterviewOf(db, candidateId, interviewId);
+  const condition = interviewFilterCondition(db, candidateId, filter);
   const rows = db
     .prepare(
       `SELECT ${columns} FROM interviewer_note
-       WHERE candidate_id = ? AND (? IS NULL OR interview_id IS NULL OR interview_id = ?)
+       WHERE candidate_id = ? AND ${condition.sql}
        ORDER BY saved_at DESC, position`,
     )
-    .all(candidateId, interviewId, interviewId) as unknown as NoteRow[];
+    .all(candidateId, ...condition.params) as unknown as NoteRow[];
   return rows.map(toNote);
 }
 

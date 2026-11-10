@@ -63,7 +63,7 @@ A question AI proposed on the Interviewer's request, with a reason and, when ava
 _Avoid_: Recommendation, generated question
 
 **Saved Question**:
-A question on the Interviewer's own list, either written by hand or copied from a Suggested Question on acceptance. Regenerating suggestions never changes it.
+A question on the Interviewer's own list, either written by hand or copied from a Suggested Question on acceptance, optionally tied to one Interview. Regenerating suggestions never changes it.
 _Avoid_: Accepted question, follow-up
 
 **AI client**:

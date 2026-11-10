@@ -146,3 +146,105 @@ describe("Saved Questions", () => {
     expect(texts(other.id)).toEqual(["X?", "Y?"]);
   });
 });
+
+describe("Interview tag of Saved Questions", () => {
+  function addInterview(date: string) {
+    return core.addInterview({ candidateId: candidate.id, date });
+  }
+
+  it("tags a new question with one of the Candidate's Interviews, or leaves it untagged", () => {
+    const first = addInterview("2026-11-03");
+    const tagged = core.addSavedQuestion({ candidateId: candidate.id, interviewId: first.id, text: "Tagged?" });
+    const untagged = core.addSavedQuestion({ candidateId: candidate.id, text: "Untagged?" });
+
+    expect(tagged.interviewId).toBe(first.id);
+    expect(untagged.interviewId).toBeNull();
+    expect(core.listSavedQuestions(candidate.id)).toEqual([tagged, untagged]);
+  });
+
+  it("changes a question's tag to another Interview or to none, and keeps its text and place", () => {
+    const first = addInterview("2026-11-03");
+    const second = addInterview("2026-11-10");
+    const [question, other] = addAll("Tag me?", "Leave me?");
+
+    const moved = core.tagSavedQuestion(question!.id, second.id);
+    expect(moved).toEqual({ ...question, interviewId: second.id });
+    expect(core.tagSavedQuestion(question!.id, first.id).interviewId).toBe(first.id);
+
+    const untagged = core.tagSavedQuestion(question!.id, null);
+    expect(untagged.interviewId).toBeNull();
+    expect(core.listSavedQuestions(candidate.id)).toEqual([untagged, other]);
+  });
+
+  it("refuses an Interview of another Candidate, or an unknown question, and changes nothing", () => {
+    const otherCandidate = core.createCandidate({ name: "Can Yilmaz", role: "Frontend Engineer" });
+    const foreign = core.addInterview({ candidateId: otherCandidate.id, date: "2026-11-03" });
+    const [question] = addAll("Mine?");
+
+    expect(() => core.addSavedQuestion({ candidateId: candidate.id, interviewId: foreign.id, text: "Foreign?" })).toThrow(NotFoundError);
+    expect(() => core.tagSavedQuestion(question!.id, foreign.id)).toThrow(NotFoundError);
+    expect(() => core.tagSavedQuestion("no-such-question", null)).toThrow(NotFoundError);
+    expect(core.listSavedQuestions(candidate.id)).toEqual([question]);
+  });
+
+  it("lists, for one Interview, the questions tagged with it and the untagged ones, in the Interviewer's order", () => {
+    const first = addInterview("2026-11-03");
+    const second = addInterview("2026-11-10");
+    const forFirst = core.addSavedQuestion({ candidateId: candidate.id, interviewId: first.id, text: "For the first?" });
+    const general = core.addSavedQuestion({ candidateId: candidate.id, text: "For every Interview?" });
+    const forSecond = core.addSavedQuestion({ candidateId: candidate.id, interviewId: second.id, text: "For the second?" });
+    core.moveSavedQuestion(forSecond.id, 0);
+
+    expect(core.listSavedQuestions(candidate.id, { interviewId: first.id })).toEqual([forFirst, general]);
+    expect(core.listSavedQuestions(candidate.id, { interviewId: second.id })).toEqual([forSecond, general]);
+    expect(core.listSavedQuestions(candidate.id, { interviewId: null })).toEqual([forSecond, forFirst, general]);
+    expect(core.listSavedQuestions(candidate.id)).toEqual([forSecond, forFirst, general]);
+  });
+
+  it("refuses to filter by an Interview of another Candidate", () => {
+    const otherCandidate = core.createCandidate({ name: "Can Yilmaz", role: "Frontend Engineer" });
+    const foreign = core.addInterview({ candidateId: otherCandidate.id, date: "2026-11-03" });
+
+    expect(() => core.listSavedQuestions(candidate.id, { interviewId: foreign.id })).toThrow(NotFoundError);
+  });
+
+  it("moves a question within the filtered list, next to the question it passes, and leaves hidden ones where they are", () => {
+    const first = addInterview("2026-11-03");
+    const second = addInterview("2026-11-10");
+    core.addSavedQuestion({ candidateId: candidate.id, interviewId: second.id, text: "For the second?" });
+    const forFirst = core.addSavedQuestion({ candidateId: candidate.id, interviewId: first.id, text: "For the first?" });
+    core.addSavedQuestion({ candidateId: candidate.id, interviewId: second.id, text: "Also for the second?" });
+    const general = core.addSavedQuestion({ candidateId: candidate.id, text: "For every Interview?" });
+    const onlyFirst = { interviewId: first.id };
+
+    core.moveSavedQuestion(general.id, 0, onlyFirst);
+    expect(texts()).toEqual(["For the second?", "For every Interview?", "For the first?", "Also for the second?"]);
+
+    core.moveSavedQuestion(general.id, 1, onlyFirst);
+    expect(texts()).toEqual(["For the second?", "For the first?", "For every Interview?", "Also for the second?"]);
+    expect(core.listSavedQuestions(candidate.id, onlyFirst)).toEqual([forFirst, general]);
+  });
+
+  it("refuses to move a question that the filter hides, or to a place outside the filtered list", () => {
+    const first = addInterview("2026-11-03");
+    const second = addInterview("2026-11-10");
+    const hidden = core.addSavedQuestion({ candidateId: candidate.id, interviewId: second.id, text: "Hidden?" });
+    const shown = core.addSavedQuestion({ candidateId: candidate.id, interviewId: first.id, text: "Shown?" });
+    core.addSavedQuestion({ candidateId: candidate.id, text: "General?" });
+    const onlyFirst = { interviewId: first.id };
+
+    expect(() => core.moveSavedQuestion(hidden.id, 0, onlyFirst)).toThrow(InvalidInputError);
+    expect(() => core.moveSavedQuestion(shown.id, 2, onlyFirst)).toThrow(InvalidInputError);
+    expect(texts()).toEqual(["Hidden?", "Shown?", "General?"]);
+  });
+
+  it("leaves the order alone when a question is moved to the place it already has", () => {
+    const first = addInterview("2026-11-03");
+    const second = addInterview("2026-11-10");
+    core.addSavedQuestion({ candidateId: candidate.id, interviewId: second.id, text: "Hidden?" });
+    const only = core.addSavedQuestion({ candidateId: candidate.id, interviewId: first.id, text: "The only one shown?" });
+
+    core.moveSavedQuestion(only.id, 0, { interviewId: first.id });
+    expect(texts()).toEqual(["Hidden?", "The only one shown?"]);
+  });
+});
