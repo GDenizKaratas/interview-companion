@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
-import { getCandidate } from "./candidates.ts";
+import { requireCandidate } from "./candidates.ts";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
 
 export interface Interview {
@@ -71,9 +71,11 @@ export function listInterviews(db: DatabaseSync, today: Today, candidateId: stri
   return rows.map((row, index) => toInterview(row, index + 1, day));
 }
 
-function requireCandidate(db: DatabaseSync, candidateId: string): void {
-  if (!getCandidate(db, candidateId)) {
-    throw new NotFoundError("This Candidate does not exist.");
+// Refuses with NotFoundError unless the Interview exists and belongs to this Candidate.
+export function requireInterviewOf(db: DatabaseSync, candidateId: string, interviewId: string): void {
+  const row = db.prepare("SELECT 1 FROM interview WHERE id = ? AND candidate_id = ?").get(interviewId, candidateId);
+  if (!row) {
+    throw new NotFoundError("This Interview does not exist for this Candidate.");
   }
 }
 

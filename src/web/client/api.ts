@@ -1,8 +1,16 @@
 // The browser's only way to reach core: the local server's /api routes.
 // Only types come from core; they are erased before the code reaches the browser.
-import type { Candidate, InputRule, Interview, NewCandidate, NewInterview } from "../../core/index.ts";
+import type {
+  Candidate,
+  InputRule,
+  Interview,
+  InterviewerNote,
+  NewCandidate,
+  NewInterview,
+  NewInterviewerNotes,
+} from "../../core/index.ts";
 
-export type { Candidate, Interview };
+export type { Candidate, Interview, InterviewerNote };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -20,6 +28,7 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, init);
+  if (response.status === 204) return undefined as T;
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new ApiError(
@@ -48,4 +57,16 @@ export const api = {
     request<Interview[]>(`/candidates/${encodeURIComponent(candidateId)}/interviews`),
   addInterview: ({ candidateId, ...fields }: NewInterview) =>
     request<Interview>(`/candidates/${encodeURIComponent(candidateId)}/interviews`, sendJson("POST", fields)),
+  listInterviewerNotes: (candidateId: string, interviewId: string | null) =>
+    request<InterviewerNote[]>(
+      `/candidates/${encodeURIComponent(candidateId)}/notes` +
+        (interviewId ? `?interviewId=${encodeURIComponent(interviewId)}` : ""),
+    ),
+  addInterviewerNotes: ({ candidateId, ...fields }: NewInterviewerNotes) =>
+    request<InterviewerNote[]>(`/candidates/${encodeURIComponent(candidateId)}/notes`, sendJson("POST", fields)),
+  editInterviewerNote: (id: string, text: string) =>
+    request<InterviewerNote>(`/notes/${encodeURIComponent(id)}/text`, sendJson("PUT", { text })),
+  tagInterviewerNote: (id: string, interviewId: string | null) =>
+    request<InterviewerNote>(`/notes/${encodeURIComponent(id)}/interview`, sendJson("PUT", { interviewId })),
+  deleteInterviewerNote: (id: string) => request<void>(`/notes/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };

@@ -237,12 +237,19 @@ button.secondary {
     "questions questions";
 }
 
+/* A panel grows with its content up to a fixed height, then scrolls inside, so one long panel
+   never pushes the rest of the Workspace down. */
 .panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 1rem;
   min-height: 8rem;
+  max-height: 32rem;
+  overflow-y: auto;
 }
 
 .panel-cv { grid-area: cv; }
@@ -260,6 +267,115 @@ button.secondary {
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 0.05rem 0.35rem;
+}
+
+/* My Notes: the box is always ready to type in; each note is plain text with its tag and time. */
+/* The box stays in place; only the list below it scrolls. */
+.notes {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.panel-notes {
+  overflow-y: hidden;
+}
+
+.note-entry {
+  flex: none;
+  margin-bottom: 0.75rem;
+}
+
+textarea,
+select {
+  font: inherit;
+}
+
+/* Grows to about six lines, then scrolls inside. */
+.note-box {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: 9.5rem;
+  overflow-y: auto;
+  resize: none;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.note-entry-meta,
+.note-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.hint {
+  margin-left: auto;
+}
+
+.note-tag {
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.1rem 0.2rem;
+  cursor: pointer;
+}
+
+.note-tag:hover,
+.note-tag:focus {
+  border-color: var(--line);
+}
+
+.note-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.note {
+  padding: 0.5rem 0;
+}
+
+.note + .note {
+  border-top: 1px solid var(--line);
+}
+
+.note-text {
+  margin: 0 0 0.2rem;
+  overflow-wrap: anywhere;
+}
+
+.note-edit {
+  width: 100%;
+  margin-bottom: 0.2rem;
+}
+
+.note .error,
+.note-entry .error {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+}
+
+button.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+
+button.link-button:hover {
+  color: var(--text);
 }
 
 /* Narrow screen: My Notes first, because it is the panel used during an interview. */
