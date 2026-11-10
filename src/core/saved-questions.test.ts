@@ -21,6 +21,10 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+function addAll(...questionTexts: string[]) {
+  return questionTexts.map((text) => core.addSavedQuestion({ candidateId: candidate.id, text }));
+}
+
 function texts(candidateId = candidate.id): string[] {
   return core.listSavedQuestions(candidateId).map((q) => q.text);
 }
@@ -35,9 +39,7 @@ describe("Saved Questions", () => {
   });
 
   it("adds each new question at the end and keeps the order after the database is opened again", () => {
-    for (const text of ["First question?", "Second question?", "Third question?"]) {
-      core.addSavedQuestion({ candidateId: candidate.id, text });
-    }
+    addAll("First question?", "Second question?", "Third question?");
     core.close();
 
     core = openCore(dbPath);
@@ -46,7 +48,7 @@ describe("Saved Questions", () => {
   });
 
   it("moves a question to a new place in the list, and keeps that order after the database is opened again", () => {
-    const [a, b, c, d] = ["A?", "B?", "C?", "D?"].map((text) => core.addSavedQuestion({ candidateId: candidate.id, text }));
+    const [a, b, c, d] = addAll("A?", "B?", "C?", "D?");
 
     core.moveSavedQuestion(d!.id, 0);
     expect(texts()).toEqual(["D?", "A?", "B?", "C?"]);
@@ -64,7 +66,7 @@ describe("Saved Questions", () => {
   });
 
   it("adds a new question after the others even when the list was reordered", () => {
-    const [, second] = ["A?", "B?"].map((text) => core.addSavedQuestion({ candidateId: candidate.id, text }));
+    const [, second] = addAll("A?", "B?");
     core.moveSavedQuestion(second!.id, 0);
 
     core.addSavedQuestion({ candidateId: candidate.id, text: "C?" });
@@ -84,7 +86,7 @@ describe("Saved Questions", () => {
   });
 
   it("deletes a question and keeps the order of the others", () => {
-    const [, second] = ["A?", "B?", "C?"].map((text) => core.addSavedQuestion({ candidateId: candidate.id, text }));
+    const [, second] = addAll("A?", "B?", "C?");
 
     core.deleteSavedQuestion(second!.id);
 
@@ -110,8 +112,9 @@ describe("Saved Questions", () => {
     expect(added.text).toBe("Walk me through the design.\nWhat would you change?");
   });
 
-  it("refuses a question for a Candidate that does not exist", () => {
+  it("refuses to add or list questions for a Candidate that does not exist", () => {
     expect(() => core.addSavedQuestion({ candidateId: "no-such-id", text: "A?" })).toThrow(NotFoundError);
+    expect(() => core.listSavedQuestions("no-such-id")).toThrow(NotFoundError);
   });
 
   it("refuses to edit, delete, or move a question that does not exist", () => {
@@ -121,7 +124,7 @@ describe("Saved Questions", () => {
   });
 
   it("refuses a place outside the list and keeps the order", () => {
-    const [a] = ["A?", "B?"].map((text) => core.addSavedQuestion({ candidateId: candidate.id, text }));
+    const [a] = addAll("A?", "B?");
 
     for (const position of [-1, 2, 0.5, Number.NaN]) {
       expect(() => core.moveSavedQuestion(a!.id, position)).toThrow(
@@ -133,7 +136,7 @@ describe("Saved Questions", () => {
 
   it("keeps each Candidate's questions separate", () => {
     const other = core.createCandidate({ name: "Can Aksoy", role: "Data Engineer" });
-    const mine = ["A?", "B?"].map((text) => core.addSavedQuestion({ candidateId: candidate.id, text }));
+    const mine = addAll("A?", "B?");
     core.addSavedQuestion({ candidateId: other.id, text: "X?" });
     core.addSavedQuestion({ candidateId: other.id, text: "Y?" });
 

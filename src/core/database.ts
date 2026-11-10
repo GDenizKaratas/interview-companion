@@ -14,6 +14,14 @@ const migrations: string[] = [
      key TEXT PRIMARY KEY,
      value TEXT NOT NULL
    ) STRICT;`,
+  `CREATE TABLE interview (
+     id TEXT PRIMARY KEY,
+     candidate_id TEXT NOT NULL REFERENCES candidate (id) ON DELETE CASCADE,
+     number INTEGER NOT NULL,
+     date TEXT,
+     created_at TEXT NOT NULL,
+     UNIQUE (candidate_id, number)
+   ) STRICT;`,
   `CREATE TABLE saved_question (
      id TEXT PRIMARY KEY,
      candidate_id TEXT NOT NULL REFERENCES candidate (id) ON DELETE CASCADE,

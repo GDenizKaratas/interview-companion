@@ -16,7 +16,7 @@ export class InvalidInputError extends Error {
 }
 
 // Thrown when an operation names something that does not exist, such as an unknown Candidate.
-// The English message is safe to show to the Interviewer.
+// The message is safe to show to the Interviewer.
 export class NotFoundError extends Error {
   constructor(message: string) {
     super(message);

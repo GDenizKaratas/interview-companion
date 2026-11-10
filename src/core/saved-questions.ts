@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
-import { getCandidate } from "./candidates.ts";
+import { requireCandidate } from "./candidates.ts";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
 
 // Where a Saved Question came from: written by the Interviewer, or copied from a Suggested Question.
@@ -31,9 +31,7 @@ const columns = "id, candidate_id, text, origin, created_at";
 
 // Adds a hand-written question at the end of the Candidate's list.
 export function addSavedQuestion(db: DatabaseSync, input: NewSavedQuestion): SavedQuestion {
-  if (!getCandidate(db, input.candidateId)) {
-    throw new NotFoundError("This Candidate does not exist.");
-  }
+  requireCandidate(db, input.candidateId);
   const row: SavedQuestionRow = {
     id: randomUUID(),
     candidate_id: input.candidateId,
@@ -50,6 +48,7 @@ export function addSavedQuestion(db: DatabaseSync, input: NewSavedQuestion): Sav
 
 // A Candidate's questions in the Interviewer's order.
 export function listSavedQuestions(db: DatabaseSync, candidateId: string): SavedQuestion[] {
+  requireCandidate(db, candidateId);
   const rows = db.prepare(`SELECT ${columns} FROM saved_question WHERE candidate_id = ? ORDER BY position`).all(candidateId);
   return (rows as unknown as SavedQuestionRow[]).map(toSavedQuestion);
 }

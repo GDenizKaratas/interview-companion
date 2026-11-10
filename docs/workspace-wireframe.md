@@ -48,7 +48,8 @@ Status: **conceptual**. This is a sketch of the planned screen, not a screenshot
 | Content | How it looks |
 |---|---|
 | Evidence (CV and Transcript text) | Plain text in its source panel, always with a location. |
-| Interviewer Note, hand-written question | Normal text, no badge. This is the default voice of the screen. |
+| Interviewer Note | Normal text, no badge. This is the default voice of the screen. |
+| Saved Question | Normal text with a quiet origin label: "written by you" or "from a suggestion". |
 | AI Note, Suggested Question | A visible "AI-generated" label and a different background. |
 | Unverified speaker | A grey "unverified" tag instead of a role. |
 | Stale AI Note | A warning tag: "Speakers changed. Regenerate to trust this note." |

@@ -24,6 +24,17 @@ export function createApi(core: Core): Hono {
     return candidate ? c.json(candidate) : c.json({ error: "Candidate not found." }, 404);
   });
 
+  api.get("/candidates/:id/interviews", (c) =>
+    respondOrRefuse(c, () => c.json(core.listInterviews(c.req.param("id")))),
+  );
+
+  api.post("/candidates/:id/interviews", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.addInterview({ candidateId: c.req.param("id"), date: stringField(fields, "date") }), 201),
+    );
+  });
+
   api.get("/interface-language", (c) => c.json({ language: core.getInterfaceLanguage() }));
 
   api.put("/interface-language", async (c) => {
@@ -34,11 +45,9 @@ export function createApi(core: Core): Hono {
     });
   });
 
-  api.get("/candidates/:id/saved-questions", (c) => {
-    const candidateId = c.req.param("id");
-    if (!core.getCandidate(candidateId)) return c.json({ error: "Candidate not found." }, 404);
-    return c.json(core.listSavedQuestions(candidateId));
-  });
+  api.get("/candidates/:id/saved-questions", (c) =>
+    respondOrRefuse(c, () => c.json(core.listSavedQuestions(c.req.param("id")))),
+  );
 
   api.post("/candidates/:id/saved-questions", async (c) => {
     const fields = await jsonFields(c);
@@ -81,7 +90,7 @@ function stringField(fields: Record<string, unknown>, key: string): string {
 }
 
 // Runs a core call and turns a refused input into a 400 response the interface can translate,
-// and a reference to something that does not exist into a 404 response.
+// and a request for something that does not exist into a 404 response.
 function respondOrRefuse(c: Context, run: () => Response): Response {
   try {
     return run();

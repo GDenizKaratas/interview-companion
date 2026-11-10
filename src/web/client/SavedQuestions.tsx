@@ -14,6 +14,8 @@ export function SavedQuestions({ candidateId }: { candidateId: string }) {
   const [saving, setSaving] = useState(false);
   const [addError, setAddError] = useState<unknown>();
   const [changeError, setChangeError] = useState<unknown>();
+  // While a change is on its way, the list may be out of date, so its buttons wait.
+  const [busy, setBusy] = useState(false);
 
   const reload = useCallback(
     () =>
@@ -34,6 +36,7 @@ export function SavedQuestions({ candidateId }: { candidateId: string }) {
   async function add() {
     setSaving(true);
     setAddError(undefined);
+    setChangeError(undefined);
     try {
       await api.addSavedQuestion(candidateId, draft);
       setDraft("");
@@ -49,6 +52,8 @@ export function SavedQuestions({ candidateId }: { candidateId: string }) {
   // Runs one change to an existing question, then shows the list as core has it.
   async function change(run: () => Promise<unknown>): Promise<boolean> {
     setChangeError(undefined);
+    setAddError(undefined);
+    setBusy(true);
     let ok = true;
     try {
       await run();
@@ -57,6 +62,7 @@ export function SavedQuestions({ candidateId }: { candidateId: string }) {
       setChangeError(error);
     }
     await reload();
+    setBusy(false);
     return ok;
   }
 
@@ -93,6 +99,7 @@ export function SavedQuestions({ candidateId }: { candidateId: string }) {
               onEdit={(newText) => change(() => api.editSavedQuestion(question.id, newText))}
               onDelete={() => remove(question)}
               position={index}
+              busy={busy}
             />
           ))}
         </ol>
@@ -109,15 +116,16 @@ interface QuestionItemProps {
   onMove: (position: number) => void;
   onEdit: (text: string) => Promise<boolean>;
   onDelete: () => void;
+  busy: boolean;
 }
 
-function QuestionItem({ question, position, isFirst, isLast, onMove, onEdit, onDelete }: QuestionItemProps) {
+function QuestionItem({ question, position, isFirst, isLast, onMove, onEdit, onDelete, busy }: QuestionItemProps) {
   const { text } = useText();
   const t = text.panels.questions;
   const [editing, setEditing] = useState<string | undefined>();
 
   async function save() {
-    if (editing === undefined) return;
+    if (editing === undefined || busy) return;
     // Keep the box open if core refused the text, so the Interviewer can fix it.
     if (await onEdit(editing)) setEditing(undefined);
   }
@@ -143,7 +151,7 @@ function QuestionItem({ question, position, isFirst, isLast, onMove, onEdit, onD
             onKeyDown={onEditKey}
           />
           <span className="question-actions">
-            <button type="button" className="quiet" onClick={save}>
+            <button type="button" className="quiet" disabled={busy} onClick={save}>
               {t.save}
             </button>
             <button type="button" className="quiet" onClick={() => setEditing(undefined)}>
@@ -155,16 +163,16 @@ function QuestionItem({ question, position, isFirst, isLast, onMove, onEdit, onD
       <span className="question-origin">{question.origin === "written" ? t.writtenByYou : t.fromSuggestion}</span>
       {editing === undefined && (
         <span className="question-actions">
-          <button type="button" className="quiet" aria-label={t.moveUp} title={t.moveUp} disabled={isFirst} onClick={() => onMove(position - 1)}>
+          <button type="button" className="quiet" aria-label={t.moveUp} title={t.moveUp} disabled={busy || isFirst} onClick={() => onMove(position - 1)}>
             ↑
           </button>
-          <button type="button" className="quiet" aria-label={t.moveDown} title={t.moveDown} disabled={isLast} onClick={() => onMove(position + 1)}>
+          <button type="button" className="quiet" aria-label={t.moveDown} title={t.moveDown} disabled={busy || isLast} onClick={() => onMove(position + 1)}>
             ↓
           </button>
-          <button type="button" className="quiet" onClick={() => setEditing(question.text)}>
+          <button type="button" className="quiet" disabled={busy} onClick={() => setEditing(question.text)}>
             {t.edit}
           </button>
-          <button type="button" className="quiet" onClick={onDelete}>
+          <button type="button" className="quiet" disabled={busy} onClick={onDelete}>
             {t.delete}
           </button>
         </span>
