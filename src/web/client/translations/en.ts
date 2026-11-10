@@ -124,6 +124,18 @@ const text = {
       noTime: "no time",
       noTimeDetail: "The file has no time for this part.",
       unverified: "unverified",
+      speakers: {
+        title: "Speakers",
+        confirmed: "confirmed",
+        edit: "Edit",
+        gate: "Confirm who is speaking before generating AI Notes. Give each speaker a role.",
+        roles: { candidate: "Candidate", interviewer: "Interviewer", other: "Other" },
+        confirm: "Confirm speakers",
+        cancel: "Cancel",
+        chooseAll: "Choose a role for every speaker.",
+        saveFailed: "The speakers could not be confirmed.",
+        changed: "This Transcript has changed. Reload the page and try again.",
+      },
       confirmReplace: "Replace the Transcript?",
       // {interview}, {current}, and {new} are replaced by the Interview's name and file names.
       confirmReplaceDetail: "For the {interview}, {current} and its text will be removed and replaced by {new}.",

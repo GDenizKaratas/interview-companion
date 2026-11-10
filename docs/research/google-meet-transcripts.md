@@ -25,6 +25,6 @@ Researched on 2026-11-10 for #10, from Google's own help pages, developer docume
 
 ## Outcome
 
-No Meet adapter is added (decision 120). The only file Meet gives is a Google Doc whose layout Google does not document, so an adapter would be built on a guess. The plain-text adapter reads a Doc downloaded as `.txt` only if every turn is a `Name: text` line and nothing comes before the first one. A header with a title or attendees, which Google says is there, makes it refuse the file. A WebVTT file never comes from Meet.
+No Meet adapter is added (decision 126). The only file Meet gives is a Google Doc whose layout Google does not document, so an adapter would be built on a guess. The plain-text adapter reads a Doc downloaded as `.txt` only if every turn is a `Name: text` line and nothing comes before the first one. A header with a title or attendees, which Google says is there, makes it refuse the file. A WebVTT file never comes from Meet.
 
 To settle it, export one real Meet transcript with fictional content as `.txt` and look at it. If it does not import, that file is the fixture for a Meet adapter. This is tracked in #33.
