@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { InvalidInputError } from "./errors.ts";
+import { existingSpelling, sortLabels, tidyLabel } from "./labels.ts";
 
 export interface Candidate {
   id: string;
@@ -25,7 +26,7 @@ export function createCandidate(db: DatabaseSync, input: NewCandidate): Candidat
   const candidate: Candidate = {
     id: randomUUID(),
     name: requireText("name", input.name),
-    role: existingSpelling(db, collapseSpaces(requireText("role", input.role))),
+    role: existingSpelling(rolesInOrderWritten(db), tidyLabel(requireText("role", input.role))),
     createdAt: new Date().toISOString(),
   };
   db.prepare("INSERT INTO candidate (id, name, role, created_at) VALUES (?, ?, ?, ?)").run(
@@ -49,8 +50,7 @@ export function getCandidate(db: DatabaseSync, id: string): Candidate | undefine
 
 // Every Candidate role used so far, once each, in alphabetical order. Suggested when a Candidate is added.
 export function listCandidateRoles(db: DatabaseSync): string[] {
-  const alphabetical = new Intl.Collator("en", { sensitivity: "accent" });
-  return rolesInOrderWritten(db).sort(alphabetical.compare);
+  return sortLabels(rolesInOrderWritten(db));
 }
 
 function rolesInOrderWritten(db: DatabaseSync): string[] {
@@ -58,36 +58,6 @@ function rolesInOrderWritten(db: DatabaseSync): string[] {
     .prepare("SELECT role FROM candidate GROUP BY role ORDER BY MIN(rowid)")
     .all() as unknown as { role: string }[];
   return rows.map((row) => row.role);
-}
-
-// Returns the role as it was first written, if an equal one exists; otherwise the role itself.
-function existingSpelling(db: DatabaseSync, role: string): string {
-  return rolesInOrderWritten(db).find((existing) => isSameRole(existing, role)) ?? role;
-}
-
-// Two roles are the same if they differ only in letter case. Capital I is i in English but
-// ı in Turkish, and one role can mix both languages ("SENIOR YAZILIM MÜHENDİSİ"), so the
-// comparison goes letter by letter and lets I stand for either. The machine's default
-// language is never used, so the result is the same on every computer.
-function isSameRole(a: string, b: string): boolean {
-  const left = [...a.normalize("NFC")];
-  const right = [...b.normalize("NFC")];
-  return left.length === right.length && left.every((letter, i) => sameLetter(letter, right[i]!));
-}
-
-function sameLetter(a: string, b: string): boolean {
-  const options = lowerCaseOptions(b);
-  return lowerCaseOptions(a).some((lower) => options.includes(lower));
-}
-
-function lowerCaseOptions(letter: string): string[] {
-  if (letter === "I") return ["i", "ı"];
-  if (letter === "İ") return ["i"];
-  return [letter.toLocaleLowerCase("en")];
-}
-
-function collapseSpaces(value: string): string {
-  return value.replace(/\s+/g, " ");
 }
 
 function requireText(field: string, value: string): string {

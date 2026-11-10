@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **planned**. Only the project skeleton is implemented: the three modules, the database, and creating and listing Candidates.
+Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, and adding Interviews to a Candidate.
 
 Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md). Reasons for each choice are in the [decision log](decisions.md).
 

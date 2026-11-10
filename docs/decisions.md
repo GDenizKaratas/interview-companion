@@ -67,6 +67,16 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 52 | The Workspace panel for Interviewer Notes is titled "My Notes", with the empty state "No personal notes yet." In code and documents the term stays Interviewer Note. | The label speaks to the Interviewer directly on their own screen; the glossary term keeps code and documents precise. Decided by the owner. | Titling the panel "Interviewer Notes". |
 | 53 | The app bar shows a quotation-mark logo, the app name, and the line "Your interviews, all in one place." | It names the core idea, one Workspace that holds everything about a Candidate, and makes no promise about judging Candidates. Chosen by the owner. The quotation mark stands for what was actually said, the same mark that shows Evidence. The logo and name link back to the Candidate list. | "Interviews, made easier." (a vague benefit); "Prepare, take notes, and find what was said." (clear but long). |
 
+## 2026-11-10 — #4 Interviews
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 54 | An Interview's stage is free text. The stage box suggests every stage used before, for any Candidate, and a stage that differs from an earlier one only in letter case or spaces is saved under the first spelling. Roles and stages share this rule in one place, `src/core/labels.ts`. | Stage names differ between companies, and suggestions keep them consistent without a list to manage. Chosen by the owner. | A fixed list of stages; automatic numbers (1st, 2nd) with no stage name. |
+| 55 | An Interview's date is optional. It is a calendar day written as YYYY-MM-DD, with no time. A day that does not exist, such as 2026-02-30, is refused. | An Interview can be added before it is scheduled. A Transcript carries its own times. The date is chosen by the owner to be optional. | A required date; a date with a time of day. |
+| 56 | A Candidate's Interviews are listed earliest date first. Interviews without a date come last, in the order they were added. Core decides the order; the browser fetches the list again after adding instead of sorting it. | Interviews read as a timeline (first round, then second). An undated Interview is usually one not yet scheduled. | Newest first, as Candidates are listed. |
+| 57 | The selector names each Interview as "stage · date", or "stage · no date". After an Interview is added, it becomes the selected one. The selection starts at "All" each time the Workspace opens and is not kept in the address. | The Interviewer usually adds an Interview to work on it next. Keeping the selection in the address can be added when the panels filter by Interview. | Staying on "All" after adding; storing the selection in the address now. |
+| 58 | Adding an Interview to a Candidate that does not exist is refused by core with a clear message. The HTTP route answers 404. | The database would refuse it too, but with a message that is not meant for people. | Relying on the database error alone. |
+
 ## Open questions
 
 - The exact format of Google Meet transcripts. To be researched at the start of Milestone 2.

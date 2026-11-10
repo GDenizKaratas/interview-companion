@@ -17,6 +17,18 @@ export const text = {
     notFound: "This Candidate does not exist.",
     loadFailed: "The Workspace could not be loaded. Check that the app is still running.",
   },
+  interviews: {
+    label: "Interview",
+    all: "All",
+    noDate: "no date",
+    add: "+ New interview",
+    stageLabel: "Stage",
+    dateLabel: "Date (optional)",
+    save: "Add Interview",
+    cancel: "Cancel",
+    saveFailed: "The Interview could not be saved.",
+    loadFailed: "Interviews could not be loaded.",
+  },
   panels: {
     cv: { title: "CV", empty: "No CV uploaded." },
     interviewerNotes: { title: "My Notes", empty: "No personal notes yet." },

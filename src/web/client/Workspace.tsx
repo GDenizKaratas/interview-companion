@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, type Candidate } from "./api.ts";
+import { InterviewSelector, type InterviewChoice } from "./InterviewSelector.tsx";
 import { linkTo } from "./navigation.ts";
 import { text } from "./text.ts";
 
@@ -11,6 +12,8 @@ type Load =
 
 export function Workspace({ candidateId }: { candidateId: string }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
+  // The panels will show only this Interview's content once they have content (#5, #9).
+  const [interview, setInterview] = useState<InterviewChoice>("all");
 
   useEffect(() => {
     api.getCandidate(candidateId).then(
@@ -31,6 +34,9 @@ export function Workspace({ candidateId }: { candidateId: string }) {
           </h1>
         )}
       </header>
+      {load.state === "ready" && (
+        <InterviewSelector candidateId={candidateId} selected={interview} onSelect={setInterview} />
+      )}
       {load.state === "loading" && <p>{text.workspace.loading}</p>}
       {load.state === "notFound" && <p className="error">{text.workspace.notFound}</p>}
       {load.state === "failed" && <p className="error">{text.workspace.loadFailed}</p>}
