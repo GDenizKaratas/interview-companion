@@ -24,7 +24,7 @@ export function createApi(core: Core): Hono {
     }
   });
 
-  api.get("/roles", (c) => c.json(core.listRoles()));
+  api.get("/candidate-roles", (c) => c.json(core.listCandidateRoles()));
 
   api.get("/candidates/:id", (c) => {
     const candidate = core.getCandidate(c.req.param("id"));

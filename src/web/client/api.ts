@@ -24,7 +24,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   listCandidates: () => request<Candidate[]>("/candidates"),
-  listRoles: () => request<string[]>("/roles"),
+  listCandidateRoles: () => request<string[]>("/candidate-roles"),
   getCandidate: (id: string) => request<Candidate>(`/candidates/${encodeURIComponent(id)}`),
   createCandidate: (input: NewCandidate) =>
     request<Candidate>("/candidates", {

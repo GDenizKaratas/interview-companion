@@ -1,17 +1,11 @@
-import type { MouseEvent } from "react";
-import { navigate } from "./navigation.ts";
+import { linkTo } from "./navigation.ts";
 import { text } from "./text.ts";
 
 // The bar at the top of every page: the app's mark, its name, and what it is for.
 export function AppBar() {
-  function home(event: MouseEvent) {
-    event.preventDefault();
-    navigate("/");
-  }
-
   return (
     <header className="app-bar">
-      <a className="brand" href="/" onClick={home}>
+      <a className="brand" href="/" onClick={linkTo("/")}>
         <QuoteMark />
         <span className="brand-name">{text.appName}</span>
       </a>

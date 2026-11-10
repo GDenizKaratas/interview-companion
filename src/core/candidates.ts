@@ -47,27 +47,43 @@ export function getCandidate(db: DatabaseSync, id: string): Candidate | undefine
   return row ? toCandidate(row as unknown as CandidateRow) : undefined;
 }
 
-export function listRoles(db: DatabaseSync): string[] {
-  const rows = db.prepare("SELECT DISTINCT role FROM candidate").all() as unknown as { role: string }[];
-  const alphabetical = new Intl.Collator("tr");
-  return rows.map((row) => row.role).sort(alphabetical.compare);
+// Every Candidate role used so far, once each, in alphabetical order. Suggested when a Candidate is added.
+export function listCandidateRoles(db: DatabaseSync): string[] {
+  const alphabetical = new Intl.Collator("en", { sensitivity: "accent" });
+  return rolesInOrderWritten(db).sort(alphabetical.compare);
 }
 
-// Letter case does not make a different role. Capital I is lower-case i in English but ı in
-// Turkish, so two roles are the same if they are equal under either language's rules.
-// The machine's default language is never used, so the result is the same on every computer.
-const caseInsensitive = [
-  new Intl.Collator("en", { sensitivity: "accent" }),
-  new Intl.Collator("tr", { sensitivity: "accent" }),
-];
-
-function isSameRole(a: string, b: string): boolean {
-  return caseInsensitive.some((collator) => collator.compare(a, b) === 0);
+function rolesInOrderWritten(db: DatabaseSync): string[] {
+  const rows = db
+    .prepare("SELECT role FROM candidate GROUP BY role ORDER BY MIN(rowid)")
+    .all() as unknown as { role: string }[];
+  return rows.map((row) => row.role);
 }
 
 // Returns the role as it was first written, if an equal one exists; otherwise the role itself.
 function existingSpelling(db: DatabaseSync, role: string): string {
-  return listRoles(db).find((existing) => isSameRole(existing, role)) ?? role;
+  return rolesInOrderWritten(db).find((existing) => isSameRole(existing, role)) ?? role;
+}
+
+// Two roles are the same if they differ only in letter case. Capital I is i in English but
+// ı in Turkish, and one role can mix both languages ("SENIOR YAZILIM MÜHENDİSİ"), so the
+// comparison goes letter by letter and lets I stand for either. The machine's default
+// language is never used, so the result is the same on every computer.
+function isSameRole(a: string, b: string): boolean {
+  const left = [...a.normalize("NFC")];
+  const right = [...b.normalize("NFC")];
+  return left.length === right.length && left.every((letter, i) => sameLetter(letter, right[i]!));
+}
+
+function sameLetter(a: string, b: string): boolean {
+  const options = lowerCaseOptions(b);
+  return lowerCaseOptions(a).some((lower) => options.includes(lower));
+}
+
+function lowerCaseOptions(letter: string): string[] {
+  if (letter === "I") return ["i", "ı"];
+  if (letter === "İ") return ["i"];
+  return [letter.toLocaleLowerCase("en")];
 }
 
 function collapseSpaces(value: string): string {

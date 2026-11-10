@@ -12,7 +12,7 @@ export interface Core {
   createCandidate(input: candidates.NewCandidate): candidates.Candidate;
   listCandidates(): candidates.Candidate[];
   getCandidate(id: string): candidates.Candidate | undefined;
-  listRoles(): string[];
+  listCandidateRoles(): string[];
   close(): void;
 }
 
@@ -24,7 +24,7 @@ export function openCore(dbPath: string): Core {
     createCandidate: (input) => candidates.createCandidate(db, input),
     listCandidates: () => candidates.listCandidates(db),
     getCandidate: (id) => candidates.getCandidate(db, id),
-    listRoles: () => candidates.listRoles(db),
+    listCandidateRoles: () => candidates.listCandidateRoles(db),
     close: () => db.close(),
   };
 }

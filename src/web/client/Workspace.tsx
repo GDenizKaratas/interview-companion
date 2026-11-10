@@ -1,6 +1,6 @@
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, type Candidate } from "./api.ts";
-import { navigate } from "./navigation.ts";
+import { linkTo } from "./navigation.ts";
 import { text } from "./text.ts";
 
 type Load =
@@ -19,15 +19,10 @@ export function Workspace({ candidateId }: { candidateId: string }) {
     );
   }, [candidateId]);
 
-  function back(event: MouseEvent) {
-    event.preventDefault();
-    navigate("/");
-  }
-
   return (
     <main className="workspace">
       <header className="workspace-header">
-        <a href="/" onClick={back}>
+        <a href="/" onClick={linkTo("/")}>
           {text.workspace.back}
         </a>
         {load.state === "ready" && (

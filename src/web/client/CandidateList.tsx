@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent, type MouseEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { api, type Candidate } from "./api.ts";
-import { candidatePath, navigate } from "./navigation.ts";
+import { candidatePath, linkTo } from "./navigation.ts";
 import { text } from "./text.ts";
 
 export function CandidateList() {
@@ -14,9 +14,13 @@ export function CandidateList() {
 
   useEffect(() => {
     api.listCandidates().then(setCandidates, () => setLoadError(true));
-    // Earlier roles are only suggestions; if they cannot be loaded the form still works.
-    api.listRoles().then(setRoles, () => {});
+    loadRoles();
   }, []);
+
+  // Earlier roles are only suggestions; if they cannot be loaded the form still works.
+  function loadRoles() {
+    api.listCandidateRoles().then(setRoles, () => {});
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -25,7 +29,7 @@ export function CandidateList() {
     try {
       const created = await api.createCandidate({ name, role });
       setCandidates((current) => [created, ...(current ?? [])]);
-      setRoles((current) => (current.includes(created.role) ? current : [...current, created.role]));
+      loadRoles();
       setName("");
       setRole("");
     } catch (error) {
@@ -33,11 +37,6 @@ export function CandidateList() {
     } finally {
       setSaving(false);
     }
-  }
-
-  function open(event: MouseEvent, id: string) {
-    event.preventDefault();
-    navigate(candidatePath(id));
   }
 
   return (
@@ -68,7 +67,7 @@ export function CandidateList() {
         <ul className="candidate-list">
           {candidates.map((candidate) => (
             <li key={candidate.id}>
-              <a href={candidatePath(candidate.id)} onClick={(e) => open(e, candidate.id)}>
+              <a href={candidatePath(candidate.id)} onClick={linkTo(candidatePath(candidate.id))}>
                 <strong>{candidate.name}</strong> · {candidate.role}
               </a>
             </li>

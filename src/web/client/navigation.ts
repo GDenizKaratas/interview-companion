@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type MouseEvent } from "react";
 
 // A minimal router: "/" is the Candidate list, "/candidates/:id" is a Workspace.
 export type Page = { name: "candidates" } | { name: "workspace"; candidateId: string };
@@ -20,6 +20,14 @@ export function pageFor(path: string): Page {
 export function navigate(path: string): void {
   window.history.pushState(null, "", path);
   window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+// A click handler for an in-app link: changes the page without reloading it.
+export function linkTo(path: string) {
+  return (event: MouseEvent) => {
+    event.preventDefault();
+    navigate(path);
+  };
 }
 
 export function candidatePath(id: string): string {
