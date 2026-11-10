@@ -22,6 +22,8 @@ const migrations: string[] = [
      created_at TEXT NOT NULL,
      UNIQUE (candidate_id, number)
    ) STRICT;`,
+  // Interviews are numbered by date now; the stored value only keeps the order they were added.
+  `ALTER TABLE interview RENAME COLUMN number TO added_order;`,
   `CREATE TABLE interviewer_note (
      id TEXT PRIMARY KEY,
      candidate_id TEXT NOT NULL REFERENCES candidate (id) ON DELETE CASCADE,

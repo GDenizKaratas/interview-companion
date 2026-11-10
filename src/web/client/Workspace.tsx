@@ -19,8 +19,8 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [interviewsFailed, setInterviewsFailed] = useState(false);
 
-  function loadInterviews(id: string) {
-    api.listInterviews(id).then(
+  function loadInterviews(id: string): Promise<void> {
+    return api.listInterviews(id).then(
       (list) => {
         setInterviews(list);
         setInterviewsFailed(false);
@@ -30,15 +30,16 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   }
 
   useEffect(() => {
-    loadInterviews(candidateId);
+    void loadInterviews(candidateId);
   }, [candidateId]);
 
-  // The new Interview is shown and selected at once, then the list is fetched again
-  // because core decides the order.
-  function handleInterviewAdded(added: Interview) {
-    setInterviews((current) => [...current, added]);
+  // Adding an Interview can change the numbers of the others, and core decides them, so the
+  // list is fetched again before the new Interview is selected. If that fails, the new one is
+  // still shown and selected, next to the load error.
+  async function handleInterviewAdded(added: Interview) {
+    await loadInterviews(candidateId);
+    setInterviews((current) => (current.some((i) => i.id === added.id) ? current : [...current, added]));
     setInterviewId(added.id);
-    loadInterviews(candidateId);
   }
 
   useEffect(() => {
