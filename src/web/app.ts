@@ -1,5 +1,4 @@
-import { Hono } from "hono";
-import type { Context } from "hono";
+import { Hono, type Context } from "hono";
 import { InvalidInputError, NotFoundError, type Core } from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
@@ -9,16 +8,13 @@ export function createApi(core: Core): Hono {
   api.get("/candidates", (c) => c.json(core.listCandidates()));
 
   api.post("/candidates", async (c) => {
-    const fields = await jsonFields(c.req.raw);
-    try {
-      const candidate = core.createCandidate({
-        name: typeof fields.name === "string" ? fields.name : "",
-        role: typeof fields.role === "string" ? fields.role : "",
-      });
-      return c.json(candidate, 201);
-    } catch (error) {
-      return coreErrorResponse(c, error);
-    }
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(
+        core.createCandidate({ name: stringField(fields, "name"), role: stringField(fields, "role") }),
+        201,
+      ),
+    );
   });
 
   api.get("/candidate-roles", (c) => c.json(core.listCandidateRoles()));
@@ -35,37 +31,47 @@ export function createApi(core: Core): Hono {
   });
 
   api.post("/candidates/:id/interviews", async (c) => {
-    const fields = await jsonFields(c.req.raw);
-    try {
-      const interview = core.addInterview({
-        candidateId: c.req.param("id"),
-        stage: typeof fields.stage === "string" ? fields.stage : "",
-        date: typeof fields.date === "string" ? fields.date : null,
-      });
-      return c.json(interview, 201);
-    } catch (error) {
-      return coreErrorResponse(c, error);
-    }
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.addInterview({ candidateId: c.req.param("id"), date: stringField(fields, "date") }), 201),
+    );
   });
 
-  api.get("/interview-stages", (c) => c.json(core.listInterviewStages()));
+  api.get("/interface-language", (c) => c.json({ language: core.getInterfaceLanguage() }));
+
+  api.put("/interface-language", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => {
+      core.setInterfaceLanguage(stringField(fields, "language"));
+      return c.json({ language: core.getInterfaceLanguage() });
+    });
+  });
 
   return api;
 }
 
-// Turns an error from core into an HTTP answer. Errors core does not explain are passed on.
-function coreErrorResponse(c: Context, error: unknown): Response {
-  if (error instanceof InvalidInputError) {
-    return c.json({ error: error.message, field: error.field }, 400);
-  }
-  if (error instanceof NotFoundError) {
-    return c.json({ error: error.message }, 404);
-  }
-  throw error;
+async function jsonFields(c: Context): Promise<Record<string, unknown>> {
+  const body: unknown = await c.req.json().catch(() => undefined);
+  return typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
 }
 
-// The fields of a JSON request body, or no fields when the body is not a JSON object.
-async function jsonFields(request: Request): Promise<Record<string, unknown>> {
-  const body: unknown = await request.json().catch(() => undefined);
-  return typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+function stringField(fields: Record<string, unknown>, key: string): string {
+  const value = fields[key];
+  return typeof value === "string" ? value : "";
+}
+
+// Runs a core call and turns a refused input into a 400 response the interface can translate,
+// and a request for something that does not exist into a 404 response.
+function respondOrRefuse(c: Context, run: () => Response): Response {
+  try {
+    return run();
+  } catch (error) {
+    if (error instanceof InvalidInputError) {
+      return c.json({ error: error.message, field: error.field, rule: error.rule }, 400);
+    }
+    if (error instanceof NotFoundError) {
+      return c.json({ error: error.message }, 404);
+    }
+    throw error;
+  }
 }

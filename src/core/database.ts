@@ -10,6 +10,10 @@ const migrations: string[] = [
      role TEXT NOT NULL,
      created_at TEXT NOT NULL
    ) STRICT;`,
+  `CREATE TABLE setting (
+     key TEXT PRIMARY KEY,
+     value TEXT NOT NULL
+   ) STRICT;`,
   `CREATE TABLE interview (
      id TEXT PRIMARY KEY,
      candidate_id TEXT NOT NULL REFERENCES candidate (id) ON DELETE CASCADE,

@@ -4,10 +4,11 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as candidates from "./candidates.ts";
 import { openDatabase } from "./database.ts";
+import * as interfaceLanguage from "./interface-language.ts";
 import * as interviews from "./interviews.ts";
 
 export type { Candidate, NewCandidate } from "./candidates.ts";
-export { InvalidInputError, NotFoundError } from "./errors.ts";
+export { InvalidInputError, NotFoundError, type InputRule } from "./errors.ts";
 export type { Interview, NewInterview } from "./interviews.ts";
 
 export interface Core {
@@ -17,6 +18,8 @@ export interface Core {
   listCandidateRoles(): string[];
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
+  getInterfaceLanguage(): string;
+  setInterfaceLanguage(language: string): void;
   close(): void;
 }
 
@@ -37,6 +40,8 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listCandidateRoles: () => candidates.listCandidateRoles(db),
     addInterview: (input) => interviews.addInterview(db, today, input),
     listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),
+    getInterfaceLanguage: () => interfaceLanguage.getInterfaceLanguage(db),
+    setInterfaceLanguage: (language) => interfaceLanguage.setInterfaceLanguage(db, language),
     close: () => db.close(),
   };
 }

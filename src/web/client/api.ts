@@ -1,15 +1,20 @@
 // The browser's only way to reach core: the local server's /api routes.
 // Only types come from core; they are erased before the code reaches the browser.
-import type { Candidate, Interview, NewCandidate, NewInterview } from "../../core/index.ts";
+import type { Candidate, InputRule, Interview, NewCandidate, NewInterview } from "../../core/index.ts";
 
 export type { Candidate, Interview };
 
 export class ApiError extends Error {
   readonly status: number;
+  // Set when core refused the input: which field, and which rule it broke.
+  readonly field: string | undefined;
+  readonly rule: InputRule | undefined;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, field?: string, rule?: InputRule) {
     super(message);
     this.status = status;
+    this.field = field;
+    this.rule = rule;
   }
 }
 
@@ -17,27 +22,30 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, init);
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(response.status, typeof body.error === "string" ? body.error : response.statusText);
+    throw new ApiError(
+      response.status,
+      typeof body.error === "string" ? body.error : response.statusText,
+      typeof body.field === "string" ? body.field : undefined,
+      typeof body.rule === "string" ? (body.rule as InputRule) : undefined,
+    );
   }
   return body as T;
 }
 
-function post<T>(path: string, body: unknown): Promise<T> {
-  return request<T>(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+function sendJson(method: string, body: unknown): RequestInit {
+  return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
 }
 
 export const api = {
   listCandidates: () => request<Candidate[]>("/candidates"),
   listCandidateRoles: () => request<string[]>("/candidate-roles"),
   getCandidate: (id: string) => request<Candidate>(`/candidates/${encodeURIComponent(id)}`),
-  createCandidate: (input: NewCandidate) => post<Candidate>("/candidates", input),
+  createCandidate: (input: NewCandidate) => request<Candidate>("/candidates", sendJson("POST", input)),
+  getInterfaceLanguage: () => request<{ language: string }>("/interface-language"),
+  setInterfaceLanguage: (language: string) =>
+    request<{ language: string }>("/interface-language", sendJson("PUT", { language })),
   listInterviews: (candidateId: string) =>
     request<Interview[]>(`/candidates/${encodeURIComponent(candidateId)}/interviews`),
-  listInterviewStages: () => request<string[]>("/interview-stages"),
   addInterview: ({ candidateId, ...fields }: NewInterview) =>
-    post<Interview>(`/candidates/${encodeURIComponent(candidateId)}/interviews`, fields),
+    request<Interview>(`/candidates/${encodeURIComponent(candidateId)}/interviews`, sendJson("POST", fields)),
 };

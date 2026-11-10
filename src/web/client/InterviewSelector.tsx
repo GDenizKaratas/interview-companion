@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, type Interview } from "./api.ts";
-import { text } from "./text.ts";
+import { AddButton } from "./AddButton.tsx";
+import { api, ApiError, type Interview } from "./api.ts";
+import type { Text } from "./languages.ts";
+import { useText } from "./text.tsx";
 
 // The Interview row of the Workspace header: choose "All" or one Interview, or add a new one.
 export function InterviewSelector({
@@ -13,6 +15,7 @@ export function InterviewSelector({
   selected: string | null;
   onSelect: (interviewId: string | null) => void;
 }) {
+  const { text } = useText();
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -47,7 +50,7 @@ export function InterviewSelector({
           <option value="">{text.interviews.all}</option>
           {interviews.map((interview) => (
             <option key={interview.id} value={interview.id}>
-              {interviewName(interview)}
+              {interviewLabel(text, interview)}
             </option>
           ))}
         </select>
@@ -55,17 +58,19 @@ export function InterviewSelector({
       {adding ? (
         <NewInterviewForm candidateId={candidateId} onAdded={handleAdded} onCancel={() => setAdding(false)} />
       ) : (
-        <button type="button" className="secondary" onClick={() => setAdding(true)}>
-          {text.interviews.add}
-        </button>
+        <AddButton onClick={() => setAdding(true)}>{text.interviews.add}</AddButton>
       )}
       {loadError && <p className="error">{text.interviews.loadFailed}</p>}
     </div>
   );
 }
 
-function interviewName(interview: Interview): string {
-  return `${interview.stage} · ${interview.date ?? text.interviews.noDate}`;
+// "First interview · 2026-11-20 · planned", "Second interview · no date".
+function interviewLabel(text: Text, interview: Interview): string {
+  const ordinals: Record<string, string> = text.interviews.ordinal;
+  const name = ordinals[String(interview.number)] ?? text.interviews.numbered.replace("{number}", String(interview.number));
+  if (interview.date === null) return `${name} · ${text.interviews.noDate}`;
+  return interview.planned ? `${name} · ${interview.date} · ${text.interviews.planned}` : `${name} · ${interview.date}`;
 }
 
 function NewInterviewForm({
@@ -77,25 +82,19 @@ function NewInterviewForm({
   onAdded: (interview: Interview) => void;
   onCancel: () => void;
 }) {
-  const [stage, setStage] = useState("");
+  const { text } = useText();
   const [date, setDate] = useState("");
-  const [stages, setStages] = useState<string[]>([]);
-  const [saveError, setSaveError] = useState<string | undefined>();
+  const [saveError, setSaveError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
-
-  // Earlier stages are only suggestions; if they cannot be loaded the form still works.
-  useEffect(() => {
-    api.listInterviewStages().then(setStages, () => {});
-  }, []);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
     setSaveError(undefined);
     try {
-      onAdded(await api.addInterview({ candidateId, stage, date }));
+      onAdded(await api.addInterview({ candidateId, date }));
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : text.interviews.saveFailed);
+      setSaveError(error);
       setSaving(false);
     }
   }
@@ -103,31 +102,24 @@ function NewInterviewForm({
   return (
     <form className="interview-form" onSubmit={handleSubmit} onKeyDown={(e) => e.key === "Escape" && onCancel()}>
       <label>
-        {text.interviews.stageLabel}
-        <input
-          value={stage}
-          onChange={(e) => setStage(e.target.value)}
-          list="known-stages"
-          autoComplete="off"
-          autoFocus
-        />
-        <datalist id="known-stages">
-          {stages.map((knownStage) => (
-            <option key={knownStage} value={knownStage} />
-          ))}
-        </datalist>
-      </label>
-      <label>
         {text.interviews.dateLabel}
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} autoFocus />
       </label>
-      <button type="submit" disabled={saving}>
+      <AddButton type="submit" disabled={saving}>
         {text.interviews.save}
-      </button>
+      </AddButton>
       <button type="button" className="secondary" onClick={onCancel}>
         {text.interviews.cancel}
       </button>
-      {saveError && <p className="error">{saveError}</p>}
+      {saveError !== undefined && <p className="error">{refusalMessage(text, saveError)}</p>}
     </form>
   );
+}
+
+// Core decides whether a date is valid; this only says why, in the current language.
+function refusalMessage(text: Text, error: unknown): string {
+  if (error instanceof ApiError && error.field === "date" && error.rule === "format") {
+    return text.interviews.invalidDate;
+  }
+  return text.interviews.saveFailed;
 }

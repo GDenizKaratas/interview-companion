@@ -1,7 +1,11 @@
-// All interface text in one place. Issue #3 turns this into translation files.
-export const text = {
+// English, the default language. Every other translation file has exactly these keys.
+// To add a language, copy this file to <language code>.ts (for example de.ts or pt-BR.ts)
+// and translate the text. Every .ts file in this folder is loaded as a language, so put
+// nothing else here.
+const text = {
   appName: "Interview Companion",
   tagline: "Your interviews, all in one place.",
+  languageLabel: "Language",
   candidates: {
     title: "Candidates",
     empty: "No Candidates yet. Add the first one above.",
@@ -10,6 +14,10 @@ export const text = {
     add: "Add Candidate",
     saveFailed: "The Candidate could not be saved.",
     loadFailed: "Candidates could not be loaded.",
+    required: {
+      name: "A Candidate needs a name.",
+      role: "A Candidate needs a role.",
+    },
   },
   workspace: {
     back: "← Candidates",
@@ -20,12 +28,27 @@ export const text = {
   interviews: {
     label: "Interview",
     all: "All",
+    ordinal: {
+      "1": "First interview",
+      "2": "Second interview",
+      "3": "Third interview",
+      "4": "Fourth interview",
+      "5": "Fifth interview",
+      "6": "Sixth interview",
+      "7": "Seventh interview",
+      "8": "Eighth interview",
+      "9": "Ninth interview",
+      "10": "Tenth interview",
+    },
+    // Used after the tenth Interview. {number} is replaced by the Interview's number.
+    numbered: "Interview {number}",
     noDate: "no date",
-    add: "+ New Interview",
-    stageLabel: "Stage",
+    planned: "planned",
+    add: "New Interview",
     dateLabel: "Date (optional)",
     save: "Add Interview",
     cancel: "Cancel",
+    invalidDate: "The date must be a real day.",
     saveFailed: "The Interview could not be saved.",
     loadFailed: "Interviews could not be loaded.",
   },
@@ -37,3 +60,5 @@ export const text = {
     questions: { title: "Questions", empty: "No questions saved." },
   },
 };
+
+export default { name: "English", text };

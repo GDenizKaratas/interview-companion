@@ -80,7 +80,7 @@ function optionalDate(value: string | null | undefined): string | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
   const day = match ? new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))) : undefined;
   if (!day || day.toISOString().slice(0, 10) !== trimmed) {
-    throw new InvalidInputError("date", "The date must be a real day, written as YYYY-MM-DD.");
+    throw new InvalidInputError("date", "format", "The date must be a real day, written as YYYY-MM-DD.");
   }
   return trimmed;
 }

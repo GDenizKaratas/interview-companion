@@ -61,6 +61,15 @@ describe("Candidates", () => {
     expect(core.listCandidates()).toEqual([]);
   });
 
+  it("names the missing field and the broken rule, so the interface can say it in any language", () => {
+    expect(() => core.createCandidate({ name: "", role: "Backend Engineer" })).toThrow(
+      expect.objectContaining({ field: "name", rule: "required" }),
+    );
+    expect(() => core.createCandidate({ name: "Ada Demir", role: " " })).toThrow(
+      expect.objectContaining({ field: "role", rule: "required" }),
+    );
+  });
+
   it("finds one Candidate by id, and nothing for an unknown id", () => {
     core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
     const wanted = core.createCandidate({ name: "Can Aksoy", role: "Data Engineer" });

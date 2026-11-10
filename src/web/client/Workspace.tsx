@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, type Candidate } from "./api.ts";
 import { InterviewSelector } from "./InterviewSelector.tsx";
 import { linkTo } from "./navigation.ts";
-import { text } from "./text.ts";
+import { useText } from "./text.tsx";
 
 type Load =
   | { state: "loading" }
@@ -11,6 +11,7 @@ type Load =
   | { state: "failed" };
 
 export function Workspace({ candidateId }: { candidateId: string }) {
+  const { text } = useText();
   const [load, setLoad] = useState<Load>({ state: "loading" });
   // The panels will show only this Interview's content once they have content (#5, #9).
   // The selected Interview's id, or null for all Interviews.
