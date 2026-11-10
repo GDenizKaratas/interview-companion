@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { InvalidInputError, type Core } from "../core/index.ts";
+import type { Context } from "hono";
+import { InvalidInputError, NotFoundError, type Core } from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
 export function createApi(core: Core): Hono {
@@ -16,10 +17,7 @@ export function createApi(core: Core): Hono {
       });
       return c.json(candidate, 201);
     } catch (error) {
-      if (error instanceof InvalidInputError) {
-        return c.json({ error: error.message, field: error.field }, 400);
-      }
-      throw error;
+      return coreErrorResponse(c, error);
     }
   });
 
@@ -37,27 +35,33 @@ export function createApi(core: Core): Hono {
   });
 
   api.post("/candidates/:id/interviews", async (c) => {
-    const candidateId = c.req.param("id");
-    if (!core.getCandidate(candidateId)) return c.json({ error: "Candidate not found." }, 404);
     const fields = await jsonFields(c.req.raw);
     try {
       const interview = core.addInterview({
-        candidateId,
+        candidateId: c.req.param("id"),
         stage: typeof fields.stage === "string" ? fields.stage : "",
         date: typeof fields.date === "string" ? fields.date : null,
       });
       return c.json(interview, 201);
     } catch (error) {
-      if (error instanceof InvalidInputError) {
-        return c.json({ error: error.message, field: error.field }, 400);
-      }
-      throw error;
+      return coreErrorResponse(c, error);
     }
   });
 
   api.get("/interview-stages", (c) => c.json(core.listInterviewStages()));
 
   return api;
+}
+
+// Turns an error from core into an HTTP answer. Errors core does not explain are passed on.
+function coreErrorResponse(c: Context, error: unknown): Response {
+  if (error instanceof InvalidInputError) {
+    return c.json({ error: error.message, field: error.field }, 400);
+  }
+  if (error instanceof NotFoundError) {
+    return c.json({ error: error.message }, 404);
+  }
+  throw error;
 }
 
 // The fields of a JSON request body, or no fields when the body is not a JSON object.

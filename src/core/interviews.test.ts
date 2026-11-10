@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { InvalidInputError, openCore, type Candidate, type Core } from "./index.ts";
+import { InvalidInputError, NotFoundError, openCore, type Candidate, type Core } from "./index.ts";
 
 let dir: string;
 let dbPath: string;
@@ -100,7 +100,7 @@ describe("Interviews", () => {
   });
 
   it("refuses an Interview for a Candidate that does not exist", () => {
-    expect(() => core.addInterview({ candidateId: "no-such-id", stage: "Technical" })).toThrow(InvalidInputError);
+    expect(() => core.addInterview({ candidateId: "no-such-id", stage: "Technical" })).toThrow(NotFoundError);
 
     expect(core.listInterviews("no-such-id")).toEqual([]);
   });

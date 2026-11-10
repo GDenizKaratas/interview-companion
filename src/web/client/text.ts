@@ -21,7 +21,7 @@ export const text = {
     label: "Interview",
     all: "All",
     noDate: "no date",
-    add: "+ New interview",
+    add: "+ New Interview",
     stageLabel: "Stage",
     dateLabel: "Date (optional)",
     save: "Add Interview",

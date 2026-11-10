@@ -7,7 +7,7 @@ import { openDatabase } from "./database.ts";
 import * as interviews from "./interviews.ts";
 
 export type { Candidate, NewCandidate } from "./candidates.ts";
-export { InvalidInputError } from "./errors.ts";
+export { InvalidInputError, NotFoundError } from "./errors.ts";
 export type { Interview, NewInterview } from "./interviews.ts";
 
 export interface Core {

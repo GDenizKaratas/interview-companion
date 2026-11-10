@@ -2,9 +2,6 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api, type Interview } from "./api.ts";
 import { text } from "./text.ts";
 
-// Which Interview the Workspace shows: one Interview's id, or every Interview.
-export type InterviewChoice = "all" | string;
-
 // The Interview row of the Workspace header: choose "All" or one Interview, or add a new one.
 export function InterviewSelector({
   candidateId,
@@ -12,30 +9,42 @@ export function InterviewSelector({
   onSelect,
 }: {
   candidateId: string;
-  selected: InterviewChoice;
-  onSelect: (choice: InterviewChoice) => void;
+  // One Interview's id, or null for all Interviews.
+  selected: string | null;
+  onSelect: (interviewId: string | null) => void;
 }) {
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    api.listInterviews(candidateId).then(setInterviews, () => setLoadError(true));
+    loadInterviews(candidateId);
   }, [candidateId]);
 
-  // Core decides the order, so the list is fetched again instead of sorted here.
-  async function handleAdded(added: Interview) {
+  function loadInterviews(id: string) {
+    api.listInterviews(id).then(
+      (list) => {
+        setInterviews(list);
+        setLoadError(false);
+      },
+      () => setLoadError(true),
+    );
+  }
+
+  // The new Interview is shown at once, then the list is fetched again because core decides the order.
+  function handleAdded(added: Interview) {
     setAdding(false);
+    setInterviews((current) => [...current, added]);
     onSelect(added.id);
-    setInterviews(await api.listInterviews(candidateId).catch(() => [...interviews, added]));
+    loadInterviews(candidateId);
   }
 
   return (
     <div className="interview-bar">
       <label className="interview-select">
         {text.interviews.label}
-        <select value={selected} onChange={(e) => onSelect(e.target.value)}>
-          <option value="all">{text.interviews.all}</option>
+        <select value={selected ?? ""} onChange={(e) => onSelect(e.target.value || null)}>
+          <option value="">{text.interviews.all}</option>
           {interviews.map((interview) => (
             <option key={interview.id} value={interview.id}>
               {interviewName(interview)}
@@ -55,7 +64,7 @@ export function InterviewSelector({
   );
 }
 
-export function interviewName(interview: Interview): string {
+function interviewName(interview: Interview): string {
   return `${interview.stage} · ${interview.date ?? text.interviews.noDate}`;
 }
 

@@ -8,3 +8,12 @@ export class InvalidInputError extends Error {
     this.field = field;
   }
 }
+
+// Thrown when an operation names something that does not exist, such as an unknown Candidate.
+// The message is safe to show to the Interviewer.
+export class NotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NotFoundError";
+  }
+}

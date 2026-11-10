@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { getCandidate } from "./candidates.ts";
-import { InvalidInputError } from "./errors.ts";
+import { InvalidInputError, NotFoundError } from "./errors.ts";
 import { existingSpelling, sortLabels, tidyLabel } from "./labels.ts";
 
 export interface Interview {
@@ -29,7 +29,7 @@ interface InterviewRow {
 
 export function addInterview(db: DatabaseSync, input: NewInterview): Interview {
   if (!getCandidate(db, input.candidateId)) {
-    throw new InvalidInputError("candidateId", "This Candidate does not exist.");
+    throw new NotFoundError("This Candidate does not exist.");
   }
   const interview: Interview = {
     id: randomUUID(),

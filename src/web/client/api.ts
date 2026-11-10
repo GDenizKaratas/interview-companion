@@ -22,23 +22,22 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+function post<T>(path: string, body: unknown): Promise<T> {
+  return request<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 export const api = {
   listCandidates: () => request<Candidate[]>("/candidates"),
   listCandidateRoles: () => request<string[]>("/candidate-roles"),
   getCandidate: (id: string) => request<Candidate>(`/candidates/${encodeURIComponent(id)}`),
-  createCandidate: (input: NewCandidate) =>
-    request<Candidate>("/candidates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    }),
+  createCandidate: (input: NewCandidate) => post<Candidate>("/candidates", input),
   listInterviews: (candidateId: string) =>
     request<Interview[]>(`/candidates/${encodeURIComponent(candidateId)}/interviews`),
   listInterviewStages: () => request<string[]>("/interview-stages"),
   addInterview: ({ candidateId, ...fields }: NewInterview) =>
-    request<Interview>(`/candidates/${encodeURIComponent(candidateId)}/interviews`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(fields),
-    }),
+    post<Interview>(`/candidates/${encodeURIComponent(candidateId)}/interviews`, fields),
 };
