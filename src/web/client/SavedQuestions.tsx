@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
-import { api, ApiError, type SavedQuestion } from "./api.ts";
+import { api, ApiError, type Interview, type SavedQuestion } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { SuggestedQuestions } from "./SuggestedQuestions.tsx";
 import type { Text } from "./languages.ts";
 import { useText } from "./text.tsx";
 
-// The Interviewer's own question list for one Candidate. Core keeps the order; after every
-// change the list is fetched again, so the screen always shows what core has saved.
-export function SavedQuestions({ candidateId }: { candidateId: string }) {
+interface SavedQuestionsProps {
+  candidateId: string;
+  interviews: Interview[];
+  transcriptVersion: number;
+}
+
+// The Interviewer's own question list for one Candidate, with the collapsed Suggested Questions
+// under it. Core keeps the order; after every change the list is fetched again, so the screen
+// always shows what core has saved.
+export function SavedQuestions({ candidateId, interviews, transcriptVersion }: SavedQuestionsProps) {
   const { text } = useText();
   const t = text.panels.questions;
   const [questions, setQuestions] = useState<SavedQuestion[] | undefined>();
@@ -110,6 +118,12 @@ export function SavedQuestions({ candidateId }: { candidateId: string }) {
           ))}
         </ol>
       )}
+      <SuggestedQuestions
+        candidateId={candidateId}
+        interviews={interviews}
+        transcriptVersion={transcriptVersion}
+        onAccepted={() => void reload()}
+      />
       {toDelete && (
         <ConfirmDialog
           title={t.confirmDelete}

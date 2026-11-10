@@ -20,7 +20,7 @@ beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), "interview-companion-"));
   proposed = [];
   clock = new Date("2026-11-10T09:30:00Z");
-  core = openCore(join(dir, "test.sqlite"), { today: () => "2026-11-10", now: () => clock, aiProvider: () => ({ proposeAiNotes: async () => proposed }) });
+  core = openCore(join(dir, "test.sqlite"), { today: () => "2026-11-10", now: () => clock, aiProvider: () => ({ proposeAiNotes: async () => proposed, proposeQuestions: async () => [] }) });
   candidate = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await createMcpServer(readOnlyCore(core)).connect(serverSide);

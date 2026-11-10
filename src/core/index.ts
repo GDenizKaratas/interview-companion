@@ -17,10 +17,19 @@ import * as interviewerNotes from "./interviewer-notes.ts";
 import * as interviews from "./interviews.ts";
 import * as nameGuess from "./name-guess.ts";
 import * as savedQuestions from "./saved-questions.ts";
+import * as suggestedQuestions from "./suggested-questions.ts";
 import * as transcripts from "./transcripts.ts";
 
 export type { AiNote, AiNoteEvidence, AiNoteGeneration, ReviewState } from "./ai-notes.ts";
-export type { AiNoteRequest, AiProvider, AiProviderFactory, ProposedAiNote } from "./ai-provider.ts";
+export type {
+  AiNoteRequest,
+  AiProvider,
+  AiProviderFactory,
+  ProposedAiNote,
+  ProposedQuestion,
+  ProposedQuestionEvidence,
+  QuestionRequest,
+} from "./ai-provider.ts";
 export type { CandidateOverview, InterviewOverview } from "./candidate-overview.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
@@ -44,6 +53,12 @@ export {
 export type { InterviewerNote, NewInterviewerNotes, NoteFilter } from "./interviewer-notes.ts";
 export type { Interview, NewInterview } from "./interviews.ts";
 export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
+export type {
+  QuestionFocus,
+  SuggestedQuestion,
+  SuggestedQuestionGeneration,
+  SuggestionEvidence,
+} from "./suggested-questions.ts";
 export type { Segment, Speaker, SpeakerRole, Transcript, TranscriptFile, TranscriptFormat } from "./transcripts.ts";
 
 export interface Core {
@@ -88,6 +103,15 @@ export interface Core {
   correctAiNote(id: string, correction: string): aiNotes.AiNote;
   dismissAiNote(id: string): aiNotes.AiNote;
   restoreAiNote(id: string): aiNotes.AiNote;
+  generateSuggestedQuestions(
+    candidateId: string,
+    options?: suggestedQuestions.QuestionFocus,
+  ): Promise<suggestedQuestions.SuggestedQuestionGeneration>;
+  listSuggestedQuestions(candidateId: string): suggestedQuestions.SuggestedQuestion[];
+  acceptSuggestedQuestion(id: string): savedQuestions.SavedQuestion;
+  editSuggestedQuestion(id: string, text: string): suggestedQuestions.SuggestedQuestion;
+  dismissSuggestedQuestion(id: string): suggestedQuestions.SuggestedQuestion;
+  restoreSuggestedQuestion(id: string): suggestedQuestions.SuggestedQuestion;
   close(): void;
 }
 
@@ -176,6 +200,13 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     correctAiNote: (id, correction) => aiNotes.correctAiNote(db, id, correction),
     dismissAiNote: (id) => aiNotes.dismissAiNote(db, id),
     restoreAiNote: (id) => aiNotes.restoreAiNote(db, id),
+    generateSuggestedQuestions: (candidateId, options) =>
+      suggestedQuestions.generateSuggestedQuestions(db, today, now, aiProvider, candidateId, options),
+    listSuggestedQuestions: (candidateId) => suggestedQuestions.listSuggestedQuestions(db, candidateId),
+    acceptSuggestedQuestion: (id) => suggestedQuestions.acceptSuggestedQuestion(db, now, id),
+    editSuggestedQuestion: (id, text) => suggestedQuestions.editSuggestedQuestion(db, id, text),
+    dismissSuggestedQuestion: (id) => suggestedQuestions.dismissSuggestedQuestion(db, id),
+    restoreSuggestedQuestion: (id) => suggestedQuestions.restoreSuggestedQuestion(db, id),
     close: () => db.close(),
   };
 }

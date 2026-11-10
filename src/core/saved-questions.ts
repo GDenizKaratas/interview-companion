@@ -33,11 +33,22 @@ const columns = "id, candidate_id, text, origin, created_at";
 // Adds a hand-written question at the end of the Candidate's list.
 export function addSavedQuestion(db: DatabaseSync, input: NewSavedQuestion): SavedQuestion {
   requireCandidate(db, input.candidateId);
+  return insertSavedQuestion(db, input.candidateId, input.text, "written");
+}
+
+// Adds a question at the end of the Candidate's list. Core uses it to copy an accepted
+// Suggested Question; the copy does not point back to the suggestion.
+export function insertSavedQuestion(
+  db: DatabaseSync,
+  candidateId: string,
+  text: string,
+  origin: QuestionOrigin,
+): SavedQuestion {
   const row: SavedQuestionRow = {
     id: randomUUID(),
-    candidate_id: input.candidateId,
-    text: requireText(input.text),
-    origin: "written",
+    candidate_id: candidateId,
+    text: requireText(text),
+    origin,
     created_at: new Date().toISOString(),
   };
   db.prepare(

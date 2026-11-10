@@ -233,6 +233,35 @@ export function createApi(core: Core): Hono {
     });
   });
 
+  api.get("/candidates/:id/suggested-questions", (c) =>
+    respondOrRefuse(c, () => c.json(core.listSuggestedQuestions(c.req.param("id")))),
+  );
+
+  // Asks the model for Suggested Questions. Only this route ever calls it.
+  api.post("/candidates/:id/suggested-questions", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, async () =>
+      c.json(await core.generateSuggestedQuestions(c.req.param("id"), { focus: stringField(fields, "focus") }), 201),
+    );
+  });
+
+  // Copies the suggestion into Saved Questions and answers with the new Saved Question.
+  api.post("/suggested-questions/:id/accept", (c) =>
+    respondOrRefuse(c, () => c.json(core.acceptSuggestedQuestion(c.req.param("id")), 201)),
+  );
+  api.put("/suggested-questions/:id", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.editSuggestedQuestion(c.req.param("id"), stringField(fields, "text"))),
+    );
+  });
+  api.post("/suggested-questions/:id/dismiss", (c) =>
+    respondOrRefuse(c, () => c.json(core.dismissSuggestedQuestion(c.req.param("id")))),
+  );
+  api.post("/suggested-questions/:id/restore", (c) =>
+    respondOrRefuse(c, () => c.json(core.restoreSuggestedQuestion(c.req.param("id")))),
+  );
+
   return api;
 }
 

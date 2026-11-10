@@ -170,7 +170,8 @@ function InterviewAiNotes({
 function generationErrorMessage(text: Text, error: unknown): string {
   const t = text.panels.aiNotes.errors;
   if (error instanceof ApiError) {
-    if (error.reason) return t.reasons[error.reason];
+    // Only the reasons generation can give; the others belong to review and to suggestions.
+    if (error.reason && error.reason in t.reasons) return t.reasons[error.reason as keyof typeof t.reasons];
     if (error.failure) return `${t.failed} ${t.failures[error.failure]}`;
   }
   return t.failed;

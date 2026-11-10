@@ -923,6 +923,9 @@ button.role-choice.chosen {
 
 .ai-note-original {
   margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
 
 /* Evidence search: one bar for the CV and Transcripts, with its results under it. */
 .evidence-search {
@@ -1037,6 +1040,7 @@ button.role-choice.chosen {
 
 .ai-notes-dismissed-toggle {
   margin-top: 0.5rem;
+}
 
 .evidence-excerpt {
   white-space: pre-wrap;
@@ -1091,4 +1095,65 @@ mark {
 .textLayer mark {
   color: transparent;
   background: rgb(255 200 0 / 0.45);
+}
+
+/* Suggested Questions: collapsed under the Saved Questions, with the AI look of AI Notes. */
+.suggestions {
+  margin-top: 0.75rem;
+}
+
+.suggestions-toggle {
+  font-weight: 600;
+}
+
+.suggestions-body {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: var(--ai-surface);
+  border-radius: 8px;
+}
+
+.suggestions-generate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.suggestions-generate .hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.suggestions-focus {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 14rem;
+  font-size: 0.85rem;
+}
+
+.suggestion-label {
+  float: right;
+  margin-left: 0.5rem;
+}
+
+.suggestion-reason {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.suggestion-evidence-toggle {
+  font-size: 0.95rem;
+}
+
+.suggestion-quote {
+  cursor: default;
+}
+
+.suggestion-quote:hover {
+  background: var(--page);
 }

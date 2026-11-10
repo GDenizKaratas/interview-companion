@@ -102,6 +102,37 @@ const migrations: string[] = [
    ) STRICT;`,
   // The Interviewer's rewrite of an AI Note. The AI's statement stays as it was generated.
   `ALTER TABLE ai_note ADD COLUMN correction TEXT;`,
+  // Suggested Questions belong to a Candidate. Each quote points to the CV or to one Interview's
+  // Transcript; replacing that source removes the quote, and the trigger then removes the whole
+  // suggestion, so a suggestion never loses Evidence and quietly looks general. Saved Questions
+  // are copies in their own table, so nothing here can change them.
+  `CREATE TABLE suggested_question (
+     id TEXT PRIMARY KEY,
+     candidate_id TEXT NOT NULL REFERENCES candidate (id) ON DELETE CASCADE,
+     text TEXT NOT NULL,
+     reason TEXT NOT NULL,
+     generated_at TEXT NOT NULL,
+     position INTEGER NOT NULL,
+     accepted_at TEXT,
+     dismissed INTEGER NOT NULL DEFAULT 0 CHECK (dismissed IN (0, 1))
+   ) STRICT;
+   CREATE INDEX suggested_question_candidate ON suggested_question (candidate_id, position);
+   CREATE TABLE suggested_question_evidence (
+     suggested_question_id TEXT NOT NULL REFERENCES suggested_question (id) ON DELETE CASCADE,
+     position INTEGER NOT NULL,
+     cv_candidate_id TEXT REFERENCES cv (candidate_id) ON DELETE CASCADE,
+     cv_page INTEGER,
+     transcript_interview_id TEXT REFERENCES transcript (interview_id) ON DELETE CASCADE,
+     segment_number INTEGER,
+     quote TEXT NOT NULL,
+     PRIMARY KEY (suggested_question_id, position),
+     CHECK ((cv_candidate_id IS NOT NULL AND cv_page IS NOT NULL AND transcript_interview_id IS NULL AND segment_number IS NULL)
+         OR (cv_candidate_id IS NULL AND cv_page IS NULL AND transcript_interview_id IS NOT NULL AND segment_number IS NOT NULL))
+   ) STRICT;
+   CREATE TRIGGER suggested_question_source_replaced AFTER DELETE ON suggested_question_evidence
+   BEGIN
+     DELETE FROM suggested_question WHERE id = OLD.suggested_question_id;
+   END;`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

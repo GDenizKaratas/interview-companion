@@ -19,8 +19,41 @@ export interface ProposedAiNote {
   evidence: { segmentNumber: number; quote: string }[];
 }
 
+// What core sends when the Interviewer asks for Suggested Questions. Interviewer Notes are sent
+// here, and only here, as context for follow-up questions; they are never Evidence.
+export interface QuestionRequest {
+  // The interface language. Questions and reasons are written in it; quotes stay as they are.
+  language: string;
+  // What the Interviewer wants the questions to be about, or null for no focus.
+  focus: string | null;
+  // The CV's text page by page, or an empty list when the Candidate has no CV.
+  cvPages: { number: number; text: string }[];
+  // Each Transcript whose Speaker Mapping is confirmed, in Interview order.
+  transcripts: {
+    interviewId: string;
+    interviewNumber: number;
+    segments: { number: number; role: SpeakerRole; text: string }[];
+  }[];
+  interviewerNotes: string[];
+  // So the model does not propose a question the Interviewer already has.
+  savedQuestions: string[];
+}
+
+// One exact excerpt a suggestion cites: a CV page or a Transcript segment.
+export type ProposedQuestionEvidence =
+  | { source: "cv"; page: number; quote: string }
+  | { source: "transcript"; interviewId: string; segmentNumber: number; quote: string };
+
+// What the model proposes. A suggestion without Evidence is a general question.
+export interface ProposedQuestion {
+  question: string;
+  reason: string;
+  evidence: ProposedQuestionEvidence[];
+}
+
 export interface AiProvider {
   proposeAiNotes(request: AiNoteRequest): Promise<ProposedAiNote[]>;
+  proposeQuestions(request: QuestionRequest): Promise<ProposedQuestion[]>;
 }
 
 // Makes a provider for the saved API key. Called only when the Interviewer asks for generation.
