@@ -5,7 +5,10 @@ import { acceptCv, deleteCandidateAndCv, storeCv, storedFileName, type AcceptedC
 import { inTransaction } from "./database.ts";
 import { addInterviewerNotes, type Now } from "./interviewer-notes.ts";
 import { addInterview, type Today } from "./interviews.ts";
-import { addSavedQuestion } from "./saved-questions.ts";
+import { saveCheckedAiNotes } from "./ai-notes.ts";
+import { saveCheckedAskedQuestions } from "./asked-questions.ts";
+import { elifKaya, mertAydin, selinOzturk, type DemoAiContent } from "./demo-ai-content.ts";
+import { addSavedQuestion, listSavedQuestions } from "./saved-questions.ts";
 import { deleteSetting, setSetting } from "./settings.ts";
 import { confirmSpeakerMapping, importTranscript, type SpeakerRole } from "./transcripts.ts";
 
@@ -170,6 +173,8 @@ interface DemoSetCandidate {
     days: number | null;
     transcript?: { file: string; roles?: Record<string, SpeakerRole> };
     notes?: string[];
+    // Ready-made Asked Questions and AI Notes; the Transcript's roles must be given.
+    ai?: DemoAiContent;
   }[];
   notes?: string[];
   questions: string[];
@@ -184,21 +189,38 @@ const demoSet: DemoSetCandidate[] = [
     interviews: [
       {
         days: -12,
-        transcript: { file: "transcript-elif-kaya.vtt" },
-        notes: ["Profiler ile performans sorununu bulma adımlarını iyi sıraladı", "Erişilebilirlik testini kimin yaptığını sor"],
+        transcript: { file: "transcript-elif-kaya.vtt", roles: { Ayşe: "interviewer", Elif: "candidate" } },
+        notes: ["Profiler ile performans sorununu bulma adımlarını iyi sıraladı", "Mobil görünümü nasıl test ettiklerini sormayı unuttum"],
+        ai: elifKaya,
       },
       { days: 6, notes: ["Canlı kodlama: küçük bir form bileşeni"] },
     ],
-    questions: ["Sanal listeyi neden seçtiniz, başka ne denediniz?", "Redux'tan çıkış nasıl planlandı?"],
+    questions: [
+      "Sanal listeyi neden seçtiniz, başka ne denediniz?",
+      "Redux'tan çıkış nasıl planlandı?",
+      "Mobil görünümü nasıl test ediyorsunuz?",
+    ],
   },
   {
     id: "demo-candidate-mert",
     name: "Mert Aydın",
     role: "Veri Mühendisi",
     cv: { file: "cv-mert-aydin.pdf", fileName: "Mert_Aydin_CV.pdf" },
-    interviews: [{ days: 1 }],
+    interviews: [
+      {
+        days: -6,
+        transcript: { file: "transcript-mert-aydin.txt", roles: { Ayşe: "interviewer", Mert: "candidate" } },
+        notes: ["Flink kontrol noktası süresini neden beş dakika seçtiklerini sor"],
+        ai: mertAydin,
+      },
+      { days: 1 },
+    ],
     notes: ["CV'deki Kafka akışının ölçeğini sor"],
-    questions: ["Saatte on milyon olayı işlerken veri kaybını nasıl önlediniz?", "Airflow işleri başarısız olunca ne oluyor?"],
+    questions: [
+      "Saatte on milyon olayı işlerken veri kaybını nasıl önlediniz?",
+      "Airflow işleri başarısız olunca ne oluyor?",
+      "Flink kontrol noktası süresini neden beş dakika seçtiniz?",
+    ],
   },
   {
     id: "demo-candidate-selin",
@@ -211,10 +233,15 @@ const demoSet: DemoSetCandidate[] = [
         days: -4,
         transcript: { file: "transcript-selin-ozturk.txt", roles: { Ayşe: "interviewer", Selin: "candidate" } },
         notes: ["Kesinti sonrası alınan önlemleri somut anlattı"],
+        ai: selinOzturk,
       },
       { days: 14 },
     ],
-    questions: ["Kademeli dağıtımda geri dönüş kararını kim veriyor?"],
+    questions: [
+      "Kademeli dağıtımda geri dönüş kararını kim veriyor?",
+      "Kesintiyi ilk kim fark etti?",
+      "Felaket kurtarma planınızı en son ne zaman denediniz?",
+    ],
   },
   {
     id: "demo-candidate-burak",
@@ -228,6 +255,8 @@ const demoSet: DemoSetCandidate[] = [
 
 function addSetCandidate(db: DatabaseSync, today: Today, now: Now, demo: DemoSetCandidate): Candidate {
   const candidate = insertCandidate(db, demo.id, { name: demo.name, role: demo.role });
+  // Saved Questions come first, so the ready-made Asked Questions can be linked to them.
+  for (const text of demo.questions) addSavedQuestion(db, { candidateId: candidate.id, text });
   for (const plan of demo.interviews) {
     const date = plan.days === null ? undefined : shiftDays(today(), plan.days);
     const interview = addInterview(db, today, { candidateId: candidate.id, date });
@@ -248,11 +277,27 @@ function addSetCandidate(db: DatabaseSync, today: Today, now: Now, demo: DemoSet
         );
       }
     }
+    if (plan.ai) saveDemoAiContent(db, written, candidate.id, interview.id, plan.ai);
     if (plan.notes) {
       addInterviewerNotes(db, written, { candidateId: candidate.id, interviewId: interview.id, text: plan.notes.join("\n") });
     }
   }
   if (demo.notes) addInterviewerNotes(db, now, { candidateId: candidate.id, text: demo.notes.join("\n") });
-  for (const text of demo.questions) addSavedQuestion(db, { candidateId: candidate.id, text });
   return candidate;
+}
+
+// Saves the ready-made AI output through the same checks as the model's. Hand-written content
+// that fails a check is a mistake in the demo, so loading stops instead of hiding it.
+function saveDemoAiContent(db: DatabaseSync, now: Now, candidateId: string, interviewId: string, content: DemoAiContent): void {
+  const savedIds = new Map(listSavedQuestions(db, candidateId).map((question) => [question.text, question.id]));
+  const askedQuestions = content.askedQuestions.map(({ savedQuestion, ...asked }) => {
+    const savedQuestionId = savedQuestion === undefined ? null : savedIds.get(savedQuestion);
+    if (savedQuestionId === undefined) throw new Error(`Demo Saved Question not found: ${savedQuestion}`);
+    return { ...asked, savedQuestionId };
+  });
+  const asked = saveCheckedAskedQuestions(db, now, interviewId, askedQuestions, "app");
+  const notes = saveCheckedAiNotes(db, now, interviewId, content.aiNotes, "app");
+  if (asked.dropped > 0 || notes.dropped > 0) {
+    throw new Error(`Demo AI content has quotes that are not in its Transcript: ${asked.dropped + notes.dropped}.`);
+  }
 }

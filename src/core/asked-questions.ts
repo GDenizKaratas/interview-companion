@@ -92,8 +92,21 @@ export function saveAskedQuestionsFromClient(
   proposed: ProposedAskedQuestion[],
 ): AskedQuestionGeneration {
   requireAiClientWrites(db);
+  return saveCheckedAskedQuestions(db, now, interviewId, proposed, "aiClient");
+}
+
+// Saves Asked Questions written elsewhere, such as the demo's, through the confirmed-Transcript gate
+// and the quote check, with every current Saved Question counted as checked. It does not check
+// the AI client switch.
+export function saveCheckedAskedQuestions(
+  db: DatabaseSync,
+  now: Now,
+  interviewId: string,
+  proposed: ProposedAskedQuestion[],
+  source: AiSource,
+): AskedQuestionGeneration {
   const transcript = requireConfirmedTranscript(db, interviewId);
-  return accept(db, now, transcript, proposed, savedQuestionsOf(db, transcript).map((q) => q.id), "aiClient");
+  return accept(db, now, transcript, proposed, savedQuestionsOf(db, transcript).map((q) => q.id), source);
 }
 
 // The Candidate's Saved Questions, which the model may match.

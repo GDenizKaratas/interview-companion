@@ -1,9 +1,22 @@
 Ayşe: Merhaba Selin, hoş geldin. Şu anki altyapınızı kısaca anlatır mısın?
 Selin: Merhaba. Yaklaşık kırk servisimiz var, hepsi Kubernetes üzerinde çalışıyor. Altyapıyı Terraform ile yönetiyoruz.
+Selin: Üç ortamımız var: geliştirme, test ve canlı. Her biri ayrı bir küme.
 Ayşe: Son yaşadığınız büyük kesintiyi anlatır mısın?
 Selin: Bir sertifikanın süresi gece dolmuştu, ödeme servisi yirmi dakika boyunca istek alamadı.
-Sonrasında sertifikaları cert-manager ile otomatik yeniledik ve süresi dolmadan on dört gün önce uyarı veren bir alarm ekledik.
+Selin: Sonrasında sertifikaları cert-manager ile otomatik yeniledik ve süresi dolmadan on dört gün önce uyarı veren bir alarm ekledik.
+Ayşe: O gece kesintiyi nasıl fark ettiniz?
+Selin: Aslında müşteri destek ekibi haber verdi. Bizim alarmımız yalnızca sunucu hatalarına bakıyordu, bağlantı hatalarını görmüyordu.
+Selin: Bu yüzden dışarıdan her dakika ödeme sayfasını çağıran bir kontrol ekledik.
 Ayşe: Dağıtımları nasıl yapıyorsunuz?
 Selin: Argo CD ile GitOps kullanıyoruz. Her değişiklik önce test ortamına gidiyor, sonra kademeli olarak canlıya açılıyor.
+Ayşe: Kademeli açılımda bir sorun çıkarsa geri dönüşe kim karar veriyor?
+Selin: Hata oranı yüzde birin üstüne çıkarsa Argo Rollouts geri dönüşü kendisi yapıyor. Onun dışında nöbetçi mühendis karar veriyor.
+Ayşe: Gizli bilgileri, yani parolaları ve anahtarları nasıl saklıyorsunuz?
+Selin: HashiCorp Vault kullanıyoruz. Servisler parolaları açılışta Vault'tan alıyor, depoda hiçbir parola tutulmuyor.
 Ayşe: Maliyetleri takip ediyor musunuz?
 Selin: Evet, her ekibin harcamasını etiketlerle ayırıyoruz. Geçen yıl kullanılmayan diskleri temizleyerek bulut faturasını yüzde on beş düşürdük.
+Ayşe: Nöbet düzeniniz nasıl?
+Selin: Altı kişilik bir ekibiz, haftalık nöbet tutuyoruz. Her kesintiden sonra suçlamasız bir değerlendirme toplantısı yapıyoruz.
+Ayşe: Benim sorularım bu kadar. Senin sormak istediğin bir şey var mı?
+Selin: Ekibinizde altyapı kodunu kim inceliyor, onu merak ediyorum.
+Ayşe: Her değişikliği platform ekibinden iki kişi inceliyor. Teşekkürler Selin.
