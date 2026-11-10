@@ -10,11 +10,14 @@ export function NotesPanel({
   candidateId,
   interviews,
   selectedInterviewId,
+  onShowAll,
 }: {
   candidateId: string;
   interviews: Interview[];
   // The Interview chosen in the Workspace header, or null for all.
   selectedInterviewId: string | null;
+  // Switches the Workspace header to all Interviews.
+  onShowAll: () => void;
 }) {
   const { text } = useText();
   const [notes, setNotes] = useState<InterviewerNote[]>([]);
@@ -25,9 +28,12 @@ export function NotesPanel({
   // When the header's selection changes, the tag for new notes follows it (React's way of
   // adjusting state when a prop changes, without an extra render from an effect).
   const [followedSelection, setFollowedSelection] = useState(selectedInterviewId);
+  // The Interview a just-saved or re-tagged note went to, when the current filter hides it.
+  const [hiddenTo, setHiddenTo] = useState<string | null>(null);
   if (followedSelection !== selectedInterviewId) {
     setFollowedSelection(selectedInterviewId);
     setTag(selectedInterviewId);
+    setHiddenTo(null);
   }
   const [saveError, setSaveError] = useState<unknown>();
   const box = useRef<HTMLTextAreaElement>(null);
@@ -43,13 +49,17 @@ export function NotesPanel({
     loadNotes(candidateId, selectedInterviewId);
   }, [candidateId, selectedInterviewId]);
 
-  function loadNotes(id: string, interviewId: string | null) {
+  // changed: notes just saved or re-tagged. If core's list leaves one out, the filter hides it,
+  // and the panel says so instead of letting the note seem to vanish.
+  function loadNotes(id: string, interviewId: string | null, changed: InterviewerNote[] = []) {
     const thisLoad = ++latestLoad.current;
     api.listInterviewerNotes(id, interviewId).then(
       (list) => {
         if (thisLoad !== latestLoad.current) return;
         setNotes(list);
         setLoadFailed(false);
+        const hidden = changed.find((note) => !list.some((shown) => shown.id === note.id));
+        setHiddenTo(hidden?.interviewId ?? null);
       },
       () => {
         if (thisLoad === latestLoad.current) setLoadFailed(true);
@@ -57,8 +67,8 @@ export function NotesPanel({
     );
   }
 
-  function reload() {
-    loadNotes(candidateId, selectedInterviewId);
+  function reload(changed: InterviewerNote[] = []) {
+    loadNotes(candidateId, selectedInterviewId, changed);
   }
 
   function changeDraft(value: string) {
@@ -77,12 +87,12 @@ export function NotesPanel({
     const sent = draftNow.current;
     let saved = false;
     try {
-      await api.addInterviewerNotes({ candidateId, interviewId: tag, text: sent });
+      const added = await api.addInterviewerNotes({ candidateId, interviewId: tag, text: sent });
       const current = draftNow.current;
       changeDraft(current.startsWith(sent) ? current.slice(sent.length).replace(/^\r?\n/, "") : current);
       setSaveError(undefined);
       saved = true;
-      reload();
+      reload(added);
     } catch (error) {
       setSaveError(error);
     } finally {
@@ -106,10 +116,12 @@ export function NotesPanel({
 
   // After a note is edited, re-tagged, or deleted, the list is fetched again and the box is
   // ready for the next note.
-  function handleNoteChanged() {
-    reload();
+  function handleNoteChanged(changed?: InterviewerNote) {
+    reload(changed ? [changed] : []);
     box.current?.focus();
   }
+
+  const hiddenInterview = interviews.find((interview) => interview.id === hiddenTo);
 
   const lineCount = draft.split("\n").length;
 
@@ -135,6 +147,14 @@ export function NotesPanel({
         </div>
         {saveError !== undefined && <p className="error">{refusalMessage(text, saveError, text.panels.interviewerNotes.saveFailed)}</p>}
       </div>
+      {hiddenInterview && (
+        <p className="notice" role="status">
+          {text.panels.interviewerNotes.hiddenByFilter.replace("{interview}", interviewName(text, hiddenInterview))}{" "}
+          <button type="button" className="link-button" onClick={onShowAll}>
+            {text.panels.interviewerNotes.showAll}
+          </button>
+        </p>
+      )}
       {loadFailed && <p className="error">{text.panels.interviewerNotes.loadFailed}</p>}
       {!loadFailed && notes.length === 0 && <p className="empty">{text.panels.interviewerNotes.empty}</p>}
       <ul className="note-list">
@@ -153,7 +173,8 @@ function NoteItem({
 }: {
   note: InterviewerNote;
   interviews: Interview[];
-  onChanged: () => void;
+  // Called after a change, with the note as it is now when it still exists.
+  onChanged: (note?: InterviewerNote) => void;
 }) {
   const { text } = useText();
   const [editing, setEditing] = useState(false);
@@ -161,12 +182,12 @@ function NoteItem({
   const [error, setError] = useState<string>();
 
   // Changing the tag leaves an open edit alone, so unsaved text is not lost.
-  async function run(change: () => Promise<unknown>, failed: string, { closeEditor = true } = {}) {
+  async function run(change: () => Promise<InterviewerNote | void>, failed: string, { closeEditor = true } = {}) {
     try {
-      await change();
+      const changed = await change();
       setError(undefined);
       if (closeEditor) setEditing(false);
-      onChanged();
+      onChanged(changed ?? undefined);
     } catch (caught) {
       setError(refusalMessage(text, caught, failed));
     }

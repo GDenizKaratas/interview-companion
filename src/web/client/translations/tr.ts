@@ -69,6 +69,8 @@ const translation: TranslationFile = {
         saveFailed: "Not kaydedilemedi.",
         deleteFailed: "Not silinemedi.",
         loadFailed: "Notlar yüklenemedi.",
+        hiddenByFilter: "{interview} için kaydedildi. Başka bir mülakat seçiliyken görünmez.",
+        showAll: "Tüm notları göster",
       },
       transcript: { title: "Transkript", empty: "Transkript yok." },
       aiNotes: { title: "AI Notları", label: "AI tarafından üretildi", empty: "AI Notları henüz oluşturulmadı." },

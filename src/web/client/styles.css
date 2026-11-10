@@ -333,6 +333,15 @@ select {
   border-color: var(--line);
 }
 
+.notice {
+  flex: none;
+  margin: 0 0 0.5rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  background: var(--page);
+  border-radius: 6px;
+}
+
 .note-list {
   list-style: none;
   padding: 0;
