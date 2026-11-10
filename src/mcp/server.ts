@@ -1,12 +1,11 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { defaultDatabasePath, openCore } from "../core/index.ts";
+import { defaultDatabasePath, openCore, readOnlyCore } from "../core/index.ts";
+import { createMcpServer } from "./tools.ts";
 
-// The read-only MCP server. It reads the same database as the web app, through core.
-// Tools and the Candidate Brief prompt are added in later tickets.
+// The read-only MCP server over stdio. An AI client starts this process and talks to it through
+// standard input and output, so nothing else may be written to stdout. It reads the same
+// database as the web app, through core's read-only view.
 const core = openCore(defaultDatabasePath());
-const server = new McpServer({ name: "interview-companion", version: "0.1.0" });
-
 process.on("exit", () => core.close());
 
-await server.connect(new StdioServerTransport());
+await createMcpServer(readOnlyCore(core)).connect(new StdioServerTransport());

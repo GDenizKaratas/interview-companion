@@ -2,6 +2,7 @@
 import { mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import * as candidateOverview from "./candidate-overview.ts";
 import * as candidates from "./candidates.ts";
 import * as cv from "./cv.ts";
 import { openDatabase } from "./database.ts";
@@ -13,6 +14,7 @@ import * as nameGuess from "./name-guess.ts";
 import * as savedQuestions from "./saved-questions.ts";
 import * as transcripts from "./transcripts.ts";
 
+export type { CandidateOverview, InterviewOverview } from "./candidate-overview.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
 export { InvalidInputError, NotFoundError, type InputRule } from "./errors.ts";
@@ -26,6 +28,7 @@ export interface Core {
   createCandidateWithCv(input: cv.NewCandidateWithCv): Promise<candidates.Candidate>;
   listCandidates(): candidates.Candidate[];
   getCandidate(id: string): candidates.Candidate | undefined;
+  getCandidateOverview(candidateId: string): candidateOverview.CandidateOverview;
   deleteCandidate(id: string): void;
   loadDemoCandidate(): Promise<candidates.Candidate>;
   loadDemoCandidateOnFirstStart(): Promise<candidates.Candidate | undefined>;
@@ -55,6 +58,28 @@ export interface Core {
   close(): void;
 }
 
+// The operations that only read. A caller that must never change data gets only these.
+const readOperations = [
+  "listCandidates",
+  "getCandidate",
+  "getCandidateOverview",
+  "listCandidateRoles",
+  "listInterviews",
+  "listInterviewerNotes",
+  "listSavedQuestions",
+  "getCv",
+  "getTranscript",
+  "listTranscriptFormats",
+] as const satisfies readonly (keyof Core)[];
+
+export type ReadOnlyCore = Pick<Core, (typeof readOperations)[number]>;
+
+// A view of core that holds only the read operations. Write operations are not hidden behind a
+// type: they are absent from the object, so not even a type cast can reach them.
+export function readOnlyCore(core: Core): ReadOnlyCore {
+  return Object.fromEntries(readOperations.map((name) => [name, core[name]])) as unknown as ReadOnlyCore;
+}
+
 export interface CoreOptions {
   // Today as YYYY-MM-DD. Defaults to the day on this computer's clock; tests fix it.
   today?: interviews.Today;
@@ -76,6 +101,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     createCandidateWithCv: (input) => cv.createCandidateWithCv(db, cvFolder, now, input),
     listCandidates: () => candidates.listCandidates(db),
     getCandidate: (id) => candidates.getCandidate(db, id),
+    getCandidateOverview: (candidateId) => candidateOverview.getCandidateOverview(db, today, candidateId),
     deleteCandidate: (id) => cv.deleteCandidateAndCv(db, cvFolder, id),
     loadDemoCandidate: () => demoCandidate.loadDemoCandidate(db, cvFolder, today, now),
     loadDemoCandidateOnFirstStart: () => demoCandidate.loadDemoCandidateOnFirstStart(db, cvFolder, today, now),
