@@ -44,6 +44,20 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 34 | Work runs in two parallel lanes (two chats): one for tickets where learning matters, one for mechanical tickets. | The owner's review time is the bottleneck, and early tickets touch shared files, so more lanes would add conflicts and waiting, not speed. | One lane; four lanes. |
 | 35 | Every ticket is built test-first and reviewed with the code-review skill before it is shown to the owner. | The owner reviews a finished, tested change, not a draft. | Review only at milestone end. |
 
+## 2026-11-10 — #2 Project skeleton and first Candidate
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 36 | SQLite through Node's built-in `node:sqlite` module. Node 24 or newer is required. | No native build step on install, and its bundled SQLite includes the FTS5 full-text search we need later. | `better-sqlite3`, which compiles native code and often lags behind new Node versions. |
+| 37 | Node runs the TypeScript files directly (built-in type stripping). `tsc` only checks types. Code uses only erasable TypeScript syntax. | No build step for the server or the MCP server, and one less tool to explain. | `tsx` or compiling to `dist/` before running. |
+| 38 | TypeScript 6.0, not 7.0. | `typescript-eslint` does not support 7.0 yet. | TypeScript 7.0 without type-aware linting. |
+| 39 | The schema is upgraded by an ordered list of SQL steps in core, with the applied count stored in `PRAGMA user_version`. | Simple, has no dependency, and runs every time the database opens. | A migration library. |
+| 40 | The database lives at `data/interview-companion.sqlite` in the project folder, or in `DATA_DIR` when set. Core decides the path, so web and mcp always open the same file. | An MCP client starts the server from any directory, so the path cannot depend on the current directory. | A path relative to the current directory. |
+| 41 | The local server listens on 127.0.0.1 only. `npm start` builds the interface and starts the server on port 3000 (`PORT` overrides it). | The app holds candidate data and is for this machine only. | Listening on all network interfaces. |
+| 42 | The Candidate list shows the newest Candidate first. A Candidate needs a name and a role; spaces around them are removed. | The Interviewer usually works on the Candidate they added most recently. | Alphabetical order. |
+| 43 | A lint rule enforces the module boundary: `web` and `mcp` import core only through `src/core/index.ts`, and the browser code never imports core. | The rule "no business rule is written twice" is checked by a tool, not only by review. | Relying on code review alone. |
+| 44 | Workspace panels show only their empty-state message for now. Upload, import, and input controls arrive with the tickets that make them work. | A button that does nothing is misleading. | Disabled placeholder buttons. |
+
 ## Open questions
 
 - The exact format of Google Meet transcripts. To be researched at the start of Milestone 2.

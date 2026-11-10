@@ -1,0 +1,162 @@
+:root {
+  --text: #1d1d1f;
+  --muted: #6b6b70;
+  --line: #d9d9de;
+  --surface: #ffffff;
+  --page: #f5f5f7;
+  --ai-surface: #f1f0fb;
+  --error: #b42318;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--page);
+}
+
+body {
+  margin: 0;
+}
+
+h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+h2 {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 0.75rem;
+}
+
+a {
+  color: inherit;
+}
+
+.page {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.candidate-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.candidate-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  flex: 1 1 10rem;
+}
+
+input,
+button {
+  font: inherit;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+button {
+  background: var(--text);
+  color: var(--surface);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+}
+
+.candidate-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.candidate-list li + li {
+  border-top: 1px solid var(--line);
+}
+
+.candidate-list a {
+  display: block;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+}
+
+.empty {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--error);
+}
+
+.workspace {
+  padding: 1rem;
+}
+
+.workspace-header {
+  display: flex;
+  gap: 1.5rem;
+  align-items: baseline;
+  margin-bottom: 1rem;
+}
+
+.role {
+  font-weight: normal;
+}
+
+/* Wide screen: the fixed layout from docs/workspace-wireframe.md. */
+.panels {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "cv notes"
+    "transcript ai"
+    "questions questions";
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1rem;
+  min-height: 8rem;
+}
+
+.panel-cv { grid-area: cv; }
+.panel-notes { grid-area: notes; }
+.panel-transcript { grid-area: transcript; }
+.panel-ai { grid-area: ai; background: var(--ai-surface); }
+.panel-questions { grid-area: questions; }
+
+.ai-label {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: normal;
+  text-transform: none;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+}
+
+/* Narrow screen: My Notes first, because it is the panel used during an interview. */
+@media (max-width: 760px) {
+  .panels {
+    grid-template-columns: 1fr;
+    grid-template-areas: "notes" "cv" "transcript" "ai" "questions";
+  }
+}
