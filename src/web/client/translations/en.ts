@@ -70,6 +70,9 @@ const text = {
       saveFailed: "Note could not be saved.",
       deleteFailed: "Note could not be deleted.",
       loadFailed: "Notes could not be loaded.",
+      // {interview} is replaced by the Interview's name.
+      hiddenByFilter: "Saved under {interview}. Notes of other Interviews are hidden while one is selected.",
+      showAll: "Show all notes",
     },
     transcript: { title: "Transcript", empty: "No transcript available." },
     aiNotes: { title: "AI Notes", label: "AI-generated", empty: "AI Notes have not been generated." },

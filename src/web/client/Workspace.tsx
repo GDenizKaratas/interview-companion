@@ -80,7 +80,12 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             <p className="empty">{text.panels.cv.empty}</p>
           </Panel>
           <Panel area="notes" title={text.panels.interviewerNotes.title}>
-            <NotesPanel candidateId={candidateId} interviews={interviews} selectedInterviewId={interviewId} />
+            <NotesPanel
+              candidateId={candidateId}
+              interviews={interviews}
+              selectedInterviewId={interviewId}
+              onShowAll={() => setInterviewId(null)}
+            />
           </Panel>
           <Panel area="transcript" title={text.panels.transcript.title}>
             <p className="empty">{text.panels.transcript.empty}</p>

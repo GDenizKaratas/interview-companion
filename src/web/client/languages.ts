@@ -30,3 +30,8 @@ export function translationFor(code: string): Language {
     languages.find((language) => language.code === defaultLanguageCode)!
   );
 }
+
+// Fills the {name} places in a translated text: fill("Interview {number}", { number: "11" }).
+export function fill(template: string, values: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (place, name: string) => values[name] ?? place);
+}
