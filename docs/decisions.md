@@ -190,6 +190,17 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 118 | The demo Candidate's Transcript is imported with its mapping not confirmed. | The Interviewer trying the demo sees and tries the step every real Transcript needs. | Confirming it in the demo data. |
 | 119 | Marking AI Notes Stale when the mapping changes is left to #16, in `confirmSpeakerMapping`. No AI Notes exist yet. | Building it now would test something that cannot happen. | Adding a Stale flag before AI Notes exist. |
 
+## 2026-11-10 — #13 MCP server: Candidates, notes, and questions
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 120 | The MCP server is given `readOnlyCore(core)`, an object that holds only core's read operations. Its type, `ReadOnlyCore`, is a `Pick` of `Core` over the same list, and a test checks that no write operation is in the object. | "The MCP server cannot write" is then enforced twice: the compiler refuses a write call in `src/mcp`, and at run time the write functions are not there, so not even a type cast reaches them. | Relying on the mcp folder only calling reads, checked by review. |
+| 121 | `get_candidate` returns core's new `getCandidateOverview`: the Candidate, the CV's file name, upload time, and page count (or `null`), each Interview with its number, date, Planned flag, and its Transcript's file name, format, segment count, and whether the Speaker Mapping is confirmed (or `null`), and the number of Interviewer Notes and Saved Questions. No full texts. | The architecture names "CV status, Interviews, counts". The overview is built in core so a later screen or tool shows the same thing. Full texts belong to their own tools and to Evidence search (#14). | Building the overview in the mcp folder; returning the CV and Transcript texts. |
+| 122 | `list_candidates` adds `interviewCount` to each Candidate, counted in the mcp folder from `listInterviews`. | It is a count of an existing list, not a rule, and no other caller needs it yet. | A new core operation for one count. |
+| 123 | Tools return their result as pretty-printed JSON text. Inputs are checked by the SDK against zod schemas: a Candidate id is a non-empty string. An unknown Candidate or Interview returns an error result with core's message plus a hint that Candidate ids come from `list_candidates` and Interview ids from `get_candidate`. `zod` is now a direct dependency. | Text content works in every client. The hint lets the model correct itself instead of guessing. | Structured content with an output schema, which would repeat core's types in zod; a bare "not found". |
+| 124 | `get_interviewer_notes` takes an optional `interviewId` with the same meaning as the Workspace filter: that Interview's notes and the untagged ones. | Core already has this filter, and the Candidate Brief (#14) is often about one Interview. | No filter; a filter that drops untagged notes. |
+| 125 | Every tool is marked with the annotations `readOnlyHint: true` and `openWorldHint: false`. | Clients can show that the tools change nothing and reach nothing outside the local database. | No annotations. |
+
 ## Open questions
 
 - The exact format of Google Meet transcripts. To be researched at the start of Milestone 2.

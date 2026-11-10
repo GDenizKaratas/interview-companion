@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), and plain-text Transcript import through an adapter.
+Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), plain-text Transcript import through an adapter, the Speaker Mapping, and the first four MCP tools (`list_candidates`, `get_candidate`, `get_interviewer_notes`, `get_saved_questions`). Setup and an introduction to MCP are in [mcp.md](mcp.md).
 
 Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md). Reasons for each choice are in the [decision log](decisions.md).
 
@@ -103,7 +103,7 @@ Notes on the model:
 | AI never edits an Interviewer Note. | Core exposes no such operation to AI code. |
 | Regenerating suggestions never changes Saved Questions. | Saved Questions are copies in a separate table. |
 | No generation without a request. | Generation is only reachable from explicit actions. |
-| The MCP server cannot write. | The mcp folder only uses read operations of core. |
+| The MCP server cannot write. | The MCP server gets `readOnlyCore(core)`, a view that holds only core's read operations. |
 
 Model output itself is not deterministic. These checks are.
 
