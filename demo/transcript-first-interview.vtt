@@ -1,0 +1,25 @@
+WEBVTT
+
+NOTE
+Fictional demo Transcript in WebVTT, for trying the import by hand.
+
+1
+00:00:02.000 --> 00:00:07.400
+<v Ayşe>Merhaba Deniz, hoş geldin. Kısaca son projenden bahseder misin?</v>
+
+2
+00:00:08.100 --> 00:00:15.900
+<v Deniz>Merhaba. Son iki yılda bir ödeme platformunun backend ekibindeydim.</v>
+
+3
+00:00:15.900 --> 00:00:20.300
+Node.js ve PostgreSQL ile ödeme servislerini yazdık.
+
+4
+00:00:21.000 --> 00:00:24.600
+<v Ayşe>Bu servislerde en zorlandığınız konu neydi?</v>
+
+5
+00:00:25.200 --> 00:00:33.800
+<v Deniz>Arka plan işleri. Fatura ve iade işlemlerini kuyruğa alıyorduk,
+bunun için Redis ve BullMQ kullandık.</v>
