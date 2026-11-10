@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { openCore, readOnlyCore, type Candidate, type Core, type ProposedAiNote } from "../core/index.ts";
+import { aiClientCore, openCore, type Candidate, type Core, type ProposedAiNote } from "../core/index.ts";
 import { createMcpServer } from "./tools.ts";
 
 let dir: string;
@@ -23,7 +23,7 @@ beforeEach(async () => {
   core = openCore(join(dir, "test.sqlite"), { today: () => "2026-11-10", now: () => clock, aiProvider: () => ({ proposeAiNotes: async () => proposed, proposeQuestions: async () => [] }) });
   candidate = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
-  await createMcpServer(readOnlyCore(core)).connect(serverSide);
+  await createMcpServer(aiClientCore(core)).connect(serverSide);
   client = new Client({ name: "test-client", version: "1.0.0" });
   await client.connect(clientSide);
 });
@@ -50,19 +50,23 @@ async function refusal(name: string, args: Record<string, unknown>): Promise<str
 }
 
 describe("MCP server", () => {
-  it("offers the read-only tools and nothing else", async () => {
+  it("offers the read tools, and only the two writes that go through core's checks", async () => {
     const { tools } = await client.listTools();
 
     expect(tools.map((tool) => tool.name).sort()).toEqual([
       "get_ai_notes",
       "get_candidate",
+      "get_cv",
       "get_interviewer_notes",
       "get_saved_questions",
+      "get_transcript",
       "list_candidates",
+      "save_ai_notes",
+      "save_suggested_questions",
       "search_evidence",
     ]);
     for (const tool of tools) {
-      expect(tool.annotations?.readOnlyHint, tool.name).toBe(true);
+      expect(tool.annotations?.readOnlyHint, tool.name).toBe(!tool.name.startsWith("save_"));
       expect(tool.description, tool.name).toBeTruthy();
     }
   });
@@ -193,6 +197,7 @@ describe("MCP server", () => {
         correction: "Used Redis with BullMQ.",
         reviewState: "corrected",
         generatedAt: "2026-11-10T09:30:00.000Z",
+        source: "app",
         stale: true,
         evidence: [{ segmentNumber: 2, quote: "Redis" }],
       },
@@ -203,6 +208,7 @@ describe("MCP server", () => {
         correction: null,
         reviewState: "dismissed",
         generatedAt: "2026-11-10T09:30:00.000Z",
+        source: "app",
         stale: true,
         evidence: [{ segmentNumber: 2, quote: "BullMQ" }],
       },
@@ -328,4 +334,104 @@ describe("MCP server", () => {
   it("candidate_brief refuses a missing Candidate", async () => {
     await expect(client.getPrompt({ name: "candidate_brief", arguments: {} })).rejects.toThrow(/candidate/);
   });
+
+  it("get_transcript gives every segment with its number, speaker label, and confirmed role", async () => {
+    const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    const transcript = core.importTranscript(interview.id, {
+      fileName: "t.txt",
+      bytes: new TextEncoder().encode("Ayşe: Which queue did you use?\nAda: We used Redis."),
+    });
+
+    expect(await call("get_transcript", { interviewId: interview.id })).toEqual({
+      interviewId: interview.id,
+      fileName: "t.txt",
+      speakerMappingConfirmed: false,
+      segments: [
+        { number: 1, speakerLabel: "Ayşe", role: null, startMs: null, endMs: null, text: "Which queue did you use?" },
+        { number: 2, speakerLabel: "Ada", role: null, startMs: null, endMs: null, text: "We used Redis." },
+      ],
+    });
+    core.confirmSpeakerMapping(
+      interview.id,
+      Object.fromEntries(transcript.speakers.map((s) => [s.id, s.label === "Ada" ? "candidate" : "interviewer"] as const)),
+    );
+    const confirmed = (await call("get_transcript", { interviewId: interview.id })) as { segments: { role: string }[] };
+    expect(confirmed.segments.map((segment) => segment.role)).toEqual(["interviewer", "candidate"]);
+  });
+
+  it("get_transcript and get_cv give null when there is nothing yet", async () => {
+    const interview = core.addInterview({ candidateId: candidate.id });
+
+    expect(await call("get_transcript", { interviewId: interview.id })).toBeNull();
+    expect(await call("get_cv", { candidateId: candidate.id })).toBeNull();
+    expect(await refusal("get_cv", { candidateId: "no-such-candidate" })).toContain("list_candidates");
+  });
+
+  it("save_ai_notes refuses while saving from the AI client is off, and says where to turn it on", async () => {
+    const interview = readyInterview();
+
+    const message = await refusal("save_ai_notes", { interviewId: interview.id, notes: [redisNote] });
+
+    expect(message).toContain("AI Settings");
+    expect(core.listAiNotes(interview.id)).toEqual([]);
+  });
+
+  it("save_ai_notes saves the notes whose quotes are the Candidate's words, and counts the dropped ones", async () => {
+    const interview = readyInterview();
+    core.allowAiClientWrites(true);
+
+    const saved = (await call("save_ai_notes", {
+      interviewId: interview.id,
+      notes: [redisNote, { statement: "Used Kafka.", evidence: [{ segmentNumber: 2, quote: "Kafka" }] }],
+    })) as { notes: { statement: string; source: string; reviewState: string }[]; dropped: number };
+
+    expect(saved.dropped).toBe(1);
+    expect(saved.notes).toEqual([expect.objectContaining({ statement: "Used Redis.", source: "aiClient", reviewState: "unreviewed" })]);
+  });
+
+  it("save_suggested_questions saves through core's checks", async () => {
+    const interview = readyInterview();
+    core.allowAiClientWrites(true);
+
+    const saved = (await call("save_suggested_questions", {
+      candidateId: candidate.id,
+      suggestions: [
+        {
+          question: "Why Redis?",
+          reason: "The Candidate named it.",
+          evidence: [{ source: "transcript", interviewId: interview.id, segmentNumber: 2, quote: "Redis" }],
+        },
+        { question: "Why Kafka?", reason: "Made up.", evidence: [{ source: "cv", page: 1, quote: "Kafka" }] },
+      ],
+    })) as { suggestions: { text: string; source: string }[]; dropped: number };
+
+    expect(saved.dropped).toBe(1);
+    expect(saved.suggestions).toEqual([expect.objectContaining({ text: "Why Redis?", source: "aiClient" })]);
+  });
+
+  it("save tools refuse malformed input", async () => {
+    const interview = readyInterview();
+    core.allowAiClientWrites(true);
+
+    expect(await refusal("save_ai_notes", { interviewId: interview.id, notes: [{ statement: "No evidence" }] })).toContain("evidence");
+    expect(await refusal("save_suggested_questions", { candidateId: candidate.id, suggestions: "none" })).toContain("suggestions");
+    const tooMany = Array.from({ length: 41 }, () => redisNote);
+    expect(await refusal("save_ai_notes", { interviewId: interview.id, notes: tooMany })).toContain("notes");
+  });
 });
+
+// An Interview with a confirmed Transcript: segment 1 is the Interviewer's, segment 2 the Candidate's.
+function readyInterview() {
+  const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+  const transcript = core.importTranscript(interview.id, {
+    fileName: "t.txt",
+    bytes: new TextEncoder().encode("Ayşe: Which queue did you use?\nAda: We used Redis with BullMQ."),
+  });
+  core.confirmSpeakerMapping(
+    interview.id,
+    Object.fromEntries(transcript.speakers.map((s) => [s.id, s.label === "Ada" ? "candidate" : "interviewer"] as const)),
+  );
+  return interview;
+}
+
+const redisNote = { statement: "Used Redis.", evidence: [{ segmentNumber: 2, quote: "Redis" }] };

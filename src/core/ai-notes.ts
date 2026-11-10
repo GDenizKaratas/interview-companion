@@ -1,15 +1,19 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import type { AiProviderFactory, ProposedAiNote } from "./ai-provider.ts";
-import { readApiKey } from "./ai-settings.ts";
+import { readApiKey, requireAiClientWrites } from "./ai-settings.ts";
+import { getTranscript, type Transcript } from "./transcripts.ts";
 import { inTransaction } from "./database.ts";
 import { AiProviderError, InvalidInputError, NotFoundError, PreconditionError } from "./errors.ts";
 import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { requireInterview } from "./interviews.ts";
-import { getTranscript } from "./transcripts.ts";
 
 export type ReviewState = "unreviewed" | "confirmed" | "corrected" | "dismissed";
+
+// Who wrote an AI Note: the app, with the Interviewer's API key, or the AI client through MCP.
+// Both went through the same checks.
+export type AiSource = "app" | "aiClient";
 
 export interface AiNoteEvidence {
   // The Transcript segment the quote comes from, numbered from 1.
@@ -27,6 +31,7 @@ export interface AiNote {
   correction: string | null;
   reviewState: ReviewState;
   generatedAt: string;
+  source: AiSource;
   // True when the Speaker Mapping was confirmed again after the note was generated: the note
   // may credit words to the wrong speaker, so it is not trusted until regenerated.
   stale: boolean;
@@ -46,15 +51,7 @@ export async function generateAiNotes(
   providerFor: AiProviderFactory,
   interviewId: string,
 ): Promise<AiNoteGeneration> {
-  requireInterview(db, interviewId);
-  const transcript = getTranscript(db, interviewId);
-  if (!transcript) throw new PreconditionError("noTranscript", "Import a Transcript before generating AI Notes.");
-  if (transcript.speakerMappingConfirmedAt === null) {
-    throw new PreconditionError(
-      "speakerMappingNotConfirmed",
-      "Confirm who is speaking before generating AI Notes.",
-    );
-  }
+  const transcript = requireConfirmedTranscript(db, interviewId);
   const apiKey = readApiKey(db);
   if (apiKey === undefined) throw new PreconditionError("apiKeyMissing", "Add an API key to generate AI Notes.");
   const roles = new Map(transcript.speakers.map((speaker) => [speaker.id, speaker.role!]));
@@ -85,6 +82,39 @@ export async function generateAiNotes(
       "The Transcript or its speakers changed during generation. Nothing was saved; generate again.",
     );
   }
+  return acceptNotes(db, now, transcript, proposed, "app");
+}
+
+// Saves the AI Notes the AI client wrote itself, through MCP, with no API key in the app. They
+// go through the same gate and the same quote check as notes the app generates.
+export function saveAiNotesFromClient(db: DatabaseSync, now: Now, interviewId: string, proposed: ProposedAiNote[]): AiNoteGeneration {
+  requireAiClientWrites(db);
+  return acceptNotes(db, now, requireConfirmedTranscript(db, interviewId), proposed, "aiClient");
+}
+
+// AI Notes need a Transcript whose speakers are confirmed, so every quote is known to be the Candidate's.
+function requireConfirmedTranscript(db: DatabaseSync, interviewId: string): Transcript {
+  requireInterview(db, interviewId);
+  const transcript = getTranscript(db, interviewId);
+  if (!transcript) throw new PreconditionError("noTranscript", "Import a Transcript before making AI Notes.");
+  if (transcript.speakerMappingConfirmedAt === null) {
+    throw new PreconditionError(
+      "speakerMappingNotConfirmed",
+      "Confirm who is speaking before making AI Notes.",
+    );
+  }
+  return transcript;
+}
+
+// Keeps the proposed notes that pass the quote check and saves them, Unreviewed.
+function acceptNotes(
+  db: DatabaseSync,
+  now: Now,
+  transcript: Transcript,
+  proposed: ProposedAiNote[],
+  source: AiSource,
+): AiNoteGeneration {
+  const roles = new Map(transcript.speakers.map((speaker) => [speaker.id, speaker.role!]));
   const candidateSegments = new Map(
     transcript.segments
       .filter((segment) => roles.get(segment.speakerId) === "candidate")
@@ -92,8 +122,8 @@ export async function generateAiNotes(
   );
   const backed = proposed.filter((note) => isBacked(note, candidateSegments));
   // An answer with nothing usable does not cost the Interviewer the notes they already have.
-  if (backed.length > 0) saveNotes(db, now, interviewId, backed);
-  return { notes: listAiNotes(db, interviewId), dropped: proposed.length - backed.length };
+  if (backed.length > 0) saveNotes(db, now, transcript.interviewId, backed, source);
+  return { notes: listAiNotes(db, transcript.interviewId), dropped: proposed.length - backed.length };
 }
 
 // The check that makes an AI Note trustworthy, done in code rather than asked of the model:
@@ -107,21 +137,21 @@ function isBacked(note: ProposedAiNote, candidateSegments: Map<number, string>):
   });
 }
 
-function saveNotes(db: DatabaseSync, now: Now, interviewId: string, notes: ProposedAiNote[]): void {
+function saveNotes(db: DatabaseSync, now: Now, interviewId: string, notes: ProposedAiNote[], source: AiSource): void {
   const generatedAt = now().toISOString();
   inTransaction(db, () => {
     // Only notes the Interviewer has not touched are replaced. A Confirmed, Corrected, or
     // Dismissed note is their work, so it stays, Stale if the mapping changed since.
     db.prepare("DELETE FROM ai_note WHERE interview_id = ? AND review_state = 'unreviewed'").run(interviewId);
     const insertNote = db.prepare(
-      "INSERT INTO ai_note (id, interview_id, statement, review_state, generated_at, position) VALUES (?, ?, ?, 'unreviewed', ?, ?)",
+      "INSERT INTO ai_note (id, interview_id, statement, review_state, generated_at, position, source) VALUES (?, ?, ?, 'unreviewed', ?, ?, ?)",
     );
     const insertEvidence = db.prepare(
       "INSERT INTO ai_note_evidence (ai_note_id, position, segment_number, quote) VALUES (?, ?, ?, ?)",
     );
     for (const [i, note] of notes.entries()) {
       const id = randomUUID();
-      insertNote.run(id, interviewId, note.statement.trim(), generatedAt, i + 1);
+      insertNote.run(id, interviewId, note.statement.trim(), generatedAt, i + 1, source);
       for (const [j, evidence] of note.evidence.entries()) {
         insertEvidence.run(id, j + 1, evidence.segmentNumber, evidence.quote);
       }
@@ -140,7 +170,7 @@ export function listAiNotes(db: DatabaseSync, interviewId: string): AiNote[] {
   return toAiNotes(db, notes);
 }
 
-const selectNotes = `SELECT ai_note.id, ai_note.interview_id, statement, correction, review_state, generated_at,
+const selectNotes = `SELECT ai_note.id, ai_note.interview_id, statement, correction, review_state, generated_at, source,
          generated_at < speaker_mapping_confirmed_at AS stale
   FROM ai_note JOIN transcript ON transcript.interview_id = ai_note.interview_id`;
 
@@ -151,6 +181,7 @@ interface NoteRow {
   correction: string | null;
   review_state: ReviewState;
   generated_at: string;
+  source: AiSource;
   stale: number;
 }
 
@@ -218,6 +249,7 @@ function toAiNotes(db: DatabaseSync, notes: NoteRow[]): AiNote[] {
     correction: note.correction,
     reviewState: note.review_state,
     generatedAt: note.generated_at,
+    source: note.source,
     stale: note.stale === 1,
     evidence: (evidenceOf.all(note.id) as unknown as { segment_number: number; quote: string }[]).map((row) => ({
       segmentNumber: row.segment_number,

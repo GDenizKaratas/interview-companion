@@ -1,14 +1,21 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { candidateBriefPrompt } from "./candidate-brief.ts";
-import { evidenceSources, InvalidInputError, NotFoundError, type ReadOnlyCore } from "../core/index.ts";
+import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, type AiClientCore } from "../core/index.ts";
+
+// Bounds on what the AI client can save in one call, so a runaway client cannot flood the
+// Workspace. They are generous for a real Interview.
+const limits = { notes: 40, suggestions: 25, evidence: 8 };
+const text = { long: 2000 };
 
 // Every tool that is about one Candidate takes their id, as list_candidates gives it.
 const candidateId = z.string().min(1).describe("The Candidate's id, as given by list_candidates.");
 
-// Builds the MCP server and its tools. It gets only the read operations of core, so no tool
-// can change data. Transport (stdio in server.ts, in-memory in tests) is attached by the caller.
-export function createMcpServer(core: ReadOnlyCore): McpServer {
+// Builds the MCP server and its tools. It gets core's read operations and only the two writes
+// the AI client may make, which go through the same checks as the app's own AI and are refused
+// while the Interviewer has not turned them on. No tool can change anything else. Transport
+// (stdio in server.ts, in-memory in tests) is attached by the caller.
+export function createMcpServer(core: AiClientCore): McpServer {
   const server = new McpServer({ name: "interview-companion", version: "0.1.0" });
   const readOnly = { readOnlyHint: true, openWorldHint: false };
 
@@ -82,6 +89,133 @@ export function createMcpServer(core: ReadOnlyCore): McpServer {
     ({ interviewId }) => toolResult(() => core.listAiNotes(interviewId)),
   );
   server.registerTool(
+    "get_transcript",
+    {
+      description:
+        "Get the whole Transcript of one Interview, segment by segment: its number, the speaker label, the " +
+        "speaker's role (candidate, interviewer, or other; null while the Speaker Mapping is not confirmed), " +
+        "times when the file had them, and the exact text. Null when the Interview has no Transcript. Use the " +
+        "segment numbers and exact text when you save AI Notes or Suggested Questions.",
+      inputSchema: { interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate.") },
+      annotations: readOnly,
+    },
+    ({ interviewId }) =>
+      toolResult(() => {
+        const transcript = core.getTranscript(interviewId);
+        if (!transcript) return null;
+        const speakers = new Map(transcript.speakers.map((speaker) => [speaker.id, speaker]));
+        return {
+          interviewId,
+          fileName: transcript.fileName,
+          speakerMappingConfirmed: transcript.speakerMappingConfirmedAt !== null,
+          segments: transcript.segments.map((segment) => {
+            const speaker = speakers.get(segment.speakerId)!;
+            return {
+              number: segment.number,
+              speakerLabel: speaker.label,
+              role: speaker.role,
+              startMs: segment.startMs,
+              endMs: segment.endMs,
+              text: segment.text,
+            };
+          }),
+        };
+      }),
+  );
+  server.registerTool(
+    "get_cv",
+    {
+      description:
+        "Get the text of a Candidate's CV, page by page, exactly as the app stores it. Null when there is no CV. " +
+        "Quotes from the CV in Suggested Questions must be copied from this text.",
+      inputSchema: { candidateId },
+      annotations: readOnly,
+    },
+    ({ candidateId }) =>
+      toolResult(() => {
+        core.getCandidateOverview(candidateId);
+        const cv = core.getCv(candidateId);
+        return cv ? { fileName: cv.fileName, pages: cv.pages.map((page) => ({ number: page.number, text: page.text })) } : null;
+      }),
+  );
+  server.registerTool(
+    "save_ai_notes",
+    {
+      description:
+        "Save AI Notes you wrote about one Interview into Interview Companion, so the Interviewer can review " +
+        "them in the app. Each note is one short, neutral statement about what the Candidate said, with at least " +
+        "one quote copied word for word from a segment whose role is candidate (see get_transcript). The app " +
+        "checks every quote: a note with any quote that is not found word for word in a Candidate segment is " +
+        "dropped, and the answer says how many. Saved notes are Unreviewed and replace the earlier Unreviewed " +
+        "ones; notes the Interviewer reviewed stay. Refused until the Speaker Mapping is confirmed, and while " +
+        "saving from the AI client is off in the app's AI Settings.",
+      inputSchema: {
+        interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate."),
+        notes: z
+          .array(
+            z.object({
+              statement: z.string().max(text.long).describe("One short, neutral statement, in the Interviewer's language."),
+              evidence: z
+                .array(
+                  z.object({
+                    segmentNumber: z.number().int().positive().describe("The segment's number, from get_transcript."),
+                    quote: z.string().max(text.long).describe("Words copied exactly from that segment."),
+                  }),
+                )
+                .min(1)
+                .max(limits.evidence),
+            }),
+          )
+          .max(limits.notes)
+          .describe("The notes, in the order to show them."),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+    },
+    ({ interviewId, notes }) => toolResult(() => core.saveAiNotesFromClient(interviewId, notes)),
+  );
+  server.registerTool(
+    "save_suggested_questions",
+    {
+      description:
+        "Save questions you suggest the Interviewer could ask a Candidate, into Interview Companion, as " +
+        "Suggested Questions. Each has the question, one short reason, and quotes that back it: copied word for " +
+        "word from a CV page (see get_cv) or from a Transcript segment (see get_transcript). A question without " +
+        "quotes is saved as a general question. The app checks every quote; a suggestion with a quote that is not " +
+        "found, or that comes from a Transcript whose Speaker Mapping is not confirmed, is dropped, and the answer " +
+        "says how many. Saving replaces the earlier suggestions that were not accepted. Refused while saving from " +
+        "the AI client is off in the app's AI Settings.",
+      inputSchema: {
+        candidateId,
+        suggestions: z
+          .array(
+            z.object({
+              question: z.string().max(text.long).describe("The question, in the Interviewer's language."),
+              reason: z.string().max(text.long).describe("One short line on why it is worth asking."),
+              evidence: z.array(
+                z.discriminatedUnion("source", [
+                  z.object({
+                    source: z.literal("cv"),
+                    page: z.number().int().positive().describe("The CV page number, from get_cv."),
+                    quote: z.string().max(text.long).describe("Words copied exactly from that page."),
+                  }),
+                  z.object({
+                    source: z.literal("transcript"),
+                    interviewId: z.string().min(1),
+                    segmentNumber: z.number().int().positive().describe("The segment's number, from get_transcript."),
+                    quote: z.string().max(text.long).describe("Words copied exactly from that segment."),
+                  }),
+                ]),
+              ).max(limits.evidence),
+            }),
+          )
+          .max(limits.suggestions)
+          .describe("The suggestions, in the order to show them."),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+    },
+    ({ candidateId, suggestions }) => toolResult(() => core.saveSuggestedQuestionsFromClient(candidateId, suggestions)),
+  );
+  server.registerTool(
     "search_evidence",
     {
       description:
@@ -137,7 +271,7 @@ function toolResult(read: () => unknown) {
     return { content: [{ type: "text" as const, text: JSON.stringify(read(), null, 2) }] };
   } catch (error) {
     if (error instanceof NotFoundError) return errorResult(`${error.message} ${idHint}`);
-    if (error instanceof InvalidInputError) return errorResult(error.message);
+    if (error instanceof InvalidInputError || error instanceof PreconditionError) return errorResult(error.message);
     throw error;
   }
 }

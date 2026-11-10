@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as aiNotes from "./ai-notes.ts";
-import type { AiProviderFactory } from "./ai-provider.ts";
+import type { AiProviderFactory, ProposedAiNote, ProposedQuestion } from "./ai-provider.ts";
 import * as aiSettings from "./ai-settings.ts";
 import * as candidateOverview from "./candidate-overview.ts";
 import * as candidates from "./candidates.ts";
@@ -20,7 +20,7 @@ import * as savedQuestions from "./saved-questions.ts";
 import * as suggestedQuestions from "./suggested-questions.ts";
 import * as transcripts from "./transcripts.ts";
 
-export type { AiNote, AiNoteEvidence, AiNoteGeneration, ReviewState } from "./ai-notes.ts";
+export type { AiNote, AiNoteEvidence, AiNoteGeneration, AiSource, ReviewState } from "./ai-notes.ts";
 export type {
   AiNoteRequest,
   AiProvider,
@@ -100,6 +100,13 @@ export interface Core {
   removeApiKey(): void;
   hasApiKey(): boolean;
   generateAiNotes(interviewId: string): Promise<aiNotes.AiNoteGeneration>;
+  aiClientWritesAllowed(): boolean;
+  allowAiClientWrites(allowed: boolean): void;
+  saveAiNotesFromClient(interviewId: string, notes: ProposedAiNote[]): aiNotes.AiNoteGeneration;
+  saveSuggestedQuestionsFromClient(
+    candidateId: string,
+    suggestions: ProposedQuestion[],
+  ): suggestedQuestions.SuggestedQuestionGeneration;
   listAiNotes(interviewId: string): aiNotes.AiNote[];
   confirmAiNote(id: string): aiNotes.AiNote;
   correctAiNote(id: string, correction: string): aiNotes.AiNote;
@@ -134,6 +141,20 @@ const readOperations = [
 ] as const satisfies readonly (keyof Core)[];
 
 export type ReadOnlyCore = Pick<Core, (typeof readOperations)[number]>;
+
+// The writes the AI client may make through MCP, each going through the same checks as the app's
+// own AI and refused while the Interviewer has not allowed it. The switch itself is not here.
+const aiClientWriteOperations = ["saveAiNotesFromClient", "saveSuggestedQuestionsFromClient"] as const satisfies readonly (keyof Core)[];
+
+export type AiClientCore = Pick<Core, (typeof readOperations)[number] | (typeof aiClientWriteOperations)[number]>;
+
+// The view of core the MCP server gets: every read, and only the AI client's checked writes.
+// Like readOnlyCore, any other write is absent from the object, not only from its type.
+export function aiClientCore(core: Core): AiClientCore {
+  return Object.fromEntries(
+    [...readOperations, ...aiClientWriteOperations].map((name) => [name, core[name]]),
+  ) as unknown as AiClientCore;
+}
 
 // A view of core that holds only the read operations. Write operations are not hidden behind a
 // type: they are absent from the object, so not even a type cast can reach them.
@@ -198,6 +219,11 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     removeApiKey: () => aiSettings.removeApiKey(db),
     hasApiKey: () => aiSettings.hasApiKey(db),
     generateAiNotes: (interviewId) => aiNotes.generateAiNotes(db, now, aiProvider, interviewId),
+    aiClientWritesAllowed: () => aiSettings.aiClientWritesAllowed(db),
+    allowAiClientWrites: (allowed) => aiSettings.allowAiClientWrites(db, allowed),
+    saveAiNotesFromClient: (interviewId, notes) => aiNotes.saveAiNotesFromClient(db, now, interviewId, notes),
+    saveSuggestedQuestionsFromClient: (candidateId, suggestions) =>
+      suggestedQuestions.saveSuggestedQuestionsFromClient(db, today, now, candidateId, suggestions),
     listAiNotes: (interviewId) => aiNotes.listAiNotes(db, interviewId),
     confirmAiNote: (id) => aiNotes.confirmAiNote(db, id),
     correctAiNote: (id, correction) => aiNotes.correctAiNote(db, id, correction),

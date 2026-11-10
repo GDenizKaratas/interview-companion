@@ -29,7 +29,7 @@ flowchart LR
             DB[("SQLite file + CV files")]
         end
         Web["web: local server + browser interface"]
-        MCP["mcp: MCP server (stdio, read-only)"]
+        MCP["mcp: MCP server (stdio; reads, and checked AI writes when allowed)"]
     end
 
     Client["AI client (Claude Desktop, Claude Code)"]
@@ -105,13 +105,13 @@ Notes on the model:
 | A Suggested Question's quotes must exist word for word in the CV or a Transcript. | Core, before a suggestion is saved. |
 | Replacing a CV or Transcript removes the suggestions that quote it. | The database, through a foreign key and a trigger. |
 | No generation without a request. | Generation is only reachable from explicit actions. |
-| The MCP server cannot write. | The MCP server gets `readOnlyCore(core)`, a view that holds only core's read operations. |
+| The MCP server can only read, except for checked AI work the Interviewer allowed. | The MCP server gets `aiClientCore(core)`, a view that holds core's reads and only `saveAiNotesFromClient` and `saveSuggestedQuestionsFromClient`; both refuse while the setting is off and run the same checks as in-app generation (ADR 0005). |
 
 Model output itself is not deterministic. These checks are.
 
 ## MCP surface
 
-Tools (all read-only):
+Tools (read-only unless noted):
 
 | Tool | Returns |
 |---|---|
@@ -121,6 +121,10 @@ Tools (all read-only):
 | `get_interviewer_notes` | The Interviewer's notes for a Candidate. |
 | `get_ai_notes` | AI Notes with Review State, Stale flag, and Evidence. |
 | `get_saved_questions` | The Interviewer's question list. |
+| `get_transcript` | One Interview's Transcript, segment by segment, with speaker label and role. |
+| `get_cv` | A Candidate's CV text, page by page. |
+| `save_ai_notes` | Writes, when allowed: AI Notes the client wrote, checked and saved Unreviewed. |
+| `save_suggested_questions` | Writes, when allowed: Suggested Questions the client wrote, checked and saved. |
 
 Prompt:
 

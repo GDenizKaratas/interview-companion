@@ -262,6 +262,7 @@ function SuggestionItem({ suggestion, interviews, busy, onAccept, onEdit, onDism
       )}
       <p className="suggestion-reason">
         {suggestion.reason}{" "}
+        {suggestion.source === "aiClient" && <span className="source-tag">{t.fromAiClient}</span>}{" "}
         {suggestion.general ? (
           <span className="review-state" title={t.generalHint}>
             {t.general}

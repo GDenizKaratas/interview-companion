@@ -125,6 +125,15 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
     return c.body(null, 204);
   });
 
+  // Whether the AI client may save AI Notes and Suggested Questions through MCP.
+  api.get("/ai/client-writes", (c) => c.json({ allowed: core.aiClientWritesAllowed() }));
+
+  api.put("/ai/client-writes", async (c) => {
+    const fields = await jsonFields(c);
+    core.allowAiClientWrites(fields.allowed === true);
+    return c.json({ allowed: core.aiClientWritesAllowed() });
+  });
+
   api.get("/interviews/:id/ai-notes", (c) => respondOrRefuse(c, () => c.json(core.listAiNotes(c.req.param("id")))));
 
   // Review of one AI Note. Each answers with the note as it now is.

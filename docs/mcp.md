@@ -1,6 +1,6 @@
 # The MCP server
 
-Interview Companion has a read-only MCP server. With it, an AI client such as Claude Code or Claude Desktop can read your Candidates, Interviewer Notes, Saved Questions, and AI Notes, search the CV and Transcripts for Evidence, and write a Candidate Brief, without an API key for Interview Companion.
+Interview Companion has an MCP server. With it, an AI client such as Claude Code or Claude Desktop can read your Candidates, Interviewer Notes, Saved Questions, AI Notes, CVs, and Transcripts, search them for Evidence, and write a Candidate Brief, without an API key for Interview Companion. If you allow it in AI Settings, it can also save the AI Notes and Suggested Questions it writes into the app, checked like the app's own ([ADR 0005](adr/0005-ai-client-saves-through-core.md)).
 
 Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 
@@ -45,7 +45,9 @@ A plain web API could serve the same data, for example `GET /candidates/:id/evid
 
 ## The tools
 
-All tools only read. The server gets a view of core that holds only the read operations, so no tool can change data, and there is no tool that adds, edits, or deletes anything.
+All tools but two only read. The two that write, `save_ai_notes` and `save_suggested_questions`, refuse until you turn on "Saving from your AI client" in AI Settings. Even then they go through the same core code as the app's own AI: a note or suggestion whose quote is not found word for word in its source is dropped, a Transcript is quoted only after its Speaker Mapping is confirmed, and everything arrives Unreviewed, marked as from the AI client. The server gets a view of core, `aiClientCore`, that holds every read and only these two writes; the switch is not in it, so the client cannot turn writing on itself. Your Interviewer Notes, Saved Questions, Candidates, CVs, and Transcripts cannot be changed through MCP. Saving follows the same replace rules as generating in the app: new AI Notes replace the Interview's Unreviewed ones, whoever wrote them, and new suggestions replace those not yet accepted; anything you reviewed or accepted stays. One call can save at most 40 notes or 25 suggestions, each with at most 8 quotes.
+
+The switch protects the MCP connection. Like everything in the app (ADR 0001), the local web interface has no login, so any program on this computer that can reach it could change the switch; an AI client with a shell is such a program.
 
 | Tool | Arguments | Returns |
 |---|---|---|
@@ -54,6 +56,10 @@ All tools only read. The server gets a view of core that holds only the read ope
 | `get_interviewer_notes` | `candidateId`, optional `interviewId` | The Interviewer Notes, newest save first. With `interviewId`, only that Interview's notes and the untagged ones. |
 | `get_saved_questions` | `candidateId` | The Saved Questions in the Interviewer's order. |
 | `get_ai_notes` | `interviewId` | The Interview's AI Notes, newest generation first. Each has the AI's statement, the Interviewer's correction (or `null`), its Review State, its Stale flag, and its Evidence: exact quotes with the Transcript segment number. Dismissed notes are included, marked `dismissed`. |
+| `get_transcript` | `interviewId` | The whole Transcript: each segment's number, speaker label, role (`null` until the Speaker Mapping is confirmed), times, and exact text; or `null`. |
+| `get_cv` | `candidateId` | The CV's file name and the text of each page, as stored; or `null`. |
+| `save_ai_notes` | `interviewId`, `notes` (each a `statement` and `evidence`: `segmentNumber` and `quote`) | **Writes, only when allowed.** The checked notes, saved Unreviewed and replacing earlier Unreviewed ones, and how many were dropped. |
+| `save_suggested_questions` | `candidateId`, `suggestions` (each a `question`, a `reason`, and `evidence` from the CV or a Transcript) | **Writes, only when allowed.** The checked suggestions, replacing earlier ones that were not accepted, how many were dropped, and which Transcripts could not be quoted. |
 | `search_evidence` | `candidateId`, `query`, optional `sources` (`all`, `cv`, or `transcripts`; `all` by default), optional `candidateOnly` (`false` by default) | The same search as the Workspace search bar, from the same code in core. Each result is Evidence: a CV line with its page, or a Transcript segment with its Interview, segment number, speaker label, speaker role (`null` until the Speaker Mapping is confirmed), and times, with the positions of the match. It also says where the word was found and, with `candidateOnly`, which Interviews were left out because their Speaker Mapping is not confirmed. No result means "nothing found in the indexed sources". |
 
 Candidate ids come from `list_candidates`; Interview ids come from `get_candidate`.

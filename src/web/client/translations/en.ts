@@ -27,6 +27,13 @@ const text = {
     required: "Enter an API key.",
     saveFailed: "The API key could not be saved.",
     loadFailed: "The AI settings could not be loaded.",
+    clientWrites: {
+      title: "Saving from your AI client",
+      label: "Let Claude Code or Claude Desktop save AI Notes and Suggested Questions here",
+      detail:
+        "Off: your AI client can only read. On: it can also save AI Notes and Suggested Questions, which the app checks like its own: every quote must be found word for word, and they arrive Unreviewed. It can never change your notes, your questions, or your Candidates.",
+      saveFailed: "The setting could not be saved.",
+    },
   },
   candidates: {
     title: "Candidates",
@@ -118,7 +125,7 @@ const text = {
     stepAsk: "2. Start Claude Code and ask, for example: “What did Deniz say about Redis? Use Interview Companion.”",
     stepBrief: "3. For a full brief, type /mcp__interview-companion__candidate_brief and give the Candidate's name.",
     desktop: "For Claude Desktop, see docs/mcp.md in the project folder.",
-    readOnly: "The AI client can read and search, never change anything. Quotes in a Candidate Brief are not checked by the app; check them with the search here.",
+    readOnly: "Unless you allow it in AI Settings, the AI client can only read and search. Allowed, it can also save AI Notes and Suggested Questions, which the app checks; it can never change your own notes, questions, or Candidates. Quotes in a Candidate Brief are not checked by the app; check them with the search here.",
   },
   search: {
     label: "Search the CV and Transcripts",
@@ -273,6 +280,8 @@ const text = {
       showInTranscript: "Show in the Transcript",
       // {number} is replaced by the part's number in the Transcript.
       segment: "part {number}",
+      fromAiClient: "From your AI client",
+      fromAiClientHint: "Written by Claude Code or Claude Desktop through MCP, and checked by the app like any AI Note.",
       reviewStates: { unreviewed: "Unreviewed", confirmed: "Confirmed", corrected: "Corrected", dismissed: "Dismissed" },
       confirmRegenerate: "Generate AI Notes again?",
       // {count} is replaced by a number.
@@ -322,6 +331,7 @@ const text = {
       suggestions: {
         open: "Suggest questions",
         label: "AI-generated",
+        fromAiClient: "From your AI client",
         whatIsSent:
           "Sends the CV, the Transcripts with confirmed speakers, your notes (My Notes), and your saved questions to Claude (Anthropic).",
         focusLabel: "Focus (optional)",

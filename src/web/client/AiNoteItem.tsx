@@ -113,6 +113,11 @@ export function AiNoteItem({ note, segmentTimes, onShowEvidence, onChanged }: Ai
       })}
       <div className="ai-note-actions">
         <span className="review-state">{t.reviewStates[note.reviewState]}</span>
+        {note.source === "aiClient" && (
+          <span className="source-tag" title={t.fromAiClientHint}>
+            {t.fromAiClient}
+          </span>
+        )}
         {!editing && note.reviewState === "unreviewed" && (
           <button
             type="button"

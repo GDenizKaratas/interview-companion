@@ -18,11 +18,16 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const [clientWrites, setClientWrites] = useState<boolean | undefined>();
 
   useEffect(() => {
     dialog.current?.showModal();
     api.getApiKeyStatus().then(
       (status) => setSaved(status.saved),
+      () => setError(t.loadFailed),
+    );
+    api.getAiClientWrites().then(
+      (setting) => setClientWrites(setting.allowed),
       () => setError(t.loadFailed),
     );
   }, [t.loadFailed]);
@@ -42,6 +47,15 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
       setError(refusedAsMissing ? t.required : t.saveFailed);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function changeClientWrites(allowed: boolean) {
+    setError(undefined);
+    try {
+      setClientWrites((await api.setAiClientWrites(allowed)).allowed);
+    } catch {
+      setError(t.clientWrites.saveFailed);
     }
   }
 
@@ -93,6 +107,16 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
         <p>{t.whatIsSent}</p>
         <p>{t.notSent}</p>
       </div>
+      {clientWrites !== undefined && (
+        <section className="settings-section" aria-labelledby="client-writes-title">
+          <h3 id="client-writes-title">{t.clientWrites.title}</h3>
+          <label className="settings-check">
+            <input type="checkbox" checked={clientWrites} onChange={(event) => void changeClientWrites(event.target.checked)} />
+            {t.clientWrites.label}
+          </label>
+          <p className="settings-detail">{t.clientWrites.detail}</p>
+        </section>
+      )}
       {saved === false && <NoKeyGuide className="compact" />}
       {error && <p className="error">{error}</p>}
       <div className="confirm-dialog-actions">

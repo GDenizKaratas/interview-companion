@@ -110,6 +110,8 @@ export const api = {
   confirmSpeakerMapping: (interviewId: string, roles: Record<string, SpeakerRole>) =>
     request<Transcript>(`/interviews/${encodeURIComponent(interviewId)}/speaker-mapping`, sendJson("PUT", { roles })),
   getApiKeyStatus: () => request<{ saved: boolean }>("/ai/api-key"),
+  getAiClientWrites: () => request<{ allowed: boolean }>("/ai/client-writes"),
+  setAiClientWrites: (allowed: boolean) => request<{ allowed: boolean }>("/ai/client-writes", sendJson("PUT", { allowed })),
   saveApiKey: (apiKey: string) => request<{ saved: boolean }>("/ai/api-key", sendJson("PUT", { apiKey })),
   removeApiKey: () => request<void>("/ai/api-key", { method: "DELETE" }),
   listAiNotes: (interviewId: string) => request<AiNote[]>(`/interviews/${encodeURIComponent(interviewId)}/ai-notes`),

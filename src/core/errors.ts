@@ -27,6 +27,7 @@ export class NotFoundError extends Error {
 // Why an action cannot run yet, although its input is fine: something the Interviewer must do first.
 export type Precondition =
   | "apiKeyMissing"
+  | "aiClientWritesOff"
   | "noTranscript"
   | "speakerMappingNotConfirmed"
   | "transcriptChanged"

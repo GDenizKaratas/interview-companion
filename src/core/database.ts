@@ -133,6 +133,9 @@ const migrations: string[] = [
    BEGIN
      DELETE FROM suggested_question WHERE id = OLD.suggested_question_id;
    END;`,
+  // Who wrote an AI Note or a Suggested Question: the app with its API key, or the AI client through MCP.
+  `ALTER TABLE ai_note ADD COLUMN source TEXT NOT NULL DEFAULT 'app' CHECK (source IN ('app', 'aiClient'));
+   ALTER TABLE suggested_question ADD COLUMN source TEXT NOT NULL DEFAULT 'app' CHECK (source IN ('app', 'aiClient'));`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file
