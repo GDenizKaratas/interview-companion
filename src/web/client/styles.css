@@ -2051,3 +2051,148 @@ button.cv-shortcut svg {
   max-width: 40rem;
   margin: 2rem auto;
 }
+
+/* The AI panel's two tabs: Asked questions and AI Notes. */
+.ai-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0 0 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.ai-tab {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+}
+
+.ai-tab.selected {
+  color: var(--navy);
+  font-weight: 600;
+  border-bottom-color: var(--accent-strong);
+}
+
+/* Each question asked, as one button: the question, then what the Candidate said. */
+.asked-question-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.asked-question-list li + li {
+  border-top: 1px solid var(--line);
+}
+
+.asked-question {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.45rem 0.35rem;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.asked-question:hover,
+.asked-question:focus-visible {
+  background: var(--accent-tint);
+}
+
+.asked-question-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.asked-question-summary {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.asked-question-saved {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--accent-strong);
+  background: var(--accent-tint);
+  border-radius: 3px;
+  padding: 0 0.35rem;
+}
+
+/* One exchange cut out of the Transcript: the question and the answer stand out, the rest is dimmed. */
+.exchange-dialog {
+  max-width: min(52rem, 95vw);
+  height: auto;
+  max-height: 90vh;
+}
+
+.exchange-dialog .panel-body {
+  overflow-y: auto;
+}
+
+.exchange {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+
+.exchange-summary {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.exchange-summary-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.exchange-segments {
+  align-self: stretch;
+}
+
+.segment.exchange-part {
+  padding: 0.4rem 0.6rem;
+  border-left: 3px solid var(--accent-strong);
+  background: var(--accent-tint);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.segment.exchange-context {
+  opacity: 0.45;
+}
+
+/* Under a Saved Question: where it was asked, or that it was not found. */
+.question-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.75rem;
+  width: 100%;
+  font-size: 0.8rem;
+}
+
+.question-not-found {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Found before the speakers changed: shown, but quieter, with the reason on hover. */
+.question-checks .stale {
+  opacity: 0.55;
+}

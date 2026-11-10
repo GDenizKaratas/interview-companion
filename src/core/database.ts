@@ -158,6 +158,41 @@ const migrations: string[] = [
   // A Saved Question may be tagged with one Interview of its Candidate. Deleting the Interview
   // leaves the question untagged, as it does for Interviewer Notes.
   `ALTER TABLE saved_question ADD COLUMN interview_id TEXT REFERENCES interview (id) ON DELETE SET NULL;`,
+  // Asked Questions of one Interview, found by AI in its Transcript. One run per Interview says
+  // when they were found; each question points into the Transcript by segment number, so
+  // replacing the Transcript removes the run and its questions. A deleted Saved Question only
+  // loses its link.
+  `CREATE TABLE asked_question_run (
+     interview_id TEXT PRIMARY KEY REFERENCES transcript (interview_id) ON DELETE CASCADE,
+     found_at TEXT NOT NULL,
+     source TEXT NOT NULL CHECK (source IN ('app', 'aiClient'))
+   ) STRICT;
+   CREATE TABLE asked_question (
+     id TEXT PRIMARY KEY,
+     interview_id TEXT NOT NULL REFERENCES asked_question_run (interview_id) ON DELETE CASCADE,
+     position INTEGER NOT NULL,
+     question TEXT NOT NULL,
+     question_segment INTEGER NOT NULL,
+     question_quote TEXT NOT NULL,
+     answer_summary TEXT NOT NULL,
+     saved_question_id TEXT REFERENCES saved_question (id) ON DELETE SET NULL
+   ) STRICT;
+   CREATE INDEX asked_question_interview ON asked_question (interview_id, position);
+   CREATE INDEX asked_question_saved ON asked_question (saved_question_id);
+   CREATE TABLE asked_question_evidence (
+     asked_question_id TEXT NOT NULL REFERENCES asked_question (id) ON DELETE CASCADE,
+     position INTEGER NOT NULL,
+     segment_number INTEGER NOT NULL,
+     quote TEXT NOT NULL,
+     PRIMARY KEY (asked_question_id, position)
+   ) STRICT;
+   -- The Saved Questions the model was given, so one that was not matched is known to be
+   -- not found, and one written later is known to be not checked yet.
+   CREATE TABLE asked_question_checked (
+     interview_id TEXT NOT NULL REFERENCES asked_question_run (interview_id) ON DELETE CASCADE,
+     saved_question_id TEXT NOT NULL REFERENCES saved_question (id) ON DELETE CASCADE,
+     PRIMARY KEY (interview_id, saved_question_id)
+   ) STRICT;`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

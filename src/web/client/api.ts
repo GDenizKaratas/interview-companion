@@ -4,6 +4,9 @@ import type {
   AiFailure,
   AiNote,
   AiNoteGeneration,
+  AskedQuestion,
+  AskedQuestionGeneration,
+  AskedQuestions,
   BriefEvidence,
   Candidate,
   CandidateBrief,
@@ -22,6 +25,7 @@ import type {
   NewInterviewerNotes,
   Precondition,
   SavedQuestion,
+  SavedQuestionCheck,
   SpeakerRole,
   SuggestedQuestion,
   SuggestedQuestionGeneration,
@@ -30,7 +34,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, BriefEvidence, Candidate, CandidateBrief, CandidateOverview, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateOverview, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SavedQuestionCheck, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -161,6 +165,12 @@ export const api = {
   // position is in the list as shown with the Interview filter interviewId.
   moveSavedQuestion: (id: string, position: number, interviewId: string | null) =>
     request<void>(`/saved-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position, interviewId })),
+  listAskedQuestions: (interviewId: string) =>
+    request<AskedQuestions | null>(`/interviews/${encodeURIComponent(interviewId)}/asked-questions`),
+  findAskedQuestions: (interviewId: string) =>
+    request<AskedQuestionGeneration>(`/interviews/${encodeURIComponent(interviewId)}/asked-questions`, { method: "POST" }),
+  listSavedQuestionChecks: (candidateId: string) =>
+    request<SavedQuestionCheck[]>(`/candidates/${encodeURIComponent(candidateId)}/saved-question-checks`),
   getCandidateBrief: (candidateId: string) =>
     request<CandidateBrief | null>(`/candidates/${encodeURIComponent(candidateId)}/candidate-brief`),
   listSuggestedQuestions: (candidateId: string) =>

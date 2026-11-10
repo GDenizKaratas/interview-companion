@@ -12,6 +12,7 @@ import { InterviewSelector } from "./InterviewSelector.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, navigate } from "./navigation.ts";
 import { SavedQuestions } from "./SavedQuestions.tsx";
+import { AskedQuestionsPanel } from "./AskedQuestionsPanel.tsx";
 import { TranscriptPanel, type SegmentHighlight } from "./TranscriptPanel.tsx";
 import { useText } from "./text.tsx";
 
@@ -34,6 +35,10 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [briefOpen, setBriefOpen] = useState(false);
   // Counts changes to the selected Interview's Transcript, so the AI Notes panel loads again.
   const [transcriptVersion, setTranscriptVersion] = useState(0);
+  // Asked Questions come first in the AI panel: after an Interview they are what is needed most.
+  const [aiTab, setAiTab] = useState<"asked" | "notes">("asked");
+  // Changes whenever Asked Questions are found, so the Saved Questions show where they were asked.
+  const [askedVersion, setAskedVersion] = useState(0);
   // Counts CV uploads, so the Suggested Questions load again.
   const [cvVersion, setCvVersion] = useState(0);
   // The Transcript segment an AI Note's quote points to. `request` changes on every click, so
@@ -61,6 +66,13 @@ export function Workspace({ candidateId }: { candidateId: string }) {
         marks: result.highlights,
       }));
     }
+  }
+
+  // Shows one segment in the Transcript panel, selecting its Interview, as an AI Note's quote or
+  // an Asked Question does.
+  function showInTranscript(segmentInterviewId: string, segmentNumber: number) {
+    setInterviewId(segmentInterviewId);
+    setHighlight((current) => ({ interviewId: segmentInterviewId, segmentNumber, request: (current?.request ?? 0) + 1 }));
   }
 
   function loadInterviews(id: string): Promise<void> {
@@ -203,15 +215,37 @@ export function Workspace({ candidateId }: { candidateId: string }) {
               }}
             />
           </Panel>
-          <Panel area="ai" title={text.panels.aiNotes.title} label={text.panels.aiNotes.label}>
-            <AiNotesPanel
-              interviews={interviews}
-              selectedInterviewId={interviewId}
-              transcriptVersion={transcriptVersion}
-              onShowEvidence={(id, segmentNumber) =>
-                setHighlight((current) => ({ interviewId: id, segmentNumber, request: (current?.request ?? 0) + 1 }))
-              }
-            />
+          <Panel area="ai" title={text.panels.ai.title} label={text.panels.aiNotes.label}>
+            <div className="ai-tabs" role="tablist">
+              {(["asked", "notes"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={aiTab === tab}
+                  className={aiTab === tab ? "ai-tab selected" : "ai-tab"}
+                  onClick={() => setAiTab(tab)}
+                >
+                  {tab === "asked" ? text.panels.ai.askedTab : text.panels.ai.notesTab}
+                </button>
+              ))}
+            </div>
+            {aiTab === "asked" ? (
+              <AskedQuestionsPanel
+                interviews={interviews}
+                selectedInterviewId={interviewId}
+                transcriptVersion={transcriptVersion}
+                onShowEvidence={showInTranscript}
+                onFound={() => setAskedVersion((version) => version + 1)}
+              />
+            ) : (
+              <AiNotesPanel
+                interviews={interviews}
+                selectedInterviewId={interviewId}
+                transcriptVersion={transcriptVersion}
+                onShowEvidence={showInTranscript}
+              />
+            )}
           </Panel>
           <Panel area="questions" title={text.panels.questions.title}>
             <SavedQuestions
@@ -220,6 +254,8 @@ export function Workspace({ candidateId }: { candidateId: string }) {
               selectedInterviewId={interviewId}
               onShowAll={() => setInterviewId(null)}
               sourceVersion={transcriptVersion + cvVersion}
+              askedVersion={askedVersion + transcriptVersion}
+              onShowInTranscript={showInTranscript}
             />
           </Panel>
         </div>

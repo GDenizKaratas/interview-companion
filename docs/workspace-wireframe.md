@@ -31,7 +31,7 @@ On a wide screen the whole bar is one line. On a narrower one, the search moves 
 
 1. **Bar.** Who the Candidate is, which Interview is selected, and the search, in one line. The Interview selector filters the Transcript, AI Notes, and tagged notes. The search covers the CV and Transcripts. Its results open in a panel under the bar, over the Workspace, so they never push the panels down. Clicking a result closes them and opens and marks that place (decision 139). Delete sits at the far end, as an icon.
 2. **CV and Transcript, at full height.** The two sources are read the most, so they get the most room.
-3. **The working column: My Notes, AI Notes, Questions.** These are what the Interviewer writes and reviews during and after an interview. The note box is always ready to type in. Clicking the ❝ mark on an AI Note scrolls the Transcript to that segment and highlights it. "Suggest questions" is one collapsed line; nothing is generated until the Interviewer opens it and asks.
+3. **The working column: My Notes, AI Notes, Questions.** These are what the Interviewer writes and reviews during and after an interview. The note box is always ready to type in. Clicking the ❝ mark on an AI Note scrolls the Transcript to that segment and highlights it. The AI panel has two tabs, "Asked questions" first and "AI Notes". Each Asked Question is one line with the Answer Summary under it; clicking it opens the exchange in a dialog, cut out of the Transcript, with the quoted words marked, one segment of context dimmed on each side, and "Open in the Transcript". Under each Saved Question, a quiet line says in which Interviews it was asked (a link to the same dialog) or not found. "Suggest questions" is one collapsed line; nothing is generated until the Interviewer opens it and asks.
 4. **Full screen.** Each panel has a full-screen button (⛶) that shows when the pointer is over the panel. It opens the panel almost full screen over a dimmed Workspace, without reloading it. Escape, the ✕ button, or a click outside closes it.
 
 ## How authorship is shown
@@ -58,6 +58,7 @@ Each Suggested Question shows one short line under it, for example "CV mentions 
 | Speakers | — | — | "Confirm who is speaking before generating AI Notes." |
 | My Notes | "No personal notes yet." | — | "Note could not be saved." The text stays in the box. |
 | AI Notes | "AI Notes have not been generated." | "Generating…" | "Generation failed. Your data was not changed." |
+| Asked questions | "Every question you asked in this Interview, each with a short summary of the answer." | "Reading the Transcript…" | "Generation failed. Your data was not changed." |
 | AI Notes, no API key | "Add an API key to generate AI Notes here, or use the Candidate Brief from your AI client." | — | — |
 | Questions | "No questions saved." | — | — |
 

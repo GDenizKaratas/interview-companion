@@ -74,6 +74,13 @@ export function requireInterview(db: DatabaseSync, interviewId: string): void {
   }
 }
 
+// The Candidate an Interview belongs to. Refuses with NotFoundError when it does not exist.
+export function candidateOfInterview(db: DatabaseSync, interviewId: string): string {
+  const row = db.prepare("SELECT candidate_id FROM interview WHERE id = ?").get(interviewId) as { candidate_id: string } | undefined;
+  if (!row) throw new NotFoundError("This Interview does not exist.");
+  return row.candidate_id;
+}
+
 // Refuses with NotFoundError unless the Interview exists and belongs to this Candidate.
 export function requireInterviewOf(db: DatabaseSync, candidateId: string, interviewId: string): void {
   const row = db.prepare("SELECT 1 FROM interview WHERE id = ? AND candidate_id = ?").get(interviewId, candidateId);

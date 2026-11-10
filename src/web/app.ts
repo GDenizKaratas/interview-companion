@@ -147,6 +147,17 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
     );
   });
 
+  // The Interview's Asked Questions, or null when they were never looked for.
+  api.get("/interviews/:id/asked-questions", (c) =>
+    respondOrRefuse(c, () => c.json(core.listAskedQuestions(c.req.param("id")))),
+  );
+  // Asks the model for the Interview's Asked Questions. Only this route ever calls it.
+  api.post("/interviews/:id/asked-questions", (c) =>
+    respondOrRefuse(c, async () => c.json(await core.findAskedQuestions(c.req.param("id")), 201)),
+  );
+  api.get("/candidates/:id/saved-question-checks", (c) =>
+    respondOrRefuse(c, () => c.json(core.listSavedQuestionChecks(c.req.param("id")))),
+  );
   // Generates the Interview's AI Notes with the model. Only this route ever calls it.
   api.post("/interviews/:id/ai-notes", (c) =>
     respondOrRefuse(c, async () => c.json(await core.generateAiNotes(c.req.param("id")), 201)),

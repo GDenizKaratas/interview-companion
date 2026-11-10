@@ -50,8 +50,16 @@ _Avoid_: My note, personal note, human note (in code and documents; the Workspac
 One AI-generated statement about an Interview, backed by at least one piece of Evidence and carrying its own review state.
 _Avoid_: Summary, insight, AI summary
 
+**Asked Question**:
+A question the Interviewer asked in one Interview, found by AI in its Transcript, quoted from the Interviewer's own segment, and linked to the Saved Question it matches, if any. Finding them again replaces the Interview's Asked Questions.
+_Avoid_: Interview question, detected question
+
+**Answer Summary**:
+A short, neutral account of what the Candidate answered to one Asked Question, backed by quotes from the Candidate's own segments. It describes the answer; it never says whether the answer was right.
+_Avoid_: Answer, evaluation, AI summary
+
 **Stale**:
-The state of an AI Note whose Speaker Mapping changed after it was generated. A Stale AI Note stays visible but is not trusted; regenerating gives new notes made from the current mapping. A reviewed Stale note is kept and stays Stale.
+The state of an AI Note or of an Interview's Asked Questions whose Speaker Mapping changed after it was generated. A Stale AI Note stays visible but is not trusted; regenerating gives new notes made from the current mapping. A reviewed Stale note is kept and stays Stale.
 _Avoid_: Outdated, invalid
 
 **Review State**:
@@ -67,7 +75,7 @@ A question on the Interviewer's own list, either written by hand or copied from 
 _Avoid_: Accepted question, follow-up
 
 **AI client**:
-An AI application the Interviewer runs outside the app, such as Claude Code or Claude Desktop, connected to it through MCP. It can read; when the Interviewer allows it, it can also save AI Notes and Suggested Questions, which core checks like the app's own.
+An AI application the Interviewer runs outside the app, such as Claude Code or Claude Desktop, connected to it through MCP. It can read; when the Interviewer allows it, it can also save AI Notes, Asked Questions, and Suggested Questions, which core checks like the app's own.
 _Avoid_: Agent, assistant, bot
 
 **Candidate Brief**:

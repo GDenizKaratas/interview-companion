@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { api, ApiError, type Interview, type SavedQuestion } from "./api.ts";
+import { api, ApiError, type AskedQuestion, type Interview, type SavedQuestion, type SavedQuestionCheck } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { ExchangeDialog } from "./ExchangeDialog.tsx";
 import { interviewName } from "./interview-names.ts";
 import { InterviewTagSelect } from "./InterviewTagSelect.tsx";
 import { SuggestedQuestions } from "./SuggestedQuestions.tsx";
@@ -16,12 +17,24 @@ interface SavedQuestionsProps {
   onShowAll: () => void;
   // Changes whenever a CV or Transcript changes.
   sourceVersion: number;
+  // Changes whenever Asked Questions are found or a Transcript changes.
+  askedVersion: number;
+  // Shows one segment of an Interview's Transcript.
+  onShowInTranscript: (interviewId: string, segmentNumber: number) => void;
 }
 
 // The Interviewer's own question list for one Candidate, with the collapsed Suggested Questions
 // under it. Core keeps the order; after every change the list is fetched again, so the screen
 // always shows what core has saved. Core applies the header's Interview filter, as for My Notes.
-export function SavedQuestions({ candidateId, interviews, selectedInterviewId, onShowAll, sourceVersion }: SavedQuestionsProps) {
+export function SavedQuestions({
+  candidateId,
+  interviews,
+  selectedInterviewId,
+  onShowAll,
+  sourceVersion,
+  askedVersion,
+  onShowInTranscript,
+}: SavedQuestionsProps) {
   const { text } = useText();
   const t = text.panels.questions;
   const [questions, setQuestions] = useState<SavedQuestion[] | undefined>();
@@ -47,6 +60,10 @@ export function SavedQuestions({ candidateId, interviews, selectedInterviewId, o
     setTag(selectedInterviewId);
     setHiddenInterviewId(null);
   }
+  // Where each question was asked, or not found, in the Interviews whose Asked Questions were found.
+  const [checks, setChecks] = useState<SavedQuestionCheck[]>([]);
+  // The exchange opened from "Asked in …".
+  const [exchange, setExchange] = useState<AskedQuestion | undefined>();
   // Only the newest list request may fill the list, so a slow answer for an earlier selection
   // cannot show the wrong Interview's questions.
   const latestLoad = useRef(0);
@@ -77,6 +94,19 @@ export function SavedQuestions({ candidateId, interviews, selectedInterviewId, o
   useEffect(() => {
     reload();
   }, [reload]);
+
+  // Read again when questions are found and after every change here, since a deleted question loses its checks.
+  const [changeCount, setChangeCount] = useState(0);
+  useEffect(() => {
+    let current = true;
+    api.listSavedQuestionChecks(candidateId).then(
+      (loaded) => current && setChecks(loaded),
+      () => current && setChecks([]),
+    );
+    return () => {
+      current = false;
+    };
+  }, [candidateId, askedVersion, changeCount]);
 
   async function add() {
     setSaving(true);
@@ -110,6 +140,7 @@ export function SavedQuestions({ candidateId, interviews, selectedInterviewId, o
       setChangeError(error);
     }
     await reload(changed);
+    setChangeCount((count) => count + 1);
     setBusy(false);
     return ok;
   }
@@ -161,6 +192,8 @@ export function SavedQuestions({ candidateId, interviews, selectedInterviewId, o
               isFirst={index === 0}
               isLast={index === questions.length - 1}
               interviews={interviews}
+              checks={checks.filter((check) => check.savedQuestionId === question.id)}
+              onOpenExchange={setExchange}
               onMove={(position) => change(() => api.moveSavedQuestion(question.id, position, shownFilter)).then(() => {})}
               onEdit={(newText) => change(() => api.editSavedQuestion(question.id, newText))}
               onTag={(interviewId) => change(() => api.tagSavedQuestion(question.id, interviewId)).then(() => {})}
@@ -177,6 +210,13 @@ export function SavedQuestions({ candidateId, interviews, selectedInterviewId, o
         sourceVersion={sourceVersion}
         onAccepted={() => void reload()}
       />
+      {exchange && (
+        <ExchangeDialog
+          askedQuestion={exchange}
+          onOpenInTranscript={() => onShowInTranscript(exchange.interviewId, exchange.firstSegment)}
+          onClose={() => setExchange(undefined)}
+        />
+      )}
       {toDelete && (
         <ConfirmDialog
           title={t.confirmDelete}
@@ -195,6 +235,8 @@ export function SavedQuestions({ candidateId, interviews, selectedInterviewId, o
 interface QuestionItemProps {
   question: SavedQuestion;
   interviews: Interview[];
+  checks: SavedQuestionCheck[];
+  onOpenExchange: (askedQuestion: AskedQuestion) => void;
   position: number;
   isFirst: boolean;
   isLast: boolean;
@@ -205,7 +247,7 @@ interface QuestionItemProps {
   busy: boolean;
 }
 
-function QuestionItem({ question, interviews, position, isFirst, isLast, onMove, onEdit, onTag, onDelete, busy }: QuestionItemProps) {
+function QuestionItem({ question, interviews, checks, onOpenExchange, position, isFirst, isLast, onMove, onEdit, onTag, onDelete, busy }: QuestionItemProps) {
   const { text } = useText();
   const t = text.panels.questions;
   const [editing, setEditing] = useState<string | undefined>();
@@ -250,6 +292,34 @@ function QuestionItem({ question, interviews, position, isFirst, isLast, onMove,
         <InterviewTagSelect interviews={interviews} value={question.interviewId} onChange={onTag} />
         <span className="question-origin">{question.origin === "written" ? t.writtenByYou : t.fromSuggestion}</span>
       </span>
+      {checks.length > 0 && (
+        <span className="question-checks">
+          {checks.map((check) => {
+            const interview = interviews.find((i) => i.id === check.interviewId);
+            if (!interview) return null;
+            const name = interviewName(text, interview);
+            return check.askedQuestion ? (
+              <button
+                key={check.interviewId}
+                type="button"
+                className={check.stale ? "link-button question-asked stale" : "link-button question-asked"}
+                title={check.stale ? text.panels.askedQuestions.stale : undefined}
+                onClick={() => onOpenExchange(check.askedQuestion!)}
+              >
+                {fill(t.askedIn, { interview: name })}
+              </button>
+            ) : (
+              <span
+                key={check.interviewId}
+                className={check.stale ? "question-not-found stale" : "question-not-found"}
+                title={check.stale ? text.panels.askedQuestions.stale : t.notFoundHint}
+              >
+                {fill(t.notFoundIn, { interview: name })}
+              </span>
+            );
+          })}
+        </span>
+      )}
       {editing === undefined && (
         <span className="question-actions">
           <button type="button" className="quiet" aria-label={t.moveUp} title={t.moveUp} disabled={busy || isFirst} onClick={() => onMove(position - 1)}>
