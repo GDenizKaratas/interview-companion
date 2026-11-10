@@ -1,5 +1,5 @@
 import { Hono, type Context } from "hono";
-import { InvalidInputError, NotFoundError, type Core, type CvFile } from "../core/index.ts";
+import { InvalidInputError, NotFoundError, type Core, type CvFile, type TranscriptFile } from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
 export function createApi(core: Core): Hono {
@@ -47,6 +47,18 @@ export function createApi(core: Core): Hono {
   api.post("/candidates/:id/cv", async (c) => {
     const cv = (await fileField(await c.req.parseBody(), "cv")) ?? { fileName: "", bytes: new Uint8Array() };
     return respondOrRefuse(c, async () => c.json(await core.attachCv(c.req.param("id"), cv), 201));
+  });
+
+  // The Transcript formats core can import, so the interface can offer and name them.
+  api.get("/transcript-formats", (c) => c.json(core.listTranscriptFormats()));
+
+  // The Interview's Transcript, or null when none has been imported.
+  api.get("/interviews/:id/transcript", (c) => c.json(core.getTranscript(c.req.param("id")) ?? null));
+
+  // Imports a Transcript as a form with a "transcript" file. It replaces the Interview's earlier one.
+  api.post("/interviews/:id/transcript", async (c) => {
+    const file = (await fileField(await c.req.parseBody(), "transcript")) ?? { fileName: "", bytes: new Uint8Array() };
+    return respondOrRefuse(c, () => c.json(core.importTranscript(c.req.param("id"), file), 201));
   });
 
   api.get("/candidate-roles", (c) => c.json(core.listCandidateRoles()));
@@ -173,7 +185,7 @@ function isForm(c: Context): boolean {
 }
 
 // The file sent in a form field, or undefined when the field holds no file.
-async function fileField(form: Record<string, unknown>, key: string): Promise<CvFile | undefined> {
+async function fileField(form: Record<string, unknown>, key: string): Promise<(CvFile & TranscriptFile) | undefined> {
   const value = form[key];
   if (!(value instanceof File)) return undefined;
   return { fileName: value.name, bytes: new Uint8Array(await value.arrayBuffer()) };

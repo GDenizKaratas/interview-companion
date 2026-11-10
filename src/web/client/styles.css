@@ -577,3 +577,78 @@ button.danger {
   font-size: 0.85rem;
   color: var(--muted);
 }
+
+/* Transcript: each segment shows its time (or "no time"), its speaker label, and its text. */
+.transcript-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.transcript-empty .hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.transcript-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.transcript-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.segments {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 32rem;
+  overflow-y: auto;
+}
+
+.segment + .segment {
+  margin-top: 0.6rem;
+}
+
+.segment-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.segment-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.segment-time.missing {
+  font-style: italic;
+}
+
+.segment-speaker {
+  font-weight: 600;
+}
+
+.unverified {
+  background: var(--line);
+  color: var(--muted);
+  border-radius: 4px;
+  padding: 0 0.35rem;
+  font-size: 0.75rem;
+}
+
+.segment-text {
+  margin: 0.15rem 0 0;
+  white-space: pre-wrap;
+}

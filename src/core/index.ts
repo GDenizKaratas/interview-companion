@@ -11,6 +11,7 @@ import * as interviewerNotes from "./interviewer-notes.ts";
 import * as interviews from "./interviews.ts";
 import * as nameGuess from "./name-guess.ts";
 import * as savedQuestions from "./saved-questions.ts";
+import * as transcripts from "./transcripts.ts";
 
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
@@ -18,6 +19,7 @@ export { InvalidInputError, NotFoundError, type InputRule } from "./errors.ts";
 export type { InterviewerNote, NewInterviewerNotes, NoteFilter } from "./interviewer-notes.ts";
 export type { Interview, NewInterview } from "./interviews.ts";
 export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
+export type { Segment, Speaker, Transcript, TranscriptFile, TranscriptFormat } from "./transcripts.ts";
 
 export interface Core {
   createCandidate(input: candidates.NewCandidate): candidates.Candidate;
@@ -46,6 +48,9 @@ export interface Core {
   getCv(candidateId: string): cv.Cv | undefined;
   readCvFile(candidateId: string): cv.CvFile | undefined;
   guessCandidateName(file: cv.CvFile): Promise<string>;
+  importTranscript(interviewId: string, file: transcripts.TranscriptFile): transcripts.Transcript;
+  getTranscript(interviewId: string): transcripts.Transcript | undefined;
+  listTranscriptFormats(): transcripts.TranscriptFormat[];
   close(): void;
 }
 
@@ -92,6 +97,9 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     getCv: (candidateId) => cv.getCv(db, candidateId),
     readCvFile: (candidateId) => cv.readCvFile(db, cvFolder, candidateId),
     guessCandidateName: (file) => nameGuess.guessCandidateName(file),
+    importTranscript: (interviewId, file) => transcripts.importTranscript(db, now, interviewId, file),
+    getTranscript: (interviewId) => transcripts.getTranscript(db, interviewId),
+    listTranscriptFormats: () => transcripts.listTranscriptFormats(),
     close: () => db.close(),
   };
 }
