@@ -228,19 +228,36 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   });
 
   api.get("/candidates/:id/saved-questions", (c) =>
-    respondOrRefuse(c, () => c.json(core.listSavedQuestions(c.req.param("id")))),
+    respondOrRefuse(c, () =>
+      c.json(core.listSavedQuestions(c.req.param("id"), { interviewId: c.req.query("interviewId") || null })),
+    ),
   );
 
   api.post("/candidates/:id/saved-questions", async (c) => {
     const fields = await jsonFields(c);
     return respondOrRefuse(c, () =>
-      c.json(core.addSavedQuestion({ candidateId: c.req.param("id"), text: stringField(fields, "text") }), 201),
+      c.json(
+        core.addSavedQuestion({
+          candidateId: c.req.param("id"),
+          interviewId: idField(fields, "interviewId"),
+          text: stringField(fields, "text"),
+        }),
+        201,
+      ),
     );
   });
 
   api.put("/saved-questions/:id", async (c) => {
     const fields = await jsonFields(c);
     return respondOrRefuse(c, () => c.json(core.editSavedQuestion(c.req.param("id"), stringField(fields, "text"))));
+  });
+
+  // The Interview a question is tagged with; a missing or empty interviewId removes the tag.
+  api.put("/saved-questions/:id/interview", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.tagSavedQuestion(c.req.param("id"), idField(fields, "interviewId"))),
+    );
   });
 
   api.delete("/saved-questions/:id", (c) =>
@@ -253,7 +270,10 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   api.put("/saved-questions/:id/position", async (c) => {
     const fields = await jsonFields(c);
     return respondOrRefuse(c, () => {
-      core.moveSavedQuestion(c.req.param("id"), typeof fields.position === "number" ? fields.position : Number.NaN);
+      // The position is in the list as shown through the Interview filter in interviewId.
+      core.moveSavedQuestion(c.req.param("id"), typeof fields.position === "number" ? fields.position : Number.NaN, {
+        interviewId: idField(fields, "interviewId"),
+      });
       return c.body(null, 204);
     });
   });

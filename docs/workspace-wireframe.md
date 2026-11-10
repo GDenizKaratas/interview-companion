@@ -40,7 +40,7 @@ On a wide screen the whole bar is one line. On a narrower one, the search moves 
 |---|---|
 | Evidence (CV and Transcript text) | Plain text in its source panel, always with a location. |
 | Interviewer Note | Normal text, no badge. This is the default voice of the screen. |
-| Saved Question | Normal text with a quiet origin label: "written by you" or "from a suggestion". |
+| Saved Question | Normal text with its Interview tag in a small dropdown and a quiet origin label: "written by you" or "from a suggestion". |
 | AI Note, Suggested Question | A visible "AI-generated" label and a different background. |
 | Unverified speaker | A grey "unverified" tag instead of a role. |
 | Stale AI Note | A warning tag: "Speakers changed. Regenerate to trust this note." |

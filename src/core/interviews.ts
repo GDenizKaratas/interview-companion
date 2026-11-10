@@ -82,6 +82,24 @@ export function requireInterviewOf(db: DatabaseSync, candidateId: string, interv
   }
 }
 
+// The Interview filter of the Workspace, shared by Interviewer Notes and Saved Questions.
+export interface InterviewFilter {
+  // Show only what is tagged with this Interview, and what is tagged with no Interview. Omit for all.
+  interviewId?: string | null;
+}
+
+// The one place the Interview filter rule is written. Refuses an Interview of another Candidate,
+// and gives the SQL condition on an interview_id column with its parameters.
+export function interviewFilterCondition(
+  db: DatabaseSync,
+  candidateId: string,
+  filter: InterviewFilter,
+): { sql: string; params: (string | null)[] } {
+  const interviewId = filter.interviewId ?? null;
+  if (interviewId !== null) requireInterviewOf(db, candidateId, interviewId);
+  return { sql: "(? IS NULL OR interview_id IS NULL OR interview_id = ?)", params: [interviewId, interviewId] };
+}
+
 function nextAddedOrder(db: DatabaseSync, candidateId: string): number {
   const row = db
     .prepare("SELECT COALESCE(MAX(added_order), 0) + 1 AS next FROM interview WHERE candidate_id = ?")

@@ -143,15 +143,24 @@ export const api = {
   tagInterviewerNote: (id: string, interviewId: string | null) =>
     request<InterviewerNote>(`/notes/${encodeURIComponent(id)}/interview`, sendJson("PUT", { interviewId })),
   deleteInterviewerNote: (id: string) => request<void>(`/notes/${encodeURIComponent(id)}`, { method: "DELETE" }),
-  listSavedQuestions: (candidateId: string) =>
-    request<SavedQuestion[]>(`/candidates/${encodeURIComponent(candidateId)}/saved-questions`),
-  addSavedQuestion: (candidateId: string, text: string) =>
-    request<SavedQuestion>(`/candidates/${encodeURIComponent(candidateId)}/saved-questions`, sendJson("POST", { text })),
+  listSavedQuestions: (candidateId: string, interviewId: string | null) =>
+    request<SavedQuestion[]>(
+      `/candidates/${encodeURIComponent(candidateId)}/saved-questions` +
+        (interviewId ? `?interviewId=${encodeURIComponent(interviewId)}` : ""),
+    ),
+  addSavedQuestion: (candidateId: string, interviewId: string | null, text: string) =>
+    request<SavedQuestion>(
+      `/candidates/${encodeURIComponent(candidateId)}/saved-questions`,
+      sendJson("POST", { interviewId, text }),
+    ),
   editSavedQuestion: (id: string, text: string) =>
     request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}`, sendJson("PUT", { text })),
+  tagSavedQuestion: (id: string, interviewId: string | null) =>
+    request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}/interview`, sendJson("PUT", { interviewId })),
   deleteSavedQuestion: (id: string) => request<void>(`/saved-questions/${encodeURIComponent(id)}`, { method: "DELETE" }),
-  moveSavedQuestion: (id: string, position: number) =>
-    request<void>(`/saved-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position })),
+  // position is in the list as shown with the Interview filter interviewId.
+  moveSavedQuestion: (id: string, position: number, interviewId: string | null) =>
+    request<void>(`/saved-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position, interviewId })),
   getCandidateBrief: (candidateId: string) =>
     request<CandidateBrief | null>(`/candidates/${encodeURIComponent(candidateId)}/candidate-brief`),
   listSuggestedQuestions: (candidateId: string) =>

@@ -197,13 +197,15 @@ const translation: TranslationFile = {
         loadFailed: "CV bilgisi alınamadı.",
         viewFailed: "PDF gösterilemedi.",
       },
+      interviewTag: {
+        label: "Mülakat",
+        none: "Mülakat yok",
+      },
       interviewerNotes: {
         title: "Notlarım",
         empty: "Henüz kişisel not yok.",
         placeholder: "Bir not yazın, kaydetmek için Enter…",
         hint: "Her satır ayrı bir not olur.",
-        tagLabel: "Mülakat",
-        noInterview: "Mülakat yok",
         savedAt: "Kaydedilme zamanı",
         edit: "Düzenle",
         cancel: "Vazgeç",
@@ -338,6 +340,8 @@ const translation: TranslationFile = {
         saveFailed: "Soru kaydedilemedi.",
         changeFailed: "Değişiklik kaydedilemedi.",
         loadFailed: "Sorular yüklenemedi.",
+        hiddenByFilter: "{interview} altına kaydedildi. Bir mülakat seçiliyken diğer mülakatların soruları gizlenir.",
+        showAll: "Tüm soruları göster",
         suggestions: {
           open: "Soru öner",
           label: "AI tarafından üretildi",

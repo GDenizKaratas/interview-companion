@@ -53,8 +53,8 @@ export {
   type InputRule,
   type Precondition,
 } from "./errors.ts";
-export type { InterviewerNote, NewInterviewerNotes, NoteFilter } from "./interviewer-notes.ts";
-export type { Interview, NewInterview } from "./interviews.ts";
+export type { InterviewerNote, NewInterviewerNotes } from "./interviewer-notes.ts";
+export type { Interview, InterviewFilter, NewInterview } from "./interviews.ts";
 export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
 export type {
   QuestionFocus,
@@ -81,14 +81,15 @@ export interface Core {
   editInterviewerNote(id: string, text: string): interviewerNotes.InterviewerNote;
   tagInterviewerNote(id: string, interviewId: string | null): interviewerNotes.InterviewerNote;
   deleteInterviewerNote(id: string): void;
-  listInterviewerNotes(candidateId: string, filter?: interviewerNotes.NoteFilter): interviewerNotes.InterviewerNote[];
+  listInterviewerNotes(candidateId: string, filter?: interviews.InterviewFilter): interviewerNotes.InterviewerNote[];
   getInterfaceLanguage(): string;
   setInterfaceLanguage(language: string): void;
   addSavedQuestion(input: savedQuestions.NewSavedQuestion): savedQuestions.SavedQuestion;
-  listSavedQuestions(candidateId: string): savedQuestions.SavedQuestion[];
+  listSavedQuestions(candidateId: string, filter?: interviews.InterviewFilter): savedQuestions.SavedQuestion[];
   editSavedQuestion(id: string, text: string): savedQuestions.SavedQuestion;
+  tagSavedQuestion(id: string, interviewId: string | null): savedQuestions.SavedQuestion;
   deleteSavedQuestion(id: string): void;
-  moveSavedQuestion(id: string, position: number): void;
+  moveSavedQuestion(id: string, position: number, filter?: interviews.InterviewFilter): void;
   attachCv(candidateId: string, file: cv.CvFile): Promise<cv.Cv>;
   getCv(candidateId: string): cv.Cv | undefined;
   readCvFile(candidateId: string): cv.CvFile | undefined;
@@ -211,10 +212,11 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     getInterfaceLanguage: () => interfaceLanguage.getInterfaceLanguage(db),
     setInterfaceLanguage: (language) => interfaceLanguage.setInterfaceLanguage(db, language),
     addSavedQuestion: (input) => savedQuestions.addSavedQuestion(db, input),
-    listSavedQuestions: (candidateId) => savedQuestions.listSavedQuestions(db, candidateId),
+    listSavedQuestions: (candidateId, filter) => savedQuestions.listSavedQuestions(db, candidateId, filter),
     editSavedQuestion: (id, text) => savedQuestions.editSavedQuestion(db, id, text),
+    tagSavedQuestion: (id, interviewId) => savedQuestions.tagSavedQuestion(db, id, interviewId),
     deleteSavedQuestion: (id) => savedQuestions.deleteSavedQuestion(db, id),
-    moveSavedQuestion: (id, position) => savedQuestions.moveSavedQuestion(db, id, position),
+    moveSavedQuestion: (id, position, filter) => savedQuestions.moveSavedQuestion(db, id, position, filter),
     attachCv: (candidateId, file) => cv.attachCv(db, cvFolder, now, candidateId, file),
     getCv: (candidateId) => cv.getCv(db, candidateId),
     readCvFile: (candidateId) => cv.readCvFile(db, cvFolder, candidateId),
