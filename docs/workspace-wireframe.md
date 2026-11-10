@@ -8,8 +8,9 @@ Status: **conceptual**. This is a sketch of the planned screen, not a screenshot
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ ← Candidates   Deniz Yılmaz · Senior Backend Engineer            [EN | TR]   │
 │ Interview: [ All ▾ ]  1st · 2026-11-03   2nd · planned     [+ New interview] │
+│ [Search the CV and Transcripts…] [CV and Transcripts ▾] ☐ Only the Candidate │
 ├───────────────────────────────┬──────────────────────────────────────────────┤
-│ CV                  [Search…] │ MY NOTES                                     │
+│ CV                            │ MY NOTES                                     │
 │ ┌───────────────────────────┐ │ ┌──────────────────────────────────────────┐ │
 │ │                           │ │ │ Write a note, Enter to save…             │ │
 │ │   PDF page 1 of 2         │ │ └──────────────────────────────────────────┘ │
@@ -17,7 +18,7 @@ Status: **conceptual**. This is a sketch of the planned screen, not a screenshot
 │ │                           │ │ • Interesting Redis example      1st · 14:10 │
 │ └───────────────────────────┘ │ • Check scale of last project    no interview│
 ├───────────────────────────────┼──────────────────────────────────────────────┤
-│ TRANSCRIPT          [Search…] │ AI NOTES  (AI-generated)        [Generate]   │
+│ TRANSCRIPT                    │ AI NOTES  (AI-generated)        [Generate]   │
 │ Speakers: ✔ confirmed [Edit]  │ ┌──────────────────────────────────────────┐ │
 │                               │ │ Described using Redis and BullMQ for     │ │
 │ 18:42 Candidate               │ │ background jobs.            ❝ 18:42      │ │
@@ -38,7 +39,7 @@ Status: **conceptual**. This is a sketch of the planned screen, not a screenshot
 
 ## Panel order and reasons
 
-1. **Header.** Who the Candidate is and which Interview is selected. The Interview selector filters the Transcript, AI Notes, and tagged notes.
+1. **Header.** Who the Candidate is and which Interview is selected. The Interview selector filters the Transcript, AI Notes, and tagged notes. Under it, one search bar searches the CV and Transcripts; its results show where the word was found, and clicking one opens and marks that place (decision 139).
 2. **Top row: CV and My Notes.** These are the two panels used before and during an interview, so they sit where the eye lands first. The note box is always ready to type in.
 3. **Middle row: Transcript and AI Notes.** A source and what was extracted from it sit side by side. Clicking the ❝ mark on an AI Note scrolls the Transcript to that segment and highlights it.
 4. **Bottom: Questions.** Saved Questions first. "Suggest questions" is one collapsed line; nothing is generated until the Interviewer opens it and asks.
