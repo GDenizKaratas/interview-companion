@@ -6,7 +6,8 @@ import { listInterviews, type Today } from "./interviews.ts";
 import { getTranscript, type SpeakerRole } from "./transcripts.ts";
 import { sameLetter } from "./turkish-letters.ts";
 
-const evidenceSources = ["all", "cv", "transcripts"] as const;
+// The sources a search can cover. Part of core's public interface.
+export const evidenceSources = ["all", "cv", "transcripts"] as const;
 export type EvidenceSources = (typeof evidenceSources)[number];
 
 export interface EvidenceQuery {

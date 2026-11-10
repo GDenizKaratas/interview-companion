@@ -41,6 +41,7 @@ export type {
   Highlight,
   TranscriptEvidence,
 } from "./evidence-search.ts";
+export { evidenceSources } from "./evidence-search.ts";
 export {
   AiProviderError,
   InvalidInputError,
