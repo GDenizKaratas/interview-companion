@@ -1,0 +1,134 @@
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { AddButton } from "./AddButton.tsx";
+import { api, type Interview, type Transcript, type TranscriptFormat } from "./api.ts";
+import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { interviewName } from "./interview-names.ts";
+import { fill } from "./languages.ts";
+import { useText } from "./text.tsx";
+import { formatNames, formatTime, transcriptRefusalMessage } from "./transcript-text.ts";
+
+// The Transcript panel. A Transcript belongs to one Interview, so it shows the selected
+// Interview's Transcript, or asks the Interviewer to select one.
+export function TranscriptPanel({ interviews, selectedInterviewId }: { interviews: Interview[]; selectedInterviewId: string | null }) {
+  const { text } = useText();
+  const t = text.panels.transcript;
+  const selected = interviews.find((interview) => interview.id === selectedInterviewId);
+  if (interviews.length === 0) return <p className="empty">{t.noInterview}</p>;
+  if (!selected) return <p className="empty">{t.selectInterview}</p>;
+  // The key starts each Interview with a fresh state, so nothing of another Interview shows.
+  return <InterviewTranscript key={selected.id} interview={selected} />;
+}
+
+function InterviewTranscript({ interview }: { interview: Interview }) {
+  const { text } = useText();
+  const t = text.panels.transcript;
+  // undefined while loading, null when the Interview has no Transcript.
+  const [transcript, setTranscript] = useState<Transcript | null | undefined>();
+  const [formats, setFormats] = useState<TranscriptFormat[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<unknown>();
+  // A file chosen to replace the current Transcript, waiting for the Interviewer to confirm.
+  const [replacement, setReplacement] = useState<File | undefined>();
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    api.getTranscript(interview.id).then(setTranscript, () => setLoadFailed(true));
+    api.listTranscriptFormats().then(setFormats, () => setLoadFailed(true));
+  }, [interview.id]);
+
+  function handleFileChosen(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Cleared, so choosing the same file again still counts as a choice.
+    event.target.value = "";
+    if (!file) return;
+    if (transcript) setReplacement(file);
+    else void importFile(file);
+  }
+
+  async function importFile(file: File) {
+    setImporting(true);
+    setImportError(undefined);
+    try {
+      setTranscript(await api.importTranscript(interview.id, file));
+    } catch (error) {
+      setImportError(error);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  const chooseFile = () => fileInput.current?.click();
+  // Core decides what is accepted; the file box only suggests the files it can read.
+  const accept = formats.flatMap((format) => format.extensions).join(",");
+  const labels = new Map(transcript?.speakers.map((speaker) => [speaker.id, speaker]));
+
+  return (
+    <div className="transcript">
+      <input ref={fileInput} type="file" accept={accept} hidden onChange={handleFileChosen} />
+      {loadFailed && <p className="error">{t.loadFailed}</p>}
+      {transcript === null && !importing && (
+        <div className="transcript-empty">
+          <p className="empty">{t.empty}</p>
+          <AddButton onClick={chooseFile}>{t.import}</AddButton>
+          {formats.length > 0 && <p className="hint">{fill(t.supported, { formats: formatNames(text, formats) })}</p>}
+        </div>
+      )}
+      {importing && <p className="empty">{t.importing}</p>}
+      {importError !== undefined && <p className="error">{transcriptRefusalMessage(text, formats, importError)}</p>}
+      {transcript && (
+        <>
+          <div className="transcript-file">
+            <span className="transcript-file-name" title={transcript.fileName}>
+              {transcript.fileName}
+            </span>
+            <button type="button" className="quiet" onClick={chooseFile} disabled={importing}>
+              {t.replace}
+            </button>
+          </div>
+          <ol className="segments">
+            {transcript.segments.map((segment) => {
+              const speaker = labels.get(segment.speakerId);
+              return (
+                <li key={segment.number} className="segment">
+                  <div className="segment-head">
+                    {segment.startMs === null ? (
+                      <span className="segment-time missing" title={t.noTimeDetail}>
+                        {t.noTime}
+                      </span>
+                    ) : (
+                      <span className="segment-time">{formatTime(segment.startMs)}</span>
+                    )}
+                    <span className="segment-speaker">{speaker?.label}</span>
+                    {speaker && !speaker.verified && <span className="unverified">{t.unverified}</span>}
+                  </div>
+                  <p className="segment-text">{segment.text}</p>
+                </li>
+              );
+            })}
+          </ol>
+        </>
+      )}
+      {replacement && (
+        <ConfirmDialog
+          title={t.confirmReplace}
+          confirmLabel={t.replaceConfirm}
+          cancelLabel={t.cancel}
+          onCancel={() => setReplacement(undefined)}
+          onConfirm={() => {
+            setReplacement(undefined);
+            void importFile(replacement);
+          }}
+        >
+          <p>
+            {fill(t.confirmReplaceDetail, {
+              interview: interviewName(text, interview),
+              current: transcript?.fileName ?? "",
+              new: replacement.name,
+            })}
+          </p>
+        </ConfirmDialog>
+      )}
+    </div>
+  );
+}

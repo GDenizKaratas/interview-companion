@@ -106,7 +106,35 @@ const text = {
       hiddenByFilter: "Saved under {interview}. Notes of other Interviews are hidden while one is selected.",
       showAll: "Show all notes",
     },
-    transcript: { title: "Transcript", empty: "No transcript available." },
+    transcript: {
+      title: "Transcript",
+      empty: "No transcript available.",
+      noInterview: "Add an Interview first, then import its Transcript.",
+      selectInterview: "Select an Interview above to see or import its Transcript.",
+      import: "Import Transcript",
+      replace: "Replace Transcript",
+      importing: "Importing…",
+      // {formats} is replaced by the list of supported formats.
+      supported: "Supported formats: {formats}.",
+      // The name of each format core can import, by its id.
+      formats: { "plain-text": "plain text, one line per turn as Speaker: text" },
+      noTime: "no time",
+      noTimeDetail: "The file has no time for this part.",
+      unverified: "unverified",
+      confirmReplace: "Replace the Transcript?",
+      // {interview}, {current}, and {new} are replaced by the Interview's name and file names.
+      confirmReplaceDetail: "For the {interview}, {current} and its text will be removed and replaced by {new}.",
+      replaceConfirm: "Replace",
+      cancel: "Cancel",
+      refused: {
+        format: "This file format is not supported. Supported formats: {formats}.",
+        encoding: "This file is not UTF-8 text. Save it as UTF-8 and try again.",
+        content: "The text of this file is not in the expected form. Supported formats: {formats}.",
+        required: "The file is empty. Choose a Transcript file.",
+      },
+      importFailed: "The Transcript could not be imported.",
+      loadFailed: "The Transcript could not be loaded.",
+    },
     aiNotes: { title: "AI Notes", label: "AI-generated", empty: "AI Notes have not been generated." },
     questions: {
       title: "Questions",

@@ -6,6 +6,7 @@ import { InterviewSelector } from "./InterviewSelector.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, navigate } from "./navigation.ts";
 import { SavedQuestions } from "./SavedQuestions.tsx";
+import { TranscriptPanel } from "./TranscriptPanel.tsx";
 import { useText } from "./text.tsx";
 
 type Load =
@@ -139,7 +140,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             />
           </Panel>
           <Panel area="transcript" title={text.panels.transcript.title}>
-            <p className="empty">{text.panels.transcript.empty}</p>
+            <TranscriptPanel interviews={interviews} selectedInterviewId={interviewId} />
           </Panel>
           <Panel area="ai" title={text.panels.aiNotes.title} label={text.panels.aiNotes.label}>
             <p className="empty">{text.panels.aiNotes.empty}</p>

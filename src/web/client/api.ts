@@ -10,9 +10,11 @@ import type {
   NewInterview,
   NewInterviewerNotes,
   SavedQuestion,
+  Transcript,
+  TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { Candidate, Cv, Interview, InterviewerNote, SavedQuestion };
+export type { Candidate, Cv, Interview, InterviewerNote, SavedQuestion, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -66,6 +68,11 @@ export const api = {
   cvFileUrl: (candidateId: string) => `/api/candidates/${encodeURIComponent(candidateId)}/cv/file`,
   uploadCv: (candidateId: string, cv: File) =>
     request<Cv>(`/candidates/${encodeURIComponent(candidateId)}/cv`, sendForm({ cv })),
+  listTranscriptFormats: () => request<TranscriptFormat[]>("/transcript-formats"),
+  getTranscript: (interviewId: string) =>
+    request<Transcript | null>(`/interviews/${encodeURIComponent(interviewId)}/transcript`),
+  importTranscript: (interviewId: string, transcript: File) =>
+    request<Transcript>(`/interviews/${encodeURIComponent(interviewId)}/transcript`, sendForm({ transcript })),
   getInterfaceLanguage: () => request<{ language: string }>("/interface-language"),
   setInterfaceLanguage: (language: string) =>
     request<{ language: string }>("/interface-language", sendJson("PUT", { language })),

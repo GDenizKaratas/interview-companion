@@ -49,6 +49,18 @@ export function createApi(core: Core): Hono {
     return respondOrRefuse(c, async () => c.json(await core.attachCv(c.req.param("id"), cv), 201));
   });
 
+  // The Transcript formats core can import, so the interface can offer and name them.
+  api.get("/transcript-formats", (c) => c.json(core.listTranscriptFormats()));
+
+  // The Interview's Transcript, or null when none has been imported.
+  api.get("/interviews/:id/transcript", (c) => c.json(core.getTranscript(c.req.param("id")) ?? null));
+
+  // Imports a Transcript as a form with a "transcript" file. It replaces the Interview's earlier one.
+  api.post("/interviews/:id/transcript", async (c) => {
+    const file = (await fileField(await c.req.parseBody(), "transcript")) ?? { fileName: "", bytes: new Uint8Array() };
+    return respondOrRefuse(c, () => c.json(core.importTranscript(c.req.param("id"), file), 201));
+  });
+
   api.get("/candidate-roles", (c) => c.json(core.listCandidateRoles()));
 
   api.get("/candidates/:id", (c) => {

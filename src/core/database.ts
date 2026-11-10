@@ -55,6 +55,31 @@ const migrations: string[] = [
      text TEXT NOT NULL,
      PRIMARY KEY (candidate_id, number)
    ) STRICT;`,
+  // An Interview has at most one Transcript. Its speakers are unverified until the Speaker
+  // Mapping is confirmed. A segment's times are null when the file had none.
+  `CREATE TABLE transcript (
+     interview_id TEXT PRIMARY KEY REFERENCES interview (id) ON DELETE CASCADE,
+     file_name TEXT NOT NULL,
+     format TEXT NOT NULL,
+     imported_at TEXT NOT NULL,
+     speaker_mapping_confirmed_at TEXT
+   ) STRICT;
+   CREATE TABLE transcript_speaker (
+     id TEXT PRIMARY KEY,
+     interview_id TEXT NOT NULL REFERENCES transcript (interview_id) ON DELETE CASCADE,
+     label TEXT NOT NULL,
+     position INTEGER NOT NULL,
+     UNIQUE (interview_id, label)
+   ) STRICT;
+   CREATE TABLE transcript_segment (
+     interview_id TEXT NOT NULL REFERENCES transcript (interview_id) ON DELETE CASCADE,
+     number INTEGER NOT NULL,
+     speaker_id TEXT NOT NULL REFERENCES transcript_speaker (id) ON DELETE CASCADE,
+     text TEXT NOT NULL,
+     start_ms INTEGER,
+     end_ms INTEGER,
+     PRIMARY KEY (interview_id, number)
+   ) STRICT;`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

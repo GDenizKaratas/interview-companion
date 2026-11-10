@@ -7,6 +7,7 @@ import { addInterviewerNotes, type Now } from "./interviewer-notes.ts";
 import { addInterview, type Today } from "./interviews.ts";
 import { addSavedQuestion } from "./saved-questions.ts";
 import { deleteSetting, setSetting } from "./settings.ts";
+import { importTranscript } from "./transcripts.ts";
 
 // The fixed id of the demo Candidate. It lets a second load find the first one.
 const demoCandidateId = "demo-candidate";
@@ -77,6 +78,14 @@ function addDemoContent(db: DatabaseSync, today: Today, now: Now): Candidate {
   const id = candidate.id;
   const first = addInterview(db, today, { candidateId: id, date: shiftDays(today(), -7) });
   const second = addInterview(db, today, { candidateId: id, date: shiftDays(today(), 3) });
+
+  // A plain-text file, imported the way the Interviewer would import one, so it can also be
+  // used to try the import by hand.
+  const transcriptFileName = "transcript-first-interview.txt";
+  importTranscript(db, daysBefore(now, 7), first.id, {
+    fileName: transcriptFileName,
+    bytes: new Uint8Array(readFileSync(new URL(`../../demo/${transcriptFileName}`, import.meta.url))),
+  });
 
   addInterviewerNotes(db, daysBefore(now, 7), {
     candidateId: id,

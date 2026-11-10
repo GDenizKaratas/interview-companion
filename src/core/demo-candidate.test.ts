@@ -105,6 +105,20 @@ describe("Demo Candidate", () => {
     expect(cv?.pages[0]?.text).toContain("Redis ve BullMQ");
   });
 
+  it("gives the First Interview a fictional Turkish Transcript, imported from the demo file, and leaves the Planned one without", async () => {
+    const demo = await core.loadDemoCandidate();
+    const [first, second] = core.listInterviews(demo.id);
+
+    const transcript = core.getTranscript(first!.id);
+    expect(transcript?.fileName).toBe("transcript-first-interview.txt");
+    expect(transcript?.speakers.map((speaker) => [speaker.label, speaker.verified])).toEqual([
+      ["Ayşe", false],
+      ["Deniz", false],
+    ]);
+    expect(transcript?.segments.some((segment) => segment.text.includes("BullMQ"))).toBe(true);
+    expect(core.getTranscript(second!.id)).toBeUndefined();
+  });
+
   it("keeps one CV file when the demo is loaded again", async () => {
     await core.loadDemoCandidate();
     await core.loadDemoCandidate();

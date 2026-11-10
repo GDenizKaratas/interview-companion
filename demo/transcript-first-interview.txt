@@ -1,0 +1,11 @@
+Ayşe: Merhaba Deniz, hoş geldin. Kısaca son projenden bahseder misin?
+Deniz: Merhaba. Son iki yılda bir ödeme platformunun backend ekibindeydim. Node.js ve PostgreSQL ile ödeme servislerini yazdık.
+Ayşe: Bu servislerde en zorlandığınız konu neydi?
+Deniz: Arka plan işleri. Fatura ve iade işlemlerini kuyruğa alıyorduk, bunun için Redis ve BullMQ kullandık.
+Bir iş yarıda kalırsa tekrar denenmesi gerekiyordu, o yüzden her işi tekrar çalıştırılabilir yazmaya çalıştık.
+Ayşe: Aynı ödeme iki kez işlenmesin diye ne yaptınız?
+Deniz: Her ödeme isteğine bir anahtar veriyorduk. Aynı anahtar ikinci kez gelirse ilk sonucu döndürüyorduk.
+Ayşe: Kod incelemesini ekipte nasıl yürütüyordunuz?
+Deniz: Her değişikliği en az bir kişi inceliyordu. Büyük değişiklikleri önce kısa bir yazıyla anlatıyorduk, sonra koda geçiyorduk.
+Ayşe: Teşekkürler. Bir sonraki görüşmede sistem tasarımına daha ayrıntılı bakacağız.
+Deniz: Ben teşekkür ederim.
