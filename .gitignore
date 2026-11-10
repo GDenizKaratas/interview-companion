@@ -1,0 +1,10 @@
+# Private working notes and reports. Never published.
+private/
+
+# Local data: database and uploaded CV files
+data/
+
+node_modules/
+dist/
+.env
+.DS_Store

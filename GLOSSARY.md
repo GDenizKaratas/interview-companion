@@ -1,0 +1,73 @@
+# Interview Companion
+
+A workspace that helps a technical interviewer prepare for interviews, take notes, and find what a candidate actually said. It organizes evidence; it never judges candidates.
+
+## Language
+
+### People
+
+**Interviewer**:
+The single person who uses the application and owns everything in it.
+_Avoid_: User, reviewer, recruiter
+
+**Candidate**:
+A person being interviewed for a role. A Candidate has one CV and any number of Interviews.
+_Avoid_: Applicant, interviewee
+
+### Sources
+
+**Interview**:
+One conversation with a Candidate, at a known stage. It may have a Transcript.
+_Avoid_: Meeting, session, round
+
+**CV**:
+The document a Candidate submitted. It belongs to the Candidate, not to an Interview.
+_Avoid_: Resume
+
+**Transcript**:
+The text of one Interview, split into segments with a speaker label and, when the source provides them, timestamps.
+_Avoid_: Recording, minutes
+
+**Evidence**:
+An exact excerpt from a CV or a Transcript. Nothing else is Evidence.
+_Avoid_: Source, proof, citation
+
+### Written by people and by AI
+
+**Speaker Mapping**:
+The Interviewer's confirmed assignment of each speaker label in a Transcript to a role: Candidate, Interviewer, or Other. Until it is confirmed, every speaker is unverified.
+_Avoid_: Speaker identification, diarization
+
+**Interviewer Note**:
+A short note the Interviewer wrote about a Candidate, optionally tied to one Interview. It is never Evidence of what a Candidate said, and AI never changes it.
+_Avoid_: My note, personal note, human note
+
+**AI Note**:
+One AI-generated statement about an Interview, backed by at least one piece of Evidence and carrying its own review state.
+_Avoid_: Summary, insight, AI summary
+
+**Stale**:
+The state of an AI Note whose Speaker Mapping changed after it was generated. A Stale AI Note stays visible but is not trusted until regenerated.
+_Avoid_: Outdated, invalid
+
+**Review State**:
+Where an AI Note stands with the Interviewer: Unreviewed, Confirmed (matches its Evidence), Corrected (the Interviewer rewrote it; the original text is kept), or Dismissed (hidden, not deleted). Confirming a note says it reflects the Evidence, not that the Candidate was right.
+_Avoid_: Status, approval
+
+**Suggested Question**:
+A question AI proposed on the Interviewer's request, with a reason and, when available, Evidence. It is replaced when suggestions are regenerated.
+_Avoid_: Recommendation, generated question
+
+**Saved Question**:
+A question on the Interviewer's own list, either written by hand or copied from a Suggested Question on acceptance. Regenerating suggestions never changes it.
+_Avoid_: Accepted question, follow-up
+
+**Candidate Brief**:
+A single document about one Candidate that an external AI client writes from the application's data, with the reason and Evidence for each statement listed at the end. It is not stored in the application.
+_Avoid_: Report, profile, summary
+
+### Workspace
+
+**Workspace**:
+The single screen that shows everything about one Candidate: CV, Interviews, Interviewer Notes, AI Notes, and questions.
+_Avoid_: Dashboard, profile page
