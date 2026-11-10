@@ -17,24 +17,35 @@ export interface Core {
   listCandidateRoles(): string[];
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
-  listInterviewStages(): string[];
   close(): void;
 }
 
+export interface CoreOptions {
+  // Today as YYYY-MM-DD. Defaults to the day on this computer's clock; tests fix it.
+  today?: interviews.Today;
+}
+
 // Opens (and creates, if needed) the database file at dbPath and brings its schema up to date.
-export function openCore(dbPath: string): Core {
+export function openCore(dbPath: string, options: CoreOptions = {}): Core {
   mkdirSync(dirname(dbPath), { recursive: true });
   const db = openDatabase(dbPath);
+  const today = options.today ?? localToday;
   return {
     createCandidate: (input) => candidates.createCandidate(db, input),
     listCandidates: () => candidates.listCandidates(db),
     getCandidate: (id) => candidates.getCandidate(db, id),
     listCandidateRoles: () => candidates.listCandidateRoles(db),
-    addInterview: (input) => interviews.addInterview(db, input),
-    listInterviews: (candidateId) => interviews.listInterviews(db, candidateId),
-    listInterviewStages: () => interviews.listInterviewStages(db),
+    addInterview: (input) => interviews.addInterview(db, today, input),
+    listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),
     close: () => db.close(),
   };
+}
+
+// The Interviewer's own calendar day: the app runs on their machine, in their time zone.
+function localToday(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 // The database the app uses: data/interview-companion.sqlite in the project folder,

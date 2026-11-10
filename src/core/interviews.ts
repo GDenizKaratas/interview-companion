@@ -2,83 +2,74 @@ import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { getCandidate } from "./candidates.ts";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
-import { existingSpelling, sortLabels, tidyLabel } from "./labels.ts";
 
 export interface Interview {
   id: string;
   candidateId: string;
-  stage: string;
+  // 1 for the Candidate's first Interview, 2 for the second, in the order they were added.
+  number: number;
   // A calendar day, YYYY-MM-DD, or null when the Interview has no date yet.
   date: string | null;
+  // True when the date is after today: the Interview has not happened yet.
+  planned: boolean;
   createdAt: string;
 }
 
 export interface NewInterview {
   candidateId: string;
-  stage: string;
   date?: string | null;
 }
 
 interface InterviewRow {
   id: string;
   candidate_id: string;
-  stage: string;
+  number: number;
   date: string | null;
   created_at: string;
 }
 
-export function addInterview(db: DatabaseSync, input: NewInterview): Interview {
+// Today as a calendar day, YYYY-MM-DD. Core asks for it so tests can fix the day.
+export type Today = () => string;
+
+export function addInterview(db: DatabaseSync, today: Today, input: NewInterview): Interview {
   if (!getCandidate(db, input.candidateId)) {
     throw new NotFoundError("This Candidate does not exist.");
   }
-  const interview: Interview = {
+  const row: InterviewRow = {
     id: randomUUID(),
-    candidateId: input.candidateId,
-    stage: existingSpelling(stagesInOrderWritten(db), requireStage(input.stage)),
+    candidate_id: input.candidateId,
+    number: nextNumber(db, input.candidateId),
     date: optionalDate(input.date),
-    createdAt: new Date().toISOString(),
+    created_at: new Date().toISOString(),
   };
-  db.prepare("INSERT INTO interview (id, candidate_id, stage, date, created_at) VALUES (?, ?, ?, ?, ?)").run(
-    interview.id,
-    interview.candidateId,
-    interview.stage,
-    interview.date,
-    interview.createdAt,
+  db.prepare("INSERT INTO interview (id, candidate_id, number, date, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    row.id,
+    row.candidate_id,
+    row.number,
+    row.date,
+    row.created_at,
   );
-  return interview;
+  return toInterview(row, today());
 }
 
 // Earliest date first. Interviews without a date come last, in the order they were added.
-export function listInterviews(db: DatabaseSync, candidateId: string): Interview[] {
+export function listInterviews(db: DatabaseSync, today: Today, candidateId: string): Interview[] {
   const rows = db
     .prepare(
-      `SELECT id, candidate_id, stage, date, created_at FROM interview
+      `SELECT id, candidate_id, number, date, created_at FROM interview
        WHERE candidate_id = ?
-       ORDER BY date IS NULL, date, rowid`,
+       ORDER BY date IS NULL, date, number`,
     )
-    .all(candidateId);
-  return (rows as unknown as InterviewRow[]).map(toInterview);
+    .all(candidateId) as unknown as InterviewRow[];
+  const day = today();
+  return rows.map((row) => toInterview(row, day));
 }
 
-// Every stage used so far, for any Candidate, once each, in alphabetical order.
-// Suggested when an Interview is added.
-export function listInterviewStages(db: DatabaseSync): string[] {
-  return sortLabels(stagesInOrderWritten(db));
-}
-
-function stagesInOrderWritten(db: DatabaseSync): string[] {
-  const rows = db
-    .prepare("SELECT stage FROM interview GROUP BY stage ORDER BY MIN(rowid)")
-    .all() as unknown as { stage: string }[];
-  return rows.map((row) => row.stage);
-}
-
-function requireStage(value: string): string {
-  const tidy = tidyLabel(value);
-  if (tidy === "") {
-    throw new InvalidInputError("stage", "An Interview needs a stage.");
-  }
-  return tidy;
+function nextNumber(db: DatabaseSync, candidateId: string): number {
+  const row = db
+    .prepare("SELECT COALESCE(MAX(number), 0) + 1 AS next FROM interview WHERE candidate_id = ?")
+    .get(candidateId) as { next: number };
+  return row.next;
 }
 
 // A blank date means the Interview has no date yet. Any other value must be a real
@@ -94,12 +85,14 @@ function optionalDate(value: string | null | undefined): string | null {
   return trimmed;
 }
 
-function toInterview(row: InterviewRow): Interview {
+// Days written as YYYY-MM-DD sort like text, so a plain comparison tells which is later.
+function toInterview(row: InterviewRow, today: string): Interview {
   return {
     id: row.id,
     candidateId: row.candidate_id,
-    stage: row.stage,
+    number: row.number,
     date: row.date,
+    planned: row.date !== null && row.date > today,
     createdAt: row.created_at,
   };
 }
