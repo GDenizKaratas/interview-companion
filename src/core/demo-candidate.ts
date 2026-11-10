@@ -1,5 +1,7 @@
+import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
 import { deleteCandidateIfExists, hasAnyCandidate, insertCandidate, type Candidate } from "./candidates.ts";
+import { acceptCv, storeCv, storedFileName, type AcceptedCv } from "./cv.ts";
 import { inTransaction } from "./database.ts";
 import { addInterviewerNotes, type Now } from "./interviewer-notes.ts";
 import { addInterview, type Today } from "./interviews.ts";
@@ -12,13 +14,33 @@ const demoCandidateId = "demo-candidate";
 // Loads a fictional Candidate, in Turkish, so a new Interviewer can explore the app.
 // Loading again replaces the demo Candidate with a fresh copy, so there is never more than one,
 // and a newer version of the app brings its newer demo data. Other Candidates are not touched.
-export function loadDemoCandidate(db: DatabaseSync, today: Today, now: Now): Candidate {
-  return inTransaction(db, () => {
-    // Once the demo has been loaded, the first start no longer needs to load it.
-    deleteSetting(db, demoPendingSetting);
-    deleteCandidateIfExists(db, demoCandidateId);
-    return addDemoContent(db, today, now);
-  });
+export async function loadDemoCandidate(db: DatabaseSync, folder: string, today: Today, now: Now): Promise<Candidate> {
+  const cv = await readDemoCv();
+  return loadDemo(db, folder, today, now, cv);
+}
+
+// The demo Candidate's fictional CV, made by demo/make-cv.ts. It is read before any change,
+// because reading a PDF cannot happen inside a database transaction.
+async function readDemoCv(): Promise<AcceptedCv> {
+  const bytes = new Uint8Array(readFileSync(new URL("../../demo/cv.pdf", import.meta.url)));
+  return acceptCv({ fileName: "Deniz_Yilmaz_CV.pdf", bytes });
+}
+
+function loadDemo(db: DatabaseSync, folder: string, today: Today, now: Now, cv: AcceptedCv): Candidate {
+  const earlierCvFile = storedFileName(db, demoCandidateId);
+  return storeCv(
+    db,
+    folder,
+    now,
+    cv,
+    () => {
+      // Once the demo has been loaded, the first start no longer needs to load it.
+      deleteSetting(db, demoPendingSetting);
+      deleteCandidateIfExists(db, demoCandidateId);
+      return addDemoContent(db, today, now);
+    },
+    earlierCvFile === undefined ? [] : [earlierCvFile],
+  );
 }
 
 // Set when the database file is created, and removed once the demo Candidate is loaded or the
@@ -34,10 +56,16 @@ export function markDemoPending(db: DatabaseSync): void {
 // Interviewer sees something to explore. It happens only once: a demo Candidate the Interviewer
 // deleted does not come back, and neither does one for an Interviewer who deletes all of their
 // own Candidates later. Returns the demo Candidate, or undefined when nothing was loaded.
-export function loadDemoCandidateOnFirstStart(db: DatabaseSync, today: Today, now: Now): Candidate | undefined {
+export async function loadDemoCandidateOnFirstStart(
+  db: DatabaseSync,
+  folder: string,
+  today: Today,
+  now: Now,
+): Promise<Candidate | undefined> {
+  const cv = await readDemoCv();
   return inTransaction(db, () => {
     if (!deleteSetting(db, demoPendingSetting) || hasAnyCandidate(db)) return undefined;
-    return loadDemoCandidate(db, today, now);
+    return loadDemo(db, folder, today, now, cv);
   });
 }
 

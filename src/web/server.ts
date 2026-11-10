@@ -14,7 +14,7 @@ const core = openCore(defaultDatabasePath());
 // A new Interviewer sees the demo Candidate the first time the app starts. It is only a
 // convenience, so if it fails the app still starts; `npm run demo` can load it later.
 try {
-  const demo = core.loadDemoCandidateOnFirstStart();
+  const demo = await core.loadDemoCandidateOnFirstStart();
   if (demo) {
     console.log(`First start: loaded the demo Candidate, ${demo.name}. Delete them from their Workspace at any time.`);
   }

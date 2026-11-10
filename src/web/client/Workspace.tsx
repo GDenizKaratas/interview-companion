@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, type Candidate, type Interview } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { CvPanel } from "./CvPanel.tsx";
 import { InterviewSelector } from "./InterviewSelector.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, navigate } from "./navigation.ts";
@@ -127,7 +128,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
       {load.state === "ready" && (
         <div className="panels">
           <Panel area="cv" title={text.panels.cv.title}>
-            <p className="empty">{text.panels.cv.empty}</p>
+            <CvPanel candidateId={load.candidate.id} />
           </Panel>
           <Panel area="notes" title={text.panels.interviewerNotes.title}>
             <NotesPanel

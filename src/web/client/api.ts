@@ -2,6 +2,7 @@
 // Only types come from core; they are erased before the code reaches the browser.
 import type {
   Candidate,
+  Cv,
   InputRule,
   Interview,
   InterviewerNote,
@@ -11,7 +12,7 @@ import type {
   SavedQuestion,
 } from "../../core/index.ts";
 
-export type { Candidate, Interview, InterviewerNote, SavedQuestion };
+export type { Candidate, Cv, Interview, InterviewerNote, SavedQuestion };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -42,6 +43,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+function sendForm(fields: Record<string, string | File>): RequestInit {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(fields)) form.append(key, value);
+  return { method: "POST", body: form };
+}
+
 function sendJson(method: string, body: unknown): RequestInit {
   return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
 }
@@ -52,6 +59,13 @@ export const api = {
   getCandidate: (id: string) => request<Candidate>(`/candidates/${encodeURIComponent(id)}`),
   createCandidate: (input: NewCandidate) => request<Candidate>("/candidates", sendJson("POST", input)),
   deleteCandidate: (id: string) => request<void>(`/candidates/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  createCandidateWithCv: (input: NewCandidate, cv: File) =>
+    request<Candidate>("/candidates", sendForm({ ...input, cv })),
+  guessCandidateName: (cv: File) => request<{ name: string }>("/cv-name-guess", sendForm({ cv })),
+  getCv: (candidateId: string) => request<Cv | null>(`/candidates/${encodeURIComponent(candidateId)}/cv`),
+  cvFileUrl: (candidateId: string) => `/api/candidates/${encodeURIComponent(candidateId)}/cv/file`,
+  uploadCv: (candidateId: string, cv: File) =>
+    request<Cv>(`/candidates/${encodeURIComponent(candidateId)}/cv`, sendForm({ cv })),
   getInterfaceLanguage: () => request<{ language: string }>("/interface-language"),
   setInterfaceLanguage: (language: string) =>
     request<{ language: string }>("/interface-language", sendJson("PUT", { language })),

@@ -1,16 +1,19 @@
 // The public interface of core. web and mcp import only from this file.
 import { mkdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as candidates from "./candidates.ts";
+import * as cv from "./cv.ts";
 import { openDatabase } from "./database.ts";
 import * as demoCandidate from "./demo-candidate.ts";
 import * as interfaceLanguage from "./interface-language.ts";
 import * as interviewerNotes from "./interviewer-notes.ts";
 import * as interviews from "./interviews.ts";
+import * as nameGuess from "./name-guess.ts";
 import * as savedQuestions from "./saved-questions.ts";
 
 export type { Candidate, NewCandidate } from "./candidates.ts";
+export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
 export { InvalidInputError, NotFoundError, type InputRule } from "./errors.ts";
 export type { InterviewerNote, NewInterviewerNotes, NoteFilter } from "./interviewer-notes.ts";
 export type { Interview, NewInterview } from "./interviews.ts";
@@ -18,11 +21,12 @@ export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-qu
 
 export interface Core {
   createCandidate(input: candidates.NewCandidate): candidates.Candidate;
+  createCandidateWithCv(input: cv.NewCandidateWithCv): Promise<candidates.Candidate>;
   listCandidates(): candidates.Candidate[];
   getCandidate(id: string): candidates.Candidate | undefined;
   deleteCandidate(id: string): void;
-  loadDemoCandidate(): candidates.Candidate;
-  loadDemoCandidateOnFirstStart(): candidates.Candidate | undefined;
+  loadDemoCandidate(): Promise<candidates.Candidate>;
+  loadDemoCandidateOnFirstStart(): Promise<candidates.Candidate | undefined>;
   listCandidateRoles(): string[];
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
@@ -38,6 +42,10 @@ export interface Core {
   editSavedQuestion(id: string, text: string): savedQuestions.SavedQuestion;
   deleteSavedQuestion(id: string): void;
   moveSavedQuestion(id: string, position: number): void;
+  attachCv(candidateId: string, file: cv.CvFile): Promise<cv.Cv>;
+  getCv(candidateId: string): cv.Cv | undefined;
+  readCvFile(candidateId: string): cv.CvFile | undefined;
+  guessCandidateName(file: cv.CvFile): Promise<string>;
   close(): void;
 }
 
@@ -55,13 +63,16 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
   if (created) demoCandidate.markDemoPending(db);
   const today = options.today ?? localToday;
   const now = options.now ?? (() => new Date());
+  // CV files live in a folder next to the database file.
+  const cvFolder = join(dirname(dbPath), "cv-files");
   return {
     createCandidate: (input) => candidates.createCandidate(db, input),
+    createCandidateWithCv: (input) => cv.createCandidateWithCv(db, cvFolder, now, input),
     listCandidates: () => candidates.listCandidates(db),
     getCandidate: (id) => candidates.getCandidate(db, id),
-    deleteCandidate: (id) => candidates.deleteCandidate(db, id),
-    loadDemoCandidate: () => demoCandidate.loadDemoCandidate(db, today, now),
-    loadDemoCandidateOnFirstStart: () => demoCandidate.loadDemoCandidateOnFirstStart(db, today, now),
+    deleteCandidate: (id) => cv.deleteCandidateAndCv(db, cvFolder, id),
+    loadDemoCandidate: () => demoCandidate.loadDemoCandidate(db, cvFolder, today, now),
+    loadDemoCandidateOnFirstStart: () => demoCandidate.loadDemoCandidateOnFirstStart(db, cvFolder, today, now),
     listCandidateRoles: () => candidates.listCandidateRoles(db),
     addInterview: (input) => interviews.addInterview(db, today, input),
     listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),
@@ -77,6 +88,10 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     editSavedQuestion: (id, text) => savedQuestions.editSavedQuestion(db, id, text),
     deleteSavedQuestion: (id) => savedQuestions.deleteSavedQuestion(db, id),
     moveSavedQuestion: (id, position) => savedQuestions.moveSavedQuestion(db, id, position),
+    attachCv: (candidateId, file) => cv.attachCv(db, cvFolder, now, candidateId, file),
+    getCv: (candidateId) => cv.getCv(db, candidateId),
+    readCvFile: (candidateId) => cv.readCvFile(db, cvFolder, candidateId),
+    guessCandidateName: (file) => nameGuess.guessCandidateName(file),
     close: () => db.close(),
   };
 }

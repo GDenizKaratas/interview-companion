@@ -11,6 +11,10 @@ const text = {
     empty: "No Candidates yet. Add the first one above.",
     nameLabel: "Name",
     roleLabel: "Role",
+    cvLabel: "CV (PDF, optional)",
+    cvHint: "Choosing a CV fills in the name. Check it before saving.",
+    cvRemove: "Remove",
+    cvChoose: "Choose PDF",
     add: "Add Candidate",
     saveFailed: "The Candidate could not be saved.",
     loadFailed: "Candidates could not be loaded.",
@@ -59,7 +63,29 @@ const text = {
     loadFailed: "Interviews could not be loaded.",
   },
   panels: {
-    cv: { title: "CV", empty: "No CV uploaded." },
+    cv: {
+      title: "CV",
+      empty: "No CV uploaded.",
+      upload: "Upload CV",
+      replace: "Replace CV",
+      reading: "Reading PDF…",
+      // {page} and {count} are replaced by numbers.
+      page: "Page {page} of {count}",
+      previous: "Previous page",
+      next: "Next page",
+      confirmReplace: "Replace the CV?",
+      // {current} and {new} are replaced by file names.
+      confirmReplaceDetail: "{current} and its text will be removed and replaced by {new}.",
+      replaceConfirm: "Replace",
+      cancel: "Cancel",
+      refused: {
+        readableText: "This PDF has no readable text. Only PDFs with real text can be used, not scans.",
+        format: "This file is not a PDF that can be opened.",
+      },
+      uploadFailed: "The CV could not be uploaded.",
+      loadFailed: "The CV could not be loaded.",
+      viewFailed: "The PDF could not be shown.",
+    },
     interviewerNotes: {
       title: "My Notes",
       empty: "No personal notes yet.",

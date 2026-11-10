@@ -5,7 +5,7 @@ import { defaultDatabasePath, openCore } from "../core/index.ts";
 
 const core = openCore(defaultDatabasePath());
 try {
-  const demo = core.loadDemoCandidate();
+  const demo = await core.loadDemoCandidate();
   console.log(`Loaded the demo Candidate: ${demo.name}. Start the app with \`npm start\` to see them.`);
 } finally {
   core.close();

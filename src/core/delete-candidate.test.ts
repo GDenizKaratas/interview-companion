@@ -1,8 +1,9 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NotFoundError, openCore, type Core } from "./index.ts";
+import { makePdf } from "./testing/make-pdf.ts";
 
 let dir: string;
 let dbPath: string;
@@ -47,6 +48,18 @@ describe("Deleting a Candidate", () => {
       expect(() => core.editInterviewerNote(note.id, "Changed")).toThrow(NotFoundError);
     }
     expect(() => core.editSavedQuestion(question.id, "Changed?")).toThrow(NotFoundError);
+  });
+
+  it("removes the Candidate's CV file and keeps the CV of every other Candidate", async () => {
+    const cv = makePdf([[{ text: "Ada Demir", size: 24 }]]);
+    const deleted = await core.createCandidateWithCv({ name: "Ada Demir", role: "Backend Engineer", cv: { fileName: "ada.pdf", bytes: cv } });
+    const kept = await core.createCandidateWithCv({ name: "Can Aksoy", role: "Backend Engineer", cv: { fileName: "can.pdf", bytes: cv } });
+
+    core.deleteCandidate(deleted.id);
+
+    expect(core.getCv(deleted.id)).toBeUndefined();
+    expect(core.readCvFile(kept.id)?.bytes).toEqual(cv);
+    expect(readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((path) => path.endsWith(".pdf"))).toHaveLength(1);
   });
 
   it("keeps every other Candidate and their data as they were", () => {

@@ -42,6 +42,19 @@ const migrations: string[] = [
      created_at TEXT NOT NULL
    ) STRICT;
    CREATE INDEX saved_question_candidate ON saved_question (candidate_id, position);`,
+  // A Candidate has at most one CV. The file is stored under stored_name in the CV folder.
+  `CREATE TABLE cv (
+     candidate_id TEXT PRIMARY KEY REFERENCES candidate (id) ON DELETE CASCADE,
+     file_name TEXT NOT NULL,
+     stored_name TEXT NOT NULL,
+     uploaded_at TEXT NOT NULL
+   ) STRICT;
+   CREATE TABLE cv_page (
+     candidate_id TEXT NOT NULL REFERENCES cv (candidate_id) ON DELETE CASCADE,
+     number INTEGER NOT NULL,
+     text TEXT NOT NULL,
+     PRIMARY KEY (candidate_id, number)
+   ) STRICT;`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file
