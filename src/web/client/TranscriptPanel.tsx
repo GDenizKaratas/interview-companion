@@ -87,7 +87,8 @@ function InterviewTranscript({ interview }: { interview: Interview }) {
               {t.replace}
             </button>
           </div>
-          <SpeakerMapping transcript={transcript} onConfirmed={setTranscript} />
+          {/* Keyed by import, so a replaced Transcript never keeps roles chosen for the old speakers. */}
+          <SpeakerMapping key={transcript.importedAt} transcript={transcript} onConfirmed={setTranscript} />
           <ol className="segments">
             {transcript.segments.map((segment) => {
               const speaker = labels.get(segment.speakerId);
@@ -105,7 +106,7 @@ function InterviewTranscript({ interview }: { interview: Interview }) {
                     {speaker?.verified && speaker.role ? (
                       <span className="speaker-role">{t.speakers.roles[speaker.role]}</span>
                     ) : (
-                      <span className="unverified">{t.unverified}</span>
+                      speaker && <span className="unverified">{t.unverified}</span>
                     )}
                   </div>
                   <p className="segment-text">{segment.text}</p>

@@ -64,7 +64,7 @@ export function createApi(core: Core): Hono {
   // Confirms the Speaker Mapping. The body is { roles: { <speaker id>: "candidate" | "interviewer" | "other" } }.
   api.put("/interviews/:id/speaker-mapping", async (c) => {
     const fields = await jsonFields(c);
-    const roles = typeof fields.roles === "object" && fields.roles !== null ? fields.roles : {};
+    const roles = typeof fields.roles === "object" && fields.roles !== null && !Array.isArray(fields.roles) ? fields.roles : {};
     return respondOrRefuse(c, () =>
       c.json(core.confirmSpeakerMapping(c.req.param("id"), roles as Record<string, SpeakerRole>)),
     );

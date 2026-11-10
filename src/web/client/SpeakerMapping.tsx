@@ -2,7 +2,10 @@ import { useState } from "react";
 import { api, ApiError, type SpeakerRole, type Transcript } from "./api.ts";
 import { useText } from "./text.tsx";
 
+// Core checks the roles; this list only sets the order of the buttons.
 const roleChoices: SpeakerRole[] = ["candidate", "interviewer", "other"];
+// How much of a speaker's first words is shown to help tell who the label is.
+const sampleLength = 60;
 
 // The Speaker Mapping of one Transcript. Until it is confirmed, it stays open and asks the
 // Interviewer to give every speaker a role. Once confirmed, it folds into one line with an
@@ -114,5 +117,5 @@ function SpeakerMappingForm({
 function firstWords(transcript: Transcript, speakerId: string): string {
   const said = transcript.segments.find((segment) => segment.speakerId === speakerId)?.text ?? "";
   const oneLine = said.replace(/\s+/g, " ").trim();
-  return oneLine.length > 60 ? `“${oneLine.slice(0, 60).trimEnd()}…”` : `“${oneLine}”`;
+  return oneLine.length > sampleLength ? `“${oneLine.slice(0, sampleLength).trimEnd()}…”` : `“${oneLine}”`;
 }
