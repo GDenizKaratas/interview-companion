@@ -45,7 +45,9 @@ const migrations: string[] = [
 ];
 
 export function openDatabase(path: string): DatabaseSync {
-  const db = new DatabaseSync(path);
+  // The web server, the MCP server, and `npm run demo` can have the file open at once, so a
+  // connection waits up to five seconds for another one to finish instead of failing at once.
+  const db = new DatabaseSync(path, { timeout: 5000 });
   db.exec("PRAGMA foreign_keys = ON;");
   migrate(db);
   return db;
@@ -54,15 +56,10 @@ export function openDatabase(path: string): DatabaseSync {
 function migrate(db: DatabaseSync): void {
   const row = db.prepare("PRAGMA user_version").get() as { user_version: number };
   for (let version = row.user_version; version < migrations.length; version++) {
-    db.exec("BEGIN");
-    try {
+    inTransaction(db, () => {
       db.exec(migrations[version]!);
       db.exec(`PRAGMA user_version = ${version + 1}`);
-      db.exec("COMMIT");
-    } catch (error) {
-      db.exec("ROLLBACK");
-      throw error;
-    }
+    });
   }
 }
 
@@ -76,8 +73,14 @@ export function inTransaction<T>(db: DatabaseSync, work: () => T): T {
     db.exec("RELEASE work");
     return result;
   } catch (error) {
-    db.exec("ROLLBACK TO work");
-    db.exec("RELEASE work");
+    // Some errors make SQLite roll back the whole transaction itself, and then the savepoint
+    // is gone. The original error is what the caller needs to see, so it is always rethrown.
+    try {
+      db.exec("ROLLBACK TO work");
+      db.exec("RELEASE work");
+    } catch {
+      // Nothing is left to undo.
+    }
     throw error;
   }
 }

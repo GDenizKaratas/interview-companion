@@ -80,12 +80,19 @@ describe("Demo Candidate", () => {
     expect(contentOf(reloaded.id)).toEqual(fresh);
   });
 
-  it("has one Interview that has taken place and one that is Planned, whatever day it is loaded", () => {
+  it.each([
+    { today: "2026-11-10", first: "2026-11-03", second: "2026-11-13" },
+    { today: "2026-12-30", first: "2026-12-23", second: "2027-01-02" },
+    { today: "2028-03-03", first: "2028-02-25", second: "2028-03-06" },
+  ])("has one Interview that has taken place and one that is Planned when loaded on $today", ({ today, first, second }) => {
+    core.close();
+    core = openCore(dbPath, { today: () => today });
+
     const demo = core.loadDemoCandidate();
 
     expect(contentOf(demo.id).interviews).toEqual([
-      { number: 1, date: "2026-11-03", planned: false },
-      { number: 2, date: "2026-11-13", planned: true },
+      { number: 1, date: first, planned: false },
+      { number: 2, date: second, planned: true },
     ]);
   });
 });

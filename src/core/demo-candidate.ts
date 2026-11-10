@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { deleteCandidate, getCandidate, insertCandidate, type Candidate } from "./candidates.ts";
+import { deleteCandidateIfExists, insertCandidate, type Candidate } from "./candidates.ts";
 import { inTransaction } from "./database.ts";
 import { addInterviewerNotes, type Now } from "./interviewer-notes.ts";
 import { addInterview, type Today } from "./interviews.ts";
@@ -13,7 +13,7 @@ const demoCandidateId = "demo-candidate";
 // and a newer version of the app brings its newer demo data. Other Candidates are not touched.
 export function loadDemoCandidate(db: DatabaseSync, today: Today, now: Now): Candidate {
   return inTransaction(db, () => {
-    if (getCandidate(db, demoCandidateId)) deleteCandidate(db, demoCandidateId);
+    deleteCandidateIfExists(db, demoCandidateId);
     return addDemoContent(db, today, now);
   });
 }

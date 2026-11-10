@@ -55,10 +55,14 @@ export function getCandidate(db: DatabaseSync, id: string): Candidate | undefine
 // Deletes the Candidate and everything about them. The database removes their Interviews,
 // Interviewer Notes, and Saved Questions with them (ON DELETE CASCADE).
 export function deleteCandidate(db: DatabaseSync, id: string): void {
-  const result = db.prepare("DELETE FROM candidate WHERE id = ?").run(id);
-  if (result.changes === 0) {
+  if (!deleteCandidateIfExists(db, id)) {
     throw new NotFoundError("This Candidate does not exist.");
   }
+}
+
+// Like deleteCandidate, but a missing Candidate is not an error. Returns whether one was deleted.
+export function deleteCandidateIfExists(db: DatabaseSync, id: string): boolean {
+  return db.prepare("DELETE FROM candidate WHERE id = ?").run(id).changes > 0;
 }
 
 // Refuses with NotFoundError when the Candidate does not exist.

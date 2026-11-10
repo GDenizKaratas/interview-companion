@@ -22,6 +22,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [interviewsFailed, setInterviewsFailed] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function loadInterviews(id: string): Promise<void> {
     return api.listInterviews(id).then(
@@ -47,14 +48,22 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   }
 
   // After the Candidate is deleted there is nothing left to show, so the app goes back to the list.
+  // A 404 means the Candidate is already gone, for example deleted in another tab, so it counts
+  // as deleted too.
   async function confirmDelete() {
     setConfirmingDelete(false);
     setDeleteFailed(false);
+    setDeleting(true);
     try {
       await api.deleteCandidate(candidateId);
       navigate("/");
-    } catch {
-      setDeleteFailed(true);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        navigate("/");
+      } else {
+        setDeleteFailed(true);
+        setDeleting(false);
+      }
     }
   }
 
@@ -77,7 +86,12 @@ export function Workspace({ candidateId }: { candidateId: string }) {
           </h1>
         )}
         {load.state === "ready" && (
-          <button type="button" className="quiet delete-candidate" onClick={() => setConfirmingDelete(true)}>
+          <button
+            type="button"
+            className="quiet delete-candidate"
+            disabled={deleting}
+            onClick={() => setConfirmingDelete(true)}
+          >
             {text.workspace.deleteCandidate}
           </button>
         )}
