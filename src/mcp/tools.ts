@@ -5,7 +5,7 @@ import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, t
 
 // Bounds on what the AI client can save in one call, so a runaway client cannot flood the
 // Workspace. They are generous for a real Interview.
-const limits = { notes: 40, suggestions: 25, evidence: 8, briefEvidence: 100 };
+const limits = { notes: 40, askedQuestions: 60, suggestions: 25, evidence: 8, briefEvidence: 100 };
 const textLimits = { long: 2000, brief: 50_000 };
 
 const briefNumber = z.number().int().positive().describe("The number in square brackets in the text, such as 1 for [1].");
@@ -105,6 +105,34 @@ export function createMcpServer(core: AiClientCore): McpServer {
     ({ interviewId }) => toolResult(() => core.listAiNotes(interviewId)),
   );
   server.registerTool(
+    "get_asked_questions",
+    {
+      description:
+        "Get the Asked Questions of one Interview: every question the Interviewer asked, in order, each with an " +
+        "Answer Summary of what the Candidate said, the Interviewer's segment and quote where it was asked " +
+        "(questionEvidence), the Candidate's quotes (answerEvidence), and the Saved Question it matches " +
+        "(savedQuestionId). null when they were never looked for. stale is true when the Speaker Mapping changed " +
+        "after they were found: do not rely on stale ones.",
+      inputSchema: {
+        interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate."),
+      },
+      annotations: readOnly,
+    },
+    ({ interviewId }) => toolResult(() => core.listAskedQuestions(interviewId)),
+  );
+  server.registerTool(
+    "get_saved_question_checks",
+    {
+      description:
+        "For one Candidate, where each Saved Question stands in each Interview whose Asked Questions were found: " +
+        "askedQuestion is the Asked Question it matched, or null when it was not found in that Transcript. A " +
+        "Saved Question with no entry for an Interview was not checked there.",
+      inputSchema: { candidateId },
+      annotations: readOnly,
+    },
+    ({ candidateId }) => toolResult(() => core.listSavedQuestionChecks(candidateId)),
+  );
+  server.registerTool(
     "get_transcript",
     {
       description:
@@ -188,6 +216,48 @@ export function createMcpServer(core: AiClientCore): McpServer {
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
     },
     ({ interviewId, notes }) => toolResult(() => core.saveAiNotesFromClient(interviewId, notes)),
+  );
+  server.registerTool(
+    "save_asked_questions",
+    {
+      description:
+        "Save the Asked Questions of one Interview into Interview Companion: every question the Interviewer " +
+        "asked, in order, with a short, neutral Answer Summary of what the Candidate said. Quote where the " +
+        "question was asked, word for word from a segment whose role is interviewer, and the answer, word for " +
+        "word from segments whose role is candidate, at or after the question (see get_transcript). Set " +
+        "savedQuestionId to the id of the Saved Question it asks (see get_saved_questions), or null. The app " +
+        "checks every quote and drops a question that fails, and the answer says how many. Saving replaces the " +
+        "Interview's earlier Asked Questions. Refused until the Speaker Mapping is confirmed, and while saving " +
+        "from the AI client is off in the app's AI Settings.",
+      inputSchema: {
+        interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate."),
+        askedQuestions: z
+          .array(
+            z.object({
+              question: z.string().max(textLimits.long).describe("The question in a few words, in the Interviewer's language."),
+              questionEvidence: z.object({
+                segmentNumber: z.number().int().positive().describe("The Interviewer's segment, from get_transcript."),
+                quote: z.string().max(textLimits.long).describe("Words copied exactly from that segment."),
+              }),
+              savedQuestionId: z.string().nullable().describe("The matching Saved Question's id, or null."),
+              answerSummary: z.string().max(textLimits.long).describe("One or two neutral sentences, in the Interviewer's language."),
+              answerEvidence: z
+                .array(
+                  z.object({
+                    segmentNumber: z.number().int().positive().describe("A Candidate segment, from get_transcript."),
+                    quote: z.string().max(textLimits.long).describe("Words copied exactly from that segment."),
+                  }),
+                )
+                .min(1)
+                .max(limits.evidence),
+            }),
+          )
+          .max(limits.askedQuestions)
+          .describe("The questions, in the order they were asked."),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+    },
+    ({ interviewId, askedQuestions }) => toolResult(() => core.saveAskedQuestionsFromClient(interviewId, askedQuestions)),
   );
   server.registerTool(
     "save_suggested_questions",
@@ -293,8 +363,8 @@ export function createMcpServer(core: AiClientCore): McpServer {
     {
       title: "Brief",
       description:
-        "Prepare one Candidate: when saving from the AI client is on, write and save AI Notes and Suggested " +
-        "Questions, then write a Candidate Brief and save it in the app. When saving is off, only read and write " +
+        "Prepare one Candidate: when saving from the AI client is on, write and save AI Notes, Asked Questions, " +
+        "and Suggested Questions, then write a Candidate Brief and save it in the app. When saving is off, only read and write " +
         "the brief in the chat. In the brief every statement cites Evidence, with no judgments, and the reasons " +
         "and quotes are listed at the end.",
       argsSchema: {

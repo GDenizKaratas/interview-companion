@@ -20,7 +20,7 @@ beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), "interview-companion-"));
   proposed = [];
   clock = new Date("2026-11-10T09:30:00Z");
-  core = openCore(join(dir, "test.sqlite"), { today: () => "2026-11-10", now: () => clock, aiProvider: () => ({ proposeAiNotes: async () => proposed, proposeQuestions: async () => [] }) });
+  core = openCore(join(dir, "test.sqlite"), { today: () => "2026-11-10", now: () => clock, aiProvider: () => ({ proposeAiNotes: async () => proposed, proposeQuestions: async () => [], proposeAskedQuestions: async () => [] }) });
   candidate = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await createMcpServer(aiClientCore(core)).connect(serverSide);
@@ -55,14 +55,17 @@ describe("MCP server", () => {
 
     expect(tools.map((tool) => tool.name).sort()).toEqual([
       "get_ai_notes",
+      "get_asked_questions",
       "get_candidate",
       "get_candidate_brief",
       "get_cv",
       "get_interviewer_notes",
+      "get_saved_question_checks",
       "get_saved_questions",
       "get_transcript",
       "list_candidates",
       "save_ai_notes",
+      "save_asked_questions",
       "save_candidate_brief",
       "save_suggested_questions",
       "search_evidence",
@@ -341,7 +344,7 @@ describe("MCP server", () => {
   it("brief only reads while saving from the AI client is off, and says where to turn it on", async () => {
     const text = await fetchBriefPrompt();
 
-    for (const tool of ["save_ai_notes", "save_suggested_questions", "save_candidate_brief"]) {
+    for (const tool of ["save_ai_notes", "save_asked_questions", "save_suggested_questions", "save_candidate_brief"]) {
       expect(text, tool).not.toContain(tool);
     }
     expect(text).toMatch(/saving from the AI client is off/i);
@@ -356,7 +359,8 @@ describe("MCP server", () => {
     // In this order: notes first, so the brief can cite them; the brief last.
     const at = (tool: string) => text.indexOf(tool);
     expect(at("save_ai_notes")).toBeGreaterThan(-1);
-    expect(at("save_ai_notes")).toBeLessThan(at("save_suggested_questions"));
+    expect(at("save_ai_notes")).toBeLessThan(at("save_asked_questions"));
+    expect(at("save_asked_questions")).toBeLessThan(at("save_suggested_questions"));
     expect(at("save_suggested_questions")).toBeLessThan(at("save_candidate_brief"));
     expect(text).toContain("get_transcript");
     expect(text).toMatch(/one evidence entry per number/i);
@@ -419,6 +423,32 @@ describe("MCP server", () => {
 
     expect(saved.dropped).toBe(1);
     expect(saved.notes).toEqual([expect.objectContaining({ statement: "Used Redis.", source: "aiClient", reviewState: "unreviewed" })]);
+  });
+
+  it("save_asked_questions saves through core's checks, and get_asked_questions and get_saved_question_checks read them back", async () => {
+    const interview = readyInterview();
+    const saved = core.addSavedQuestion({ candidateId: candidate.id, text: "Which queue?" });
+    const askedQueue = {
+      question: "Which queue",
+      questionEvidence: { segmentNumber: 1, quote: "Which queue did you use?" },
+      savedQuestionId: saved.id,
+      answerSummary: "Said they used Redis with BullMQ.",
+      answerEvidence: [{ segmentNumber: 2, quote: "Redis with BullMQ" }],
+    };
+    expect(await refusal("save_asked_questions", { interviewId: interview.id, askedQuestions: [askedQueue] })).toContain("AI Settings");
+    core.allowAiClientWrites(true);
+
+    const result = (await call("save_asked_questions", {
+      interviewId: interview.id,
+      askedQuestions: [askedQueue, { ...askedQueue, answerEvidence: [{ segmentNumber: 2, quote: "Kafka" }] }],
+    })) as { askedQuestions: { question: string; source: string }[]; dropped: number };
+
+    expect(result.dropped).toBe(1);
+    expect(result.askedQuestions).toEqual([expect.objectContaining({ question: "Which queue", source: "aiClient" })]);
+    expect(await call("get_asked_questions", { interviewId: interview.id })).toEqual(core.listAskedQuestions(interview.id));
+    expect(await call("get_saved_question_checks", { candidateId: candidate.id })).toEqual([
+      expect.objectContaining({ savedQuestionId: saved.id, interviewId: interview.id }),
+    ]);
   });
 
   it("save_suggested_questions saves through core's checks", async () => {

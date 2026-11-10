@@ -8,8 +8,8 @@
 export function briefPrompt(candidate: string, { canSave }: { canSave: boolean }): string {
   const name = JSON.stringify(candidate);
   const intro = canSave
-    ? `Prepare the Candidate ${name} in Interview Companion: write and save AI Notes for their Interviews, write and save Suggested Questions, then write and save a Candidate Brief.`
-    : `Write a Candidate Brief about the Candidate ${name} from Interview Companion's data. Saving from the AI client is off in the app's AI Settings, so only read: write the brief in the chat and save nothing. At the start of your answer, tell the Interviewer that with saving turned on in AI Settings, the same command also saves AI Notes, Suggested Questions, and the brief in the app.`;
+    ? `Prepare the Candidate ${name} in Interview Companion: write and save AI Notes and Asked Questions for their Interviews, write and save Suggested Questions, then write and save a Candidate Brief.`
+    : `Write a Candidate Brief about the Candidate ${name} from Interview Companion's data. Saving from the AI client is off in the app's AI Settings, so only read: write the brief in the chat and save nothing. At the start of your answer, tell the Interviewer that with saving turned on in AI Settings, the same command also saves AI Notes, Asked Questions, Suggested Questions, and the brief in the app.`;
 
   return `${intro}
 
@@ -48,11 +48,12 @@ const savingSteps = `${findCandidate}
 2. Call get_candidate for the CV and the Interviews in order, and get_cv for the CV's text.
 3. ${readOthers}
 4. AI Notes: for each Interview whose Speaker Mapping is confirmed, call get_ai_notes. If it has no AI Notes, or only Stale ones, call get_transcript, write AI Notes, and save them with save_ai_notes. Leave the other Interviews' notes as they are. The answer says how many notes were dropped because a quote was not found; do not try to save them again.
-5. ${readAiNotes}
-6. ${search}
-7. Suggested Questions: write a few questions the Interviewer could ask next, such as about a CV claim not discussed yet, and save them with save_suggested_questions. Do not repeat a Saved Question. The answer says how many were dropped because a quote was not found.
-8. Write the brief in the chat.
-9. Save it with save_candidate_brief: the whole brief as text, and one evidence entry per number in square brackets, with the exact quote and its source (a CV page, or an Interview id and segment number).
+5. Asked Questions: for each Interview whose Speaker Mapping is confirmed, call get_asked_questions. If it is null, or stale, list every question the Interviewer asked with a short, neutral Answer Summary of what the Candidate said, and save them with save_asked_questions. Link each to the Saved Question it asks, if any.
+6. ${readAiNotes}
+7. ${search}
+8. Suggested Questions: write a few questions the Interviewer could ask next, such as about a CV claim not discussed yet, and save them with save_suggested_questions. Do not repeat a Saved Question. The answer says how many were dropped because a quote was not found.
+9. Write the brief in the chat.
+10. Save it with save_candidate_brief: the whole brief as text, and one evidence entry per number in square brackets, with the exact quote and its source (a CV page, or an Interview id and segment number).
 
 If a save is refused because saving from the AI client is off in the app's AI Settings, tell the Interviewer, save nothing more, and still write the brief in the chat.`;
 
@@ -69,7 +70,8 @@ const rules = `- Every statement about the Candidate cites Evidence with a numbe
 
 const savingRules = `- An AI Note is one short, neutral statement about what the Candidate said, with at least one quote from a segment whose speakerRole is candidate. Never quote the Interviewer or others as the Candidate.
 - A Suggested Question has one short reason line. Back it with quotes from the CV, or from a Transcript whose Speaker Mapping is confirmed, when it rests on them; a suggestion quoting an unconfirmed Transcript is dropped. A general question has no quotes.
-- Write AI Notes and Suggested Questions in the language the Interviewer writes to you in. Quotes stay in the language of their source.`;
+- An Asked Question quotes the Interviewer's segment where it was asked, and its Answer Summary quotes the Candidate's own segments at or after it. Summarize; never judge whether the answer was right.
+- Write AI Notes, Asked Questions, and Suggested Questions in the language the Interviewer writes to you in. Quotes stay in the language of their source.`;
 
 const template = `# Candidate Brief: <name>, <role>
 

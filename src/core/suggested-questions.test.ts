@@ -203,6 +203,7 @@ describe("Suggested Question generation", () => {
       now: () => new Date("2026-11-10T09:31:00Z"),
       aiProvider: () => ({
         proposeAiNotes: async () => [],
+        proposeAskedQuestions: async () => [],
         proposeQuestions: async () => {
           confirmRoles(importTranscript());
           await core.attachCv(candidate.id, { fileName: "cv.pdf", bytes: cv });

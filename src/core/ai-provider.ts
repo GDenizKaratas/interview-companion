@@ -51,9 +51,32 @@ export interface ProposedQuestion {
   evidence: ProposedQuestionEvidence[];
 }
 
+// What core sends to find the Asked Questions of one Interview: its Transcript, as for AI Notes,
+// and the Candidate's Saved Questions, so the model can say which of them were asked.
+export interface AskedQuestionRequest {
+  // The interface language. Questions and summaries are written in it; quotes stay as they are.
+  language: string;
+  segments: { number: number; role: SpeakerRole; text: string }[];
+  savedQuestions: { id: string; text: string }[];
+}
+
+// One question the model found in the Transcript, with what the Candidate answered.
+export interface ProposedAskedQuestion {
+  // The question in a few words, in the interface language.
+  question: string;
+  // Where the Interviewer asked it: an exact quote from one of their segments.
+  questionEvidence: { segmentNumber: number; quote: string };
+  // The Saved Question this one matches, or null.
+  savedQuestionId: string | null;
+  answerSummary: string;
+  // Exact quotes from the Candidate's segments, at or after the question.
+  answerEvidence: { segmentNumber: number; quote: string }[];
+}
+
 export interface AiProvider {
   proposeAiNotes(request: AiNoteRequest): Promise<ProposedAiNote[]>;
   proposeQuestions(request: QuestionRequest): Promise<ProposedQuestion[]>;
+  proposeAskedQuestions(request: AskedQuestionRequest): Promise<ProposedAskedQuestion[]>;
 }
 
 // Makes a provider for the saved API key. Called only when the Interviewer asks for generation.

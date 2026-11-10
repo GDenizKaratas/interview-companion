@@ -3,7 +3,8 @@ import { mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as aiNotes from "./ai-notes.ts";
-import type { AiProviderFactory, ProposedAiNote, ProposedQuestion } from "./ai-provider.ts";
+import * as askedQuestions from "./asked-questions.ts";
+import type { AiProviderFactory, ProposedAiNote, ProposedAskedQuestion, ProposedQuestion } from "./ai-provider.ts";
 import * as aiSettings from "./ai-settings.ts";
 import * as candidateBrief from "./candidate-brief.ts";
 import * as candidateOverview from "./candidate-overview.ts";
@@ -26,11 +27,14 @@ export type {
   AiNoteRequest,
   AiProvider,
   AiProviderFactory,
+  AskedQuestionRequest,
   ProposedAiNote,
+  ProposedAskedQuestion,
   ProposedQuestion,
   ProposedQuestionEvidence,
   QuestionRequest,
 } from "./ai-provider.ts";
+export type { AskedQuestion, AskedQuestionGeneration, AskedQuestions, SavedQuestionCheck, SegmentQuote } from "./asked-questions.ts";
 export type { BriefEvidence, CandidateBrief, NewBriefEvidence, NewCandidateBrief } from "./candidate-brief.ts";
 export type { CandidateOverview, InterviewOverview } from "./candidate-overview.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
@@ -113,6 +117,10 @@ export interface Core {
   saveCandidateBriefFromClient(candidateId: string, brief: candidateBrief.NewCandidateBrief): candidateBrief.CandidateBrief;
   getCandidateBrief(candidateId: string): candidateBrief.CandidateBrief | null;
   listAiNotes(interviewId: string): aiNotes.AiNote[];
+  findAskedQuestions(interviewId: string): Promise<askedQuestions.AskedQuestionGeneration>;
+  listAskedQuestions(interviewId: string): askedQuestions.AskedQuestions | null;
+  listSavedQuestionChecks(candidateId: string): askedQuestions.SavedQuestionCheck[];
+  saveAskedQuestionsFromClient(interviewId: string, askedQuestions: ProposedAskedQuestion[]): askedQuestions.AskedQuestionGeneration;
   confirmAiNote(id: string): aiNotes.AiNote;
   correctAiNote(id: string, correction: string): aiNotes.AiNote;
   dismissAiNote(id: string): aiNotes.AiNote;
@@ -142,6 +150,8 @@ const readOperations = [
   "getTranscript",
   "listTranscriptFormats",
   "listAiNotes",
+  "listAskedQuestions",
+  "listSavedQuestionChecks",
   "searchEvidence",
   "getCandidateBrief",
   "aiClientWritesAllowed",
@@ -152,6 +162,7 @@ export type ReadOnlyCore = Pick<Core, (typeof readOperations)[number]>;
 // The writes the AI client may make through MCP, each going through core's checks and refused while the Interviewer has not allowed it. The client can read the switch (a read operation above) but cannot turn it.
 const aiClientWriteOperations = [
   "saveAiNotesFromClient",
+  "saveAskedQuestionsFromClient",
   "saveSuggestedQuestionsFromClient",
   "saveCandidateBriefFromClient",
 ] as const satisfies readonly (keyof Core)[];
@@ -239,6 +250,11 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
       candidateBrief.saveCandidateBriefFromClient(db, now, candidateId, brief),
     getCandidateBrief: (candidateId) => candidateBrief.getCandidateBrief(db, candidateId),
     listAiNotes: (interviewId) => aiNotes.listAiNotes(db, interviewId),
+    findAskedQuestions: (interviewId) => askedQuestions.findAskedQuestions(db, now, aiProvider, interviewId),
+    listAskedQuestions: (interviewId) => askedQuestions.listAskedQuestions(db, interviewId),
+    saveAskedQuestionsFromClient: (interviewId, proposed) =>
+      askedQuestions.saveAskedQuestionsFromClient(db, now, interviewId, proposed),
+    listSavedQuestionChecks: (candidateId) => askedQuestions.listSavedQuestionChecks(db, today, candidateId),
     confirmAiNote: (id) => aiNotes.confirmAiNote(db, id),
     correctAiNote: (id, correction) => aiNotes.correctAiNote(db, id, correction),
     dismissAiNote: (id) => aiNotes.dismissAiNote(db, id),

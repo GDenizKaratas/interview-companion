@@ -91,6 +91,8 @@ Notes on the model:
 
 **Suggest questions (in-app mode).** Runs only on request. Core sends the CV, earlier Transcripts, Interviewer Notes, and Saved Questions, plus an optional focus. Suggestions are stored until dismissed or regenerated. Accepting one copies it into Saved Questions.
 
+**Find Asked Questions (in-app or MCP).** Requires a confirmed Speaker Mapping, and an API key in the app. Core sends the Transcript segments with their roles and the Candidate's Saved Questions, and asks for every question the Interviewer asked with an Answer Summary. Core keeps only the questions quoted from an Interviewer segment whose answer is quoted from Candidate segments at or after it, and replaces the Interview's earlier ones. It records which Saved Questions were checked, so one that was not matched shows as not found.
+
 **Candidate Brief (MCP mode).** The Interviewer copies the brief command from the Workspace bar and pastes it into the AI client, which fetches the MCP `brief` prompt: steps, rules, and a fixed template. The steps depend on whether saving from the AI client is on when the prompt is fetched. On, the client reads the data, saves AI Notes for Interviews that have none, saves Suggested Questions, writes the brief in its own chat, and saves it with `save_candidate_brief`. Off, it only reads and writes the brief in the chat. Core keeps one brief per Candidate and checks each of its quotes against the CV and Transcripts every time it is read. The Workspace opens it from the bar.
 
 ## Rules enforced in code
@@ -121,10 +123,13 @@ Tools (read-only unless noted):
 | `search_evidence` | Exact excerpts from the CV, Transcripts, or both. |
 | `get_interviewer_notes` | The Interviewer's notes for a Candidate. |
 | `get_ai_notes` | AI Notes with Review State, Stale flag, and Evidence. |
+| `get_asked_questions` | One Interview's Asked Questions with Answer Summaries, quotes, matched Saved Question, and Stale flag. |
+| `get_saved_question_checks` | Where each Saved Question was asked, or that it was not found, per Interview. |
 | `get_saved_questions` | The Interviewer's question list. |
 | `get_transcript` | One Interview's Transcript, segment by segment, with speaker label and role. |
 | `get_cv` | A Candidate's CV text, page by page. |
 | `save_ai_notes` | Writes, when allowed: AI Notes the client wrote, checked and saved Unreviewed. |
+| `save_asked_questions` | Writes, when allowed: one Interview's Asked Questions, checked, replacing the earlier ones. |
 | `save_suggested_questions` | Writes, when allowed: Suggested Questions the client wrote, checked and saved. |
 | `save_candidate_brief` | Writes, when allowed: the Candidate Brief, with its Evidence references. Replaces the earlier one. |
 | `get_candidate_brief` | The saved Candidate Brief, each quote marked found or not found. |
@@ -133,7 +138,7 @@ Prompt:
 
 | Prompt | Purpose |
 |---|---|
-| `brief` | The steps, rules, and template for preparing one Candidate: with saving on, write and save AI Notes, Suggested Questions, and the Candidate Brief; with saving off, only read and write the brief in the chat. |
+| `brief` | The steps, rules, and template for preparing one Candidate: with saving on, write and save AI Notes, Asked Questions, Suggested Questions, and the Candidate Brief; with saving off, only read and write the brief in the chat. |
 
 ## Trade-offs we accepted
 

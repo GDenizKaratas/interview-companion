@@ -5,8 +5,9 @@ import type { AiSource } from "./ai-notes.ts";
 import { readApiKey, requireAiClientWrites } from "./ai-settings.ts";
 import { requireCandidate } from "./candidates.ts";
 import { getCv } from "./cv.ts";
+import { callModel } from "./transcript-ai.ts";
 import { inTransaction } from "./database.ts";
-import { AiProviderError, InvalidInputError, NotFoundError, PreconditionError } from "./errors.ts";
+import { InvalidInputError, NotFoundError, PreconditionError } from "./errors.ts";
 import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { listInterviewerNotes } from "./interviewer-notes.ts";
@@ -74,14 +75,7 @@ export async function generateSuggestedQuestions(
   }
   const focus = options.focus?.trim() || null;
   const { request, sent, leftOut } = buildRequest(db, today, candidateId, focus);
-  let proposed: ProposedQuestion[];
-  try {
-    proposed = await providerFor(apiKey).proposeQuestions(request);
-  } catch (error) {
-    throw error instanceof AiProviderError
-      ? error
-      : new AiProviderError("unavailable", "Generation failed. Your data was not changed.", { cause: error });
-  }
+  const proposed = await callModel(() => providerFor(apiKey).proposeQuestions(request));
   return acceptSuggestions(db, now, candidateId, proposed, sent, currentStamps(db, candidateId), leftOut, "app");
 }
 

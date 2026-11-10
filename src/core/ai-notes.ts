@@ -2,9 +2,10 @@ import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import type { AiProviderFactory, ProposedAiNote } from "./ai-provider.ts";
 import { readApiKey, requireAiClientWrites } from "./ai-settings.ts";
-import { getTranscript, type Transcript } from "./transcripts.ts";
+import type { Transcript } from "./transcripts.ts";
+import { callModel, requireConfirmedTranscript, requireTranscriptUnchanged, segmentsOf, segmentsWithRoles } from "./transcript-ai.ts";
 import { inTransaction } from "./database.ts";
-import { AiProviderError, InvalidInputError, NotFoundError, PreconditionError } from "./errors.ts";
+import { InvalidInputError, NotFoundError, PreconditionError } from "./errors.ts";
 import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { requireInterview } from "./interviews.ts";
@@ -55,34 +56,10 @@ export async function generateAiNotes(
   const transcript = requireConfirmedTranscript(db, interviewId);
   const apiKey = readApiKey(db);
   if (apiKey === undefined) throw new PreconditionError("apiKeyMissing", "Add an API key to generate AI Notes.");
-  const roles = new Map(transcript.speakers.map((speaker) => [speaker.id, speaker.role!]));
-  let proposed: ProposedAiNote[];
-  try {
-    proposed = await providerFor(apiKey).proposeAiNotes({
-      language: getInterfaceLanguage(db),
-      segments: transcript.segments.map((segment) => ({
-        number: segment.number,
-        role: roles.get(segment.speakerId)!,
-        text: segment.text,
-      })),
-    });
-  } catch (error) {
-    throw error instanceof AiProviderError
-      ? error
-      : new AiProviderError("unavailable", "Generation failed. Your data was not changed.", { cause: error });
-  }
-  // The model takes a while. If the Transcript was replaced or its mapping confirmed again
-  // meanwhile, the answer rests on data that is gone, so it is not saved.
-  const current = getTranscript(db, interviewId);
-  if (
-    current?.importedAt !== transcript.importedAt ||
-    current.speakerMappingConfirmedAt !== transcript.speakerMappingConfirmedAt
-  ) {
-    throw new PreconditionError(
-      "transcriptChanged",
-      "The Transcript or its speakers changed during generation. Nothing was saved; generate again.",
-    );
-  }
+  const proposed = await callModel(() =>
+    providerFor(apiKey).proposeAiNotes({ language: getInterfaceLanguage(db), segments: segmentsWithRoles(transcript) }),
+  );
+  requireTranscriptUnchanged(db, transcript);
   return acceptNotes(db, now, transcript, proposed, "app");
 }
 
@@ -93,20 +70,6 @@ export function saveAiNotesFromClient(db: DatabaseSync, now: Now, interviewId: s
   return acceptNotes(db, now, requireConfirmedTranscript(db, interviewId), proposed, "aiClient");
 }
 
-// AI Notes need a Transcript whose speakers are confirmed, so every quote is known to be the Candidate's.
-function requireConfirmedTranscript(db: DatabaseSync, interviewId: string): Transcript {
-  requireInterview(db, interviewId);
-  const transcript = getTranscript(db, interviewId);
-  if (!transcript) throw new PreconditionError("noTranscript", "Import a Transcript before making AI Notes.");
-  if (transcript.speakerMappingConfirmedAt === null) {
-    throw new PreconditionError(
-      "speakerMappingNotConfirmed",
-      "Confirm who is speaking before making AI Notes.",
-    );
-  }
-  return transcript;
-}
-
 // Keeps the proposed notes that pass the quote check and saves them, Unreviewed.
 function acceptNotes(
   db: DatabaseSync,
@@ -115,12 +78,7 @@ function acceptNotes(
   proposed: ProposedAiNote[],
   source: AiSource,
 ): AiNoteGeneration {
-  const roles = new Map(transcript.speakers.map((speaker) => [speaker.id, speaker.role!]));
-  const candidateSegments = new Map(
-    transcript.segments
-      .filter((segment) => roles.get(segment.speakerId) === "candidate")
-      .map((segment) => [segment.number, segment.text]),
-  );
+  const candidateSegments = segmentsOf(transcript, "candidate");
   const backed = proposed.filter((note) => isBacked(note, candidateSegments));
   // An answer with nothing usable does not cost the Interviewer the notes they already have.
   if (backed.length > 0) saveNotes(db, now, transcript.interviewId, backed, source);
