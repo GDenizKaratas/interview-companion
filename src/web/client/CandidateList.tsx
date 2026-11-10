@@ -5,6 +5,7 @@ import { text } from "./text.ts";
 
 export function CandidateList() {
   const [candidates, setCandidates] = useState<Candidate[] | undefined>();
+  const [roles, setRoles] = useState<string[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
@@ -13,6 +14,8 @@ export function CandidateList() {
 
   useEffect(() => {
     api.listCandidates().then(setCandidates, () => setLoadError(true));
+    // Earlier roles are only suggestions; if they cannot be loaded the form still works.
+    api.listRoles().then(setRoles, () => {});
   }, []);
 
   async function handleSubmit(event: FormEvent) {
@@ -22,6 +25,7 @@ export function CandidateList() {
     try {
       const created = await api.createCandidate({ name, role });
       setCandidates((current) => [created, ...(current ?? [])]);
+      setRoles((current) => (current.includes(created.role) ? current : [...current, created.role]));
       setName("");
       setRole("");
     } catch (error) {
@@ -49,7 +53,12 @@ export function CandidateList() {
         </label>
         <label>
           {text.candidates.roleLabel}
-          <input value={role} onChange={(e) => setRole(e.target.value)} />
+          <input value={role} onChange={(e) => setRole(e.target.value)} list="known-roles" autoComplete="off" />
+          <datalist id="known-roles">
+            {roles.map((knownRole) => (
+              <option key={knownRole} value={knownRole} />
+            ))}
+          </datalist>
         </label>
         <button type="submit" disabled={saving}>
           {text.candidates.add}

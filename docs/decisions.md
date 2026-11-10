@@ -63,6 +63,7 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 48 | Until #3 adds translation files, all interface text lives in one file, `src/web/client/text.ts`. | #3 then only has to turn one file into translation files. | Text written directly in components. |
 | 49 | `npm start` prints the address; it does not open a browser by itself. | Opening a browser differs per operating system and is unwanted when the app is restarted often. To be confirmed by the owner. | Opening the default browser automatically. |
 | 50 | The browser form does not check required fields itself. Core's message is shown instead. | The rule "a Candidate needs a name and a role" stays in one place. | The HTML `required` attribute as a second copy of the rule. |
+| 51 | Roles stay free text, but the role box suggests every role used before. A role that differs from an existing one only in letter case or spaces is saved under the existing spelling. Two roles count as the same if they are equal under English or Turkish case rules; the machine's default language is never used. | Prevents near-duplicate roles such as "backend engineer" next to "Backend Engineer" without a separate role list to manage. Capital I lowers to i in English but to ı in Turkish, and the default language differs between machines. | A fixed role list managed separately; comparing with the machine's default language. |
 
 ## Open questions
 

@@ -68,4 +68,29 @@ describe("Candidates", () => {
     expect(core.getCandidate(wanted.id)).toEqual(wanted);
     expect(core.getCandidate("no-such-id")).toBeUndefined();
   });
+
+  it("lists each role once, in alphabetical order", () => {
+    core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+    core.createCandidate({ name: "Can Aksoy", role: "Data Engineer" });
+    core.createCandidate({ name: "Ece Yalın", role: "Backend Engineer" });
+
+    expect(core.listRoles()).toEqual(["Backend Engineer", "Data Engineer"]);
+  });
+
+  it("saves a role under the existing spelling when it differs only in letter case or spaces", () => {
+    core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+
+    const second = core.createCandidate({ name: "Can Aksoy", role: "backend  ENGINEER" });
+
+    expect(second.role).toBe("Backend Engineer");
+    expect(core.listRoles()).toEqual(["Backend Engineer"]);
+  });
+
+  it("matches an existing Turkish role written in capital letters", () => {
+    core.createCandidate({ name: "Ada Demir", role: "Yazılım Mühendisi" });
+
+    const second = core.createCandidate({ name: "Can Aksoy", role: "YAZILIM MÜHENDİSİ" });
+
+    expect(second.role).toBe("Yazılım Mühendisi");
+  });
 });

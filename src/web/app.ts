@@ -24,6 +24,8 @@ export function createApi(core: Core): Hono {
     }
   });
 
+  api.get("/roles", (c) => c.json(core.listRoles()));
+
   api.get("/candidates/:id", (c) => {
     const candidate = core.getCandidate(c.req.param("id"));
     return candidate ? c.json(candidate) : c.json({ error: "Candidate not found." }, 404);
