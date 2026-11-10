@@ -1,7 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { api, ApiError, type Candidate, type Interview } from "./api.ts";
+import { api, ApiError, type Candidate, type EvidenceResult, type Interview } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { CvPanel } from "./CvPanel.tsx";
+import type { EvidenceFocus } from "./evidence-focus.ts";
+import { EvidenceSearch } from "./EvidenceSearch.tsx";
 import { InterviewSelector } from "./InterviewSelector.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, navigate } from "./navigation.ts";
@@ -25,6 +27,20 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // The search result the Interviewer opened last.
+  const [focus, setFocus] = useState<EvidenceFocus | undefined>();
+
+  // A Transcript result selects its Interview, since the Transcript panel shows one Interview.
+  function openEvidence(result: EvidenceResult) {
+    const id = Date.now();
+    if (result.source === "cv") {
+      const marks = result.highlights.map(({ start, end }) => result.excerpt.slice(start, end));
+      setFocus({ id, source: "cv", page: result.page, marks });
+    } else {
+      setInterviewId(result.interviewId);
+      setFocus({ id, source: "transcript", interviewId: result.interviewId, segmentNumber: result.segmentNumber, highlights: result.highlights });
+    }
+  }
 
   function loadInterviews(id: string): Promise<void> {
     return api.listInterviews(id).then(
@@ -123,13 +139,16 @@ export function Workspace({ candidateId }: { candidateId: string }) {
           onAdded={handleInterviewAdded}
         />
       )}
+      {load.state === "ready" && (
+        <EvidenceSearch candidateId={candidateId} interviews={interviews} onOpen={openEvidence} />
+      )}
       {load.state === "loading" && <p>{text.workspace.loading}</p>}
       {load.state === "notFound" && <p className="error">{text.workspace.notFound}</p>}
       {load.state === "failed" && <p className="error">{text.workspace.loadFailed}</p>}
       {load.state === "ready" && (
         <div className="panels">
           <Panel area="cv" title={text.panels.cv.title}>
-            <CvPanel candidateId={load.candidate.id} />
+            <CvPanel candidateId={load.candidate.id} focus={focus?.source === "cv" ? focus : undefined} />
           </Panel>
           <Panel area="notes" title={text.panels.interviewerNotes.title}>
             <NotesPanel
@@ -140,7 +159,11 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             />
           </Panel>
           <Panel area="transcript" title={text.panels.transcript.title}>
-            <TranscriptPanel interviews={interviews} selectedInterviewId={interviewId} />
+            <TranscriptPanel
+              interviews={interviews}
+              selectedInterviewId={interviewId}
+              focus={focus?.source === "transcript" ? focus : undefined}
+            />
           </Panel>
           <Panel area="ai" title={text.panels.aiNotes.title} label={text.panels.aiNotes.label}>
             <p className="empty">{text.panels.aiNotes.empty}</p>

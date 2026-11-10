@@ -62,6 +62,31 @@ const text = {
     saveFailed: "The Interview could not be saved.",
     loadFailed: "Interviews could not be loaded.",
   },
+  search: {
+    label: "Search the CV and Transcripts",
+    placeholder: "Search for a word, such as Redis",
+    submit: "Search",
+    searching: "Searching…",
+    clear: "Clear",
+    sourcesLabel: "Sources",
+    sources: { all: "CV and Transcripts", cv: "CV only", transcripts: "Transcripts only" },
+    candidateOnly: "Only what the Candidate said",
+    candidateOnlyHint: "Uses only Transcripts with a confirmed Speaker Mapping.",
+    // {places} is replaced by where the word was found, such as "CV · First interview".
+    foundIn: "Found in: {places}",
+    cv: "CV",
+    // {count} is replaced by the number of results.
+    count: "{count} results",
+    countOne: "1 result",
+    nothingFound: "Nothing found in the indexed sources.",
+    nothingFoundDetail: "This only means the word is not in the CV or Transcripts that were searched.",
+    // {interviews} is replaced by Interview names.
+    unconfirmed: "Not searched, because the Speaker Mapping is not confirmed: {interviews}.",
+    // {page} is replaced by the page number.
+    page: "page {page}",
+    required: "Type a word to search for.",
+    failed: "The search could not be run.",
+  },
   panels: {
     cv: {
       title: "CV",

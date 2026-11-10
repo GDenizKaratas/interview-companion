@@ -3,13 +3,21 @@ import { AddButton } from "./AddButton.tsx";
 import { api, type Cv } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { cvRefusalMessage } from "./cv-refusal.ts";
+import type { EvidenceFocus } from "./evidence-focus.ts";
 import { useText } from "./text.tsx";
 
 // pdf.js is large, so it is loaded only when a CV is shown.
 const PdfPages = lazy(() => import("./PdfPages.tsx").then((module) => ({ default: module.PdfPages })));
 
 // The CV panel: the uploaded PDF page by page, or an upload button when there is none.
-export function CvPanel({ candidateId }: { candidateId: string }) {
+export function CvPanel({
+  candidateId,
+  focus,
+}: {
+  candidateId: string;
+  // A search result to open and mark in the CV.
+  focus?: Extract<EvidenceFocus, { source: "cv" }>;
+}) {
   const { text } = useText();
   const t = text.panels.cv;
   // undefined while loading, null when the Candidate has no CV.
@@ -72,7 +80,7 @@ export function CvPanel({ candidateId }: { candidateId: string }) {
           </div>
           {/* The upload time is part of the key, so a replaced CV is loaded again. */}
           <Suspense fallback={<p className="empty">{t.reading}</p>}>
-            <PdfPages key={cv.uploadedAt} url={api.cvFileUrl(candidateId)} />
+            <PdfPages key={cv.uploadedAt} url={api.cvFileUrl(candidateId)} focus={focus} />
           </Suspense>
         </>
       )}

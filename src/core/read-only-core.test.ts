@@ -36,6 +36,7 @@ describe("Read-only view of core", () => {
       "listInterviews",
       "listSavedQuestions",
       "listTranscriptFormats",
+      "searchEvidence",
     ]);
   });
 });

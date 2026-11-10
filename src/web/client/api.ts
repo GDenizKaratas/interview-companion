@@ -3,6 +3,10 @@
 import type {
   Candidate,
   Cv,
+  EvidenceResult,
+  EvidenceSearch,
+  EvidenceSources,
+  Highlight,
   InputRule,
   Interview,
   InterviewerNote,
@@ -15,7 +19,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { Candidate, Cv, Interview, InterviewerNote, SavedQuestion, SpeakerRole, Transcript, TranscriptFormat };
+export type { Candidate, Cv, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -69,6 +73,14 @@ export const api = {
   cvFileUrl: (candidateId: string) => `/api/candidates/${encodeURIComponent(candidateId)}/cv/file`,
   uploadCv: (candidateId: string, cv: File) =>
     request<Cv>(`/candidates/${encodeURIComponent(candidateId)}/cv`, sendForm({ cv })),
+  searchEvidence: (candidateId: string, query: string, sources: EvidenceSources, candidateOnly: boolean) =>
+    request<EvidenceSearch>(
+      `/candidates/${encodeURIComponent(candidateId)}/evidence?${new URLSearchParams({
+        q: query,
+        sources,
+        candidateOnly: String(candidateOnly),
+      })}`,
+    ),
   listTranscriptFormats: () => request<TranscriptFormat[]>("/transcript-formats"),
   getTranscript: (interviewId: string) =>
     request<Transcript | null>(`/interviews/${encodeURIComponent(interviewId)}/transcript`),

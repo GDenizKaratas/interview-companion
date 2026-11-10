@@ -6,6 +6,7 @@ import * as candidateOverview from "./candidate-overview.ts";
 import * as candidates from "./candidates.ts";
 import * as cv from "./cv.ts";
 import { openDatabase } from "./database.ts";
+import * as evidenceSearch from "./evidence-search.ts";
 import * as demoCandidate from "./demo-candidate.ts";
 import * as interfaceLanguage from "./interface-language.ts";
 import * as interviewerNotes from "./interviewer-notes.ts";
@@ -17,6 +18,14 @@ import * as transcripts from "./transcripts.ts";
 export type { CandidateOverview, InterviewOverview } from "./candidate-overview.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
+export type {
+  EvidenceQuery,
+  EvidenceResult,
+  EvidenceSearch,
+  EvidenceSources,
+  Highlight,
+  TranscriptEvidence,
+} from "./evidence-search.ts";
 export { InvalidInputError, NotFoundError, type InputRule } from "./errors.ts";
 export type { InterviewerNote, NewInterviewerNotes, NoteFilter } from "./interviewer-notes.ts";
 export type { Interview, NewInterview } from "./interviews.ts";
@@ -55,6 +64,7 @@ export interface Core {
   getTranscript(interviewId: string): transcripts.Transcript | undefined;
   listTranscriptFormats(): transcripts.TranscriptFormat[];
   confirmSpeakerMapping(interviewId: string, roles: Record<string, transcripts.SpeakerRole>): transcripts.Transcript;
+  searchEvidence(candidateId: string, query: evidenceSearch.EvidenceQuery): evidenceSearch.EvidenceSearch;
   close(): void;
 }
 
@@ -70,6 +80,7 @@ const readOperations = [
   "getCv",
   "getTranscript",
   "listTranscriptFormats",
+  "searchEvidence",
 ] as const satisfies readonly (keyof Core)[];
 
 export type ReadOnlyCore = Pick<Core, (typeof readOperations)[number]>;
@@ -128,6 +139,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     getTranscript: (interviewId) => transcripts.getTranscript(db, interviewId),
     listTranscriptFormats: () => transcripts.listTranscriptFormats(),
     confirmSpeakerMapping: (interviewId, roles) => transcripts.confirmSpeakerMapping(db, now, interviewId, roles),
+    searchEvidence: (candidateId, query) => evidenceSearch.searchEvidence(db, today, candidateId, query),
     close: () => db.close(),
   };
 }

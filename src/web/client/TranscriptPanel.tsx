@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
 import { api, type Interview, type Transcript, type TranscriptFormat } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import type { EvidenceFocus } from "./evidence-focus.ts";
+import { MarkedText } from "./MarkedText.tsx";
 import { SpeakerMapping } from "./SpeakerMapping.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
@@ -10,17 +12,30 @@ import { formatNames, formatTime, transcriptRefusalMessage } from "./transcript-
 
 // The Transcript panel. A Transcript belongs to one Interview, so it shows the selected
 // Interview's Transcript, or asks the Interviewer to select one.
-export function TranscriptPanel({ interviews, selectedInterviewId }: { interviews: Interview[]; selectedInterviewId: string | null }) {
+type TranscriptFocus = Extract<EvidenceFocus, { source: "transcript" }>;
+
+export function TranscriptPanel({
+  interviews,
+  selectedInterviewId,
+  focus,
+}: {
+  interviews: Interview[];
+  selectedInterviewId: string | null;
+  // A search result to scroll to and mark, if it belongs to the shown Interview.
+  focus?: TranscriptFocus;
+}) {
   const { text } = useText();
   const t = text.panels.transcript;
   const selected = interviews.find((interview) => interview.id === selectedInterviewId);
   if (interviews.length === 0) return <p className="empty">{t.noInterview}</p>;
   if (!selected) return <p className="empty">{t.selectInterview}</p>;
   // The key starts each Interview with a fresh state, so nothing of another Interview shows.
-  return <InterviewTranscript key={selected.id} interview={selected} />;
+  return (
+    <InterviewTranscript key={selected.id} interview={selected} focus={focus?.interviewId === selected.id ? focus : undefined} />
+  );
 }
 
-function InterviewTranscript({ interview }: { interview: Interview }) {
+function InterviewTranscript({ interview, focus }: { interview: Interview; focus?: TranscriptFocus }) {
   const { text } = useText();
   const t = text.panels.transcript;
   // undefined while loading, null when the Interview has no Transcript.
@@ -32,6 +47,15 @@ function InterviewTranscript({ interview }: { interview: Interview }) {
   // A file chosen to replace the current Transcript, waiting for the Interviewer to confirm.
   const [replacement, setReplacement] = useState<File | undefined>();
   const fileInput = useRef<HTMLInputElement>(null);
+  const segmentList = useRef<HTMLOListElement>(null);
+
+  // Brings the found segment into view once the Transcript is shown, and again on every click.
+  useEffect(() => {
+    if (!focus || !transcript) return;
+    segmentList.current
+      ?.querySelector(`[data-segment="${focus.segmentNumber}"]`)
+      ?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focus, transcript]);
 
   useEffect(() => {
     api.getTranscript(interview.id).then(setTranscript, () => setLoadFailed(true));
@@ -89,11 +113,12 @@ function InterviewTranscript({ interview }: { interview: Interview }) {
           </div>
           {/* Keyed by import, so a replaced Transcript never keeps roles chosen for the old speakers. */}
           <SpeakerMapping key={transcript.importedAt} transcript={transcript} onConfirmed={setTranscript} />
-          <ol className="segments">
+          <ol ref={segmentList} className="segments">
             {transcript.segments.map((segment) => {
               const speaker = labels.get(segment.speakerId);
+              const found = focus?.segmentNumber === segment.number ? focus : undefined;
               return (
-                <li key={segment.number} className="segment">
+                <li key={segment.number} className={found ? "segment found" : "segment"} data-segment={segment.number}>
                   <div className="segment-head">
                     {segment.startMs === null ? (
                       <span className="segment-time missing" title={t.noTimeDetail}>
@@ -109,7 +134,9 @@ function InterviewTranscript({ interview }: { interview: Interview }) {
                       speaker && <span className="unverified">{t.unverified}</span>
                     )}
                   </div>
-                  <p className="segment-text">{segment.text}</p>
+                  <p className="segment-text">
+                    {found ? <MarkedText text={segment.text} highlights={found.highlights} /> : segment.text}
+                  </p>
                 </li>
               );
             })}
