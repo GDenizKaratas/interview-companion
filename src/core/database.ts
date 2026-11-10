@@ -21,8 +21,7 @@ const migrations: string[] = [
      date TEXT,
      created_at TEXT NOT NULL,
      UNIQUE (candidate_id, number)
-   ) STRICT;
-   CREATE INDEX interview_candidate ON interview (candidate_id);`,
+   ) STRICT;`,
 ];
 
 export function openDatabase(path: string): DatabaseSync {

@@ -32,28 +32,36 @@ interface InterviewRow {
 export type Today = () => string;
 
 export function addInterview(db: DatabaseSync, today: Today, input: NewInterview): Interview {
-  if (!getCandidate(db, input.candidateId)) {
-    throw new NotFoundError("This Candidate does not exist.");
+  requireCandidate(db, input.candidateId);
+  const date = optionalDate(input.date);
+  // The number is read and used in one transaction, so two Interviews never get the same one.
+  db.exec("BEGIN");
+  try {
+    const row: InterviewRow = {
+      id: randomUUID(),
+      candidate_id: input.candidateId,
+      number: nextNumber(db, input.candidateId),
+      date,
+      created_at: new Date().toISOString(),
+    };
+    db.prepare("INSERT INTO interview (id, candidate_id, number, date, created_at) VALUES (?, ?, ?, ?, ?)").run(
+      row.id,
+      row.candidate_id,
+      row.number,
+      row.date,
+      row.created_at,
+    );
+    db.exec("COMMIT");
+    return toInterview(row, today());
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
   }
-  const row: InterviewRow = {
-    id: randomUUID(),
-    candidate_id: input.candidateId,
-    number: nextNumber(db, input.candidateId),
-    date: optionalDate(input.date),
-    created_at: new Date().toISOString(),
-  };
-  db.prepare("INSERT INTO interview (id, candidate_id, number, date, created_at) VALUES (?, ?, ?, ?, ?)").run(
-    row.id,
-    row.candidate_id,
-    row.number,
-    row.date,
-    row.created_at,
-  );
-  return toInterview(row, today());
 }
 
 // Earliest date first. Interviews without a date come last, in the order they were added.
 export function listInterviews(db: DatabaseSync, today: Today, candidateId: string): Interview[] {
+  requireCandidate(db, candidateId);
   const rows = db
     .prepare(
       `SELECT id, candidate_id, number, date, created_at FROM interview
@@ -63,6 +71,12 @@ export function listInterviews(db: DatabaseSync, today: Today, candidateId: stri
     .all(candidateId) as unknown as InterviewRow[];
   const day = today();
   return rows.map((row) => toInterview(row, day));
+}
+
+function requireCandidate(db: DatabaseSync, candidateId: string): void {
+  if (!getCandidate(db, candidateId)) {
+    throw new NotFoundError("This Candidate does not exist.");
+  }
 }
 
 function nextNumber(db: DatabaseSync, candidateId: string): number {

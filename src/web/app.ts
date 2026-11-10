@@ -24,11 +24,9 @@ export function createApi(core: Core): Hono {
     return candidate ? c.json(candidate) : c.json({ error: "Candidate not found." }, 404);
   });
 
-  api.get("/candidates/:id/interviews", (c) => {
-    const candidateId = c.req.param("id");
-    if (!core.getCandidate(candidateId)) return c.json({ error: "Candidate not found." }, 404);
-    return c.json(core.listInterviews(candidateId));
-  });
+  api.get("/candidates/:id/interviews", (c) =>
+    respondOrRefuse(c, () => c.json(core.listInterviews(c.req.param("id")))),
+  );
 
   api.post("/candidates/:id/interviews", async (c) => {
     const fields = await jsonFields(c);

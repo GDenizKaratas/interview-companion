@@ -105,9 +105,8 @@ describe("Interviews", () => {
     expect(added.date).toBe("2028-02-29");
   });
 
-  it("refuses an Interview for a Candidate that does not exist", () => {
+  it("refuses to add or list Interviews for a Candidate that does not exist", () => {
     expect(() => core.addInterview({ candidateId: "no-such-id" })).toThrow(NotFoundError);
-
-    expect(core.listInterviews("no-such-id")).toEqual([]);
+    expect(() => core.listInterviews("no-such-id")).toThrow(NotFoundError);
   });
 });
