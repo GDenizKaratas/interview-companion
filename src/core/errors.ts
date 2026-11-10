@@ -1,5 +1,5 @@
 // The rules core can refuse input for.
-export type InputRule = "required" | "format";
+export type InputRule = "required" | "format" | "readableText";
 
 // Thrown when input breaks a rule of core. The English message is safe to show to the
 // Interviewer; the web interface uses field and rule to show it in the chosen language instead.

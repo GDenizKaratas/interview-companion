@@ -1,5 +1,5 @@
 import { Hono, type Context } from "hono";
-import { InvalidInputError, NotFoundError, type Core } from "../core/index.ts";
+import { InvalidInputError, NotFoundError, type Core, type CvFile } from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
 export function createApi(core: Core): Hono {
@@ -7,14 +7,46 @@ export function createApi(core: Core): Hono {
 
   api.get("/candidates", (c) => c.json(core.listCandidates()));
 
+  // A JSON body adds a Candidate by hand. A form with a "cv" file adds the Candidate and the CV together.
   api.post("/candidates", async (c) => {
-    const fields = await jsonFields(c);
-    return respondOrRefuse(c, () =>
-      c.json(
-        core.createCandidate({ name: stringField(fields, "name"), role: stringField(fields, "role") }),
-        201,
-      ),
+    if (!isForm(c)) {
+      const fields = await jsonFields(c);
+      return respondOrRefuse(c, () =>
+        c.json(core.createCandidate({ name: stringField(fields, "name"), role: stringField(fields, "role") }), 201),
+      );
+    }
+    const form = await c.req.parseBody();
+    const input = { name: stringField(form, "name"), role: stringField(form, "role") };
+    const cv = await fileField(form, "cv");
+    return respondOrRefuse(c, async () =>
+      c.json(cv ? await core.createCandidateWithCv({ ...input, cv }) : core.createCandidate(input), 201),
     );
+  });
+
+  // Only a suggestion for the name box; nothing is stored.
+  api.post("/cv-name-guess", async (c) => {
+    const cv = await fileField(await c.req.parseBody(), "cv");
+    return c.json({ name: cv ? await core.guessCandidateName(cv) : "" });
+  });
+
+  // The CV's file name, upload time, and text per page, or null when the Candidate has no CV.
+  api.get("/candidates/:id/cv", (c) => c.json(core.getCv(c.req.param("id")) ?? null));
+
+  api.get("/candidates/:id/cv/file", (c) => {
+    const file = core.readCvFile(c.req.param("id"));
+    if (!file) return c.json({ error: "This Candidate has no CV." }, 404);
+    // The bytes are the uploaded file: never sniffed as another type, never cached after a replacement.
+    return c.body(file.bytes.slice().buffer, 200, {
+      "Content-Type": "application/pdf",
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "no-store",
+    });
+  });
+
+  // Uploads a CV as a form with a "cv" file. It replaces the Candidate's earlier CV.
+  api.post("/candidates/:id/cv", async (c) => {
+    const cv = (await fileField(await c.req.parseBody(), "cv")) ?? { fileName: "", bytes: new Uint8Array() };
+    return respondOrRefuse(c, async () => c.json(await core.attachCv(c.req.param("id"), cv), 201));
   });
 
   api.get("/candidate-roles", (c) => c.json(core.listCandidateRoles()));
@@ -129,6 +161,17 @@ function stringField(fields: Record<string, unknown>, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
+function isForm(c: Context): boolean {
+  return (c.req.header("Content-Type") ?? "").startsWith("multipart/form-data");
+}
+
+// The file sent in a form field, or undefined when the field holds no file.
+async function fileField(form: Record<string, unknown>, key: string): Promise<CvFile | undefined> {
+  const value = form[key];
+  if (!(value instanceof File)) return undefined;
+  return { fileName: value.name, bytes: new Uint8Array(await value.arrayBuffer()) };
+}
+
 // An optional id: a missing or empty value means none.
 function idField(fields: Record<string, unknown>, key: string): string | null {
   return stringField(fields, key) || null;
@@ -136,9 +179,9 @@ function idField(fields: Record<string, unknown>, key: string): string | null {
 
 // Runs a core call and turns a refused input into a 400 response the interface can translate,
 // and a request for something that does not exist into a 404 response.
-function respondOrRefuse(c: Context, run: () => Response): Response {
+async function respondOrRefuse(c: Context, run: () => Response | Promise<Response>): Promise<Response> {
   try {
-    return run();
+    return await run();
   } catch (error) {
     if (error instanceof InvalidInputError) {
       return c.json({ error: error.message, field: error.field, rule: error.rule }, 400);
