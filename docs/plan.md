@@ -62,7 +62,7 @@ Each milestone is small, can be tested on its own, and ends with a review before
 **Goal.** Let an AI client read the same data through the same core.
 
 **Scope.**
-- A stdio MCP server with the read-only tools and the `candidate_brief` prompt listed in [architecture](architecture.md). Later, two checked write tools (ADR 0005).
+- A stdio MCP server with the read-only tools and the `brief` prompt listed in [architecture](architecture.md). Later, two checked write tools (ADR 0005).
 - Input validation on every tool.
 - Setup instructions for Claude Desktop and Claude Code.
 - A written explanation: what MCP is, what a tool and a prompt are, how a client finds and calls them, and what a plain API would do instead.

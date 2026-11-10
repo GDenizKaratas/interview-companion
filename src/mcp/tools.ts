@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { candidateBriefPrompt } from "./candidate-brief.ts";
+import { briefPrompt } from "./brief-prompt.ts";
 import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, type AiClientCore } from "../core/index.ts";
 
 // Bounds on what the AI client can save in one call, so a runaway client cannot flood the
@@ -289,19 +289,26 @@ export function createMcpServer(core: AiClientCore): McpServer {
       toolResult(() => core.searchEvidence(candidateId, { query, sources, candidateOnly })),
   );
   server.registerPrompt(
-    "candidate_brief",
+    "brief",
     {
-      title: "Candidate Brief",
+      title: "Brief",
       description:
-        "Write a Candidate Brief: one document about a Candidate in which every statement cites Evidence, " +
-        "with no judgments, and the reasons and quotes listed at the end. When saving from the AI client is on, " +
-        "the brief is saved in the app with save_candidate_brief.",
+        "Prepare one Candidate: when saving from the AI client is on, write and save AI Notes and Suggested " +
+        "Questions, then write a Candidate Brief and save it in the app. When saving is off, only read and write " +
+        "the brief in the chat. In the brief every statement cites Evidence, with no judgments, and the reasons " +
+        "and quotes are listed at the end.",
       argsSchema: {
         candidate: z.string().min(1).describe("The Candidate's name or id, as list_candidates gives it."),
       },
     },
+    // Whether saving is on is read each time the prompt is fetched, so the steps match the app now.
     ({ candidate }) => ({
-      messages: [{ role: "user", content: { type: "text", text: candidateBriefPrompt(candidate) } }],
+      messages: [
+        {
+          role: "user",
+          content: { type: "text", text: briefPrompt(candidate, { canSave: core.aiClientWritesAllowed() }) },
+        },
+      ],
     }),
   );
   return server;

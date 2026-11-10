@@ -26,6 +26,7 @@ describe("Read-only view of core", () => {
 
   it("holds only the read operations, so no write is reachable, not even behind a type cast", () => {
     expect(Object.keys(readOnlyCore(core)).sort()).toEqual([
+      "aiClientWritesAllowed",
       "getCandidate",
       "getCandidateBrief",
       "getCandidateOverview",

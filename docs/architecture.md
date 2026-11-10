@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), Transcript import through adapters (plain text and WebVTT), the Speaker Mapping, Evidence search over the CV and Transcripts, AI Note generation with an API key (Claude behind a provider interface, every quote checked before saving), AI Note review (Review States and the Stale flag), Suggested Questions on request (accept, edit, dismiss, regenerate, every quote checked), the MCP tools (reads, and the checked saves of ADR 0005, including the Candidate Brief) and the `candidate_brief` prompt. Setup and an introduction to MCP are in [mcp.md](mcp.md).
+Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), Transcript import through adapters (plain text and WebVTT), the Speaker Mapping, Evidence search over the CV and Transcripts, AI Note generation with an API key (Claude behind a provider interface, every quote checked before saving), AI Note review (Review States and the Stale flag), Suggested Questions on request (accept, edit, dismiss, regenerate, every quote checked), the MCP tools (reads, and the checked saves of ADR 0005, including the Candidate Brief) and the `brief` prompt. Setup and an introduction to MCP are in [mcp.md](mcp.md).
 
 Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md). Reasons for each choice are in the [decision log](decisions.md).
 
@@ -91,7 +91,7 @@ Notes on the model:
 
 **Suggest questions (in-app mode).** Runs only on request. Core sends the CV, earlier Transcripts, Interviewer Notes, and Saved Questions, plus an optional focus. Suggestions are stored until dismissed or regenerated. Accepting one copies it into Saved Questions.
 
-**Candidate Brief (MCP mode).** The AI client calls the MCP prompt, which gives it a fixed template and rules. It then calls the read tools to fetch the data, writes the brief in its own chat, and, when saving from the AI client is on, saves it with `save_candidate_brief`. Core keeps one brief per Candidate and checks each of its quotes against the CV and Transcripts every time it is read. The Workspace opens it from the bar.
+**Candidate Brief (MCP mode).** The Interviewer copies the brief command from the Workspace bar and pastes it into the AI client, which fetches the MCP `brief` prompt: steps, rules, and a fixed template. The steps depend on whether saving from the AI client is on when the prompt is fetched. On, the client reads the data, saves AI Notes for Interviews that have none, saves Suggested Questions, writes the brief in its own chat, and saves it with `save_candidate_brief`. Off, it only reads and writes the brief in the chat. Core keeps one brief per Candidate and checks each of its quotes against the CV and Transcripts every time it is read. The Workspace opens it from the bar.
 
 ## Rules enforced in code
 
@@ -133,7 +133,7 @@ Prompt:
 
 | Prompt | Purpose |
 |---|---|
-| `candidate_brief` | A fixed template and rules for writing a Candidate Brief. |
+| `brief` | The steps, rules, and template for preparing one Candidate: with saving on, write and save AI Notes, Suggested Questions, and the Candidate Brief; with saving off, only read and write the brief in the chat. |
 
 ## Trade-offs we accepted
 

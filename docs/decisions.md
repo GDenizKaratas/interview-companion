@@ -332,6 +332,15 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 205 | The `candidate_brief` prompt now ends with saving the brief, and its closing line says the quotes are checked by the app only when the brief is saved there. | The prompt and the app tell the same story about what is checked. | Leaving saving to the Interviewer to ask for. |
 | 206 | The word-for-word quote check is one core function, `containsQuote`, used by AI Notes, Suggested Questions, and the Candidate Brief. An empty quote never counts. | The rule was written three times; one place keeps the guarantee the same everywhere. Found in code review. | A copy of the check in each module. |
 
+## 2026-11-10 — #47 One brief command
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 207 | The `candidate_brief` prompt is renamed `brief` and does the whole job for one Candidate. The server reads whether saving from the AI client is on each time the prompt is fetched, and gives one of two step lists: on, read, save AI Notes, save Suggested Questions, then write and save the brief; off, only read and write the brief in the chat, and tell the Interviewer that saving can be turned on. This narrows decision 167: the server still matches no names, but it now reads the switch. Asked for in #47. | The model does not write notes and questions only to have the save refused, and the steps match the app at the moment the command runs. | One fixed text that tries to save and stops at the first refusal. |
+| 208 | `aiClientWritesAllowed` is a read operation, so it is in `readOnlyCore` and `aiClientCore`. Turning the switch stays out of both. | The prompt needs to read the switch; reading it changes nothing. | Passing the switch to the MCP server as a separate function. |
+| 209 | With saving on, the prompt saves AI Notes only for Interviews with a confirmed Speaker Mapping that have no AI Notes yet, or only Stale ones. Suggested Questions are always saved, replacing those not accepted. | Running the command again does not throw away the Unreviewed notes the Interviewer has not looked at yet; a new or re-imported Transcript still gets notes. Suggestions are meant to be regenerated. | Saving AI Notes for every Interview on every run. |
+| 210 | The Workspace bar has a **Copy brief command** button that copies `/mcp__interview-companion__brief <name>`, the name on one line with spaces collapsed. It shows Copied, or Could not copy, for a moment. The prompt finds the Candidate by name, id, or the first words of the name, and asks when several match. | Claude Code may pass only the first word of a multi-word argument; a first-name match still finds the Candidate, and an ambiguous one is asked about. | Copying the id, which is exact but means nothing to the Interviewer; quoting the name. |
+
 ## Open questions
 
 - The exact layout of a Google Meet transcript downloaded as `.txt` (decision 126, tracked in #33). It needs one real export with fictional content.
