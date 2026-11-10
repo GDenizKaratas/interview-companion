@@ -20,28 +20,28 @@ afterEach(() => {
 });
 
 describe("Interface language", () => {
-  it("is English until the Interviewer chooses another", () => {
-    expect(core.getInterfaceLanguage()).toBe("en");
+  it("is Turkish until the Interviewer chooses another", () => {
+    expect(core.getInterfaceLanguage()).toBe("tr");
   });
 
   it("remembers the chosen language after the database is closed and opened again", () => {
-    core.setInterfaceLanguage("tr");
+    core.setInterfaceLanguage("en");
     core.close();
 
     core = openCore(dbPath);
 
-    expect(core.getInterfaceLanguage()).toBe("tr");
+    expect(core.getInterfaceLanguage()).toBe("en");
   });
 
   it("refuses a value that is not a language code and keeps the earlier choice", () => {
-    core.setInterfaceLanguage("tr");
+    core.setInterfaceLanguage("en");
 
     for (const value of ["", "  ", "Turkish", "t", "tr_TR", "<script>"]) {
       expect(() => core.setInterfaceLanguage(value)).toThrow(
         expect.objectContaining({ field: "language", rule: "format" }),
       );
     }
-    expect(core.getInterfaceLanguage()).toBe("tr");
+    expect(core.getInterfaceLanguage()).toBe("en");
   });
 
   it("accepts a language code with a region", () => {

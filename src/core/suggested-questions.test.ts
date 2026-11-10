@@ -81,7 +81,7 @@ describe("Suggested Question generation", () => {
 
     expect(fake.questionRequests).toEqual([
       {
-        language: "en",
+        language: "tr",
         focus: "güvenilirlik",
         cvPages: [{ number: 1, text: expect.stringContaining("Built payment services with Node.js and BullMQ.") }],
         transcripts: [
@@ -174,7 +174,7 @@ describe("Suggested Question generation", () => {
     await core.generateSuggestedQuestions(candidate.id, { focus: "   " });
 
     expect(fake.questionRequests).toEqual([
-      { language: "en", focus: null, cvPages: [], transcripts: [], interviewerNotes: [], savedQuestions: [] },
+      { language: "tr", focus: null, cvPages: [], transcripts: [], interviewerNotes: [], savedQuestions: [] },
     ]);
   });
 

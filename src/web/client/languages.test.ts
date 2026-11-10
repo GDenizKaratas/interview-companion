@@ -10,10 +10,10 @@ function flatten(value: unknown, path = ""): Map<string, unknown> {
 }
 
 describe("Translation files", () => {
-  it("offer English first and Turkish, each named in its own language", () => {
+  it("offer Turkish, the default, first and English, each named in its own language", () => {
     expect(languages.slice(0, 2).map(({ code, name }) => ({ code, name }))).toEqual([
-      { code: "en", name: "English" },
       { code: "tr", name: "Türkçe" },
+      { code: "en", name: "English" },
     ]);
   });
 
@@ -29,8 +29,8 @@ describe("Translation files", () => {
     }
   });
 
-  it("fall back to English for a language that has no translation file", () => {
-    expect(translationFor("tr").text.candidates.title).toBe("Adaylar");
-    expect(translationFor("de").code).toBe("en");
+  it("fall back to Turkish, the default, for a language that has no translation file", () => {
+    expect(translationFor("en").text.candidates.title).toBe("Candidates");
+    expect(translationFor("de").code).toBe("tr");
   });
 });

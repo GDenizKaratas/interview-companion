@@ -1,4 +1,5 @@
-// English, the default language. Every other translation file has exactly these keys.
+// English, the reference language: its keys are the type of every translation, so every other
+// translation file has exactly these keys. The default language is set in core.
 // To add a language, copy this file to <language code>.ts (for example de.ts or pt-BR.ts)
 // and translate the text. Every .ts file in this folder is loaded as a language, so put
 // nothing else here.

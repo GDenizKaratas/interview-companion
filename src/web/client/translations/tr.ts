@@ -7,8 +7,8 @@ const translation: TranslationFile = {
     tagline: "Mülakatlarınız tek bir yerde.",
     languageLabel: "Dil",
     aiSettings: {
-      open: "AI ayarları",
-      title: "AI ayarları",
+      open: "AI Ayarları",
+      title: "AI Ayarları",
       saved: "Bir API anahtarı kayıtlı.",
       notSaved: "Kayıtlı API anahtarı yok. Anahtar olmadan AI istemcinizden Aday Özeti'ni kullanın.",
       keyLabel: "Anthropic API anahtarı",
@@ -25,12 +25,12 @@ const translation: TranslationFile = {
       confirmRemoveDetail: "Yeniden anahtar eklenene kadar AI Notu oluşturulamaz. Kayıtlı AI Notları kalır.",
       required: "Bir API anahtarı girin.",
       saveFailed: "API anahtarı kaydedilemedi.",
-      loadFailed: "AI ayarları yüklenemedi.",
+      loadFailed: "AI Ayarları yüklenemedi.",
     },
     candidates: {
       title: "Adaylar",
       empty: "Henüz aday yok. İlkini yukarıdan ekleyin.",
-      nameLabel: "Ad",
+      nameLabel: "İsim",
       roleLabel: "Pozisyon",
       cvLabel: "CV (PDF, isteğe bağlı)",
       cvHint: "CV seçince ad otomatik doldurulur. Kaydetmeden önce kontrol edin.",
@@ -266,14 +266,14 @@ const translation: TranslationFile = {
         errors: {
           failed: "Oluşturma başarısız oldu. Verileriniz değişmedi.",
           failures: {
-            apiKeyRefused: "API anahtarı reddedildi. AI ayarlarından kontrol edin.",
+            apiKeyRefused: "API anahtarı reddedildi. AI Ayarları'ndan kontrol edin.",
             rateLimited: "Modele çok fazla istek gitti. Bir dakika sonra tekrar deneyin.",
             unavailable: "Modele ulaşılamadı. İnternet bağlantısını kontrol edip tekrar deneyin.",
             declined: "Model yanıt vermeyi reddetti.",
             unusableAnswer: "Modelin yanıtı kullanılamadı. Tekrar deneyin.",
           },
           reasons: {
-            apiKeyMissing: "Önce AI ayarlarından bir API anahtarı ekleyin.",
+            apiKeyMissing: "Önce AI Ayarları'ndan bir API anahtarı ekleyin.",
             noTranscript: "Önce bu mülakatın transkriptini içe aktarın.",
             speakerMappingNotConfirmed: "AI Notu oluşturmadan önce kimin konuştuğunu onaylayın.",
             transcriptChanged: "Oluşturma sırasında transkript veya konuşmacılar değişti. Hiçbir şey kaydedilmedi; yeniden oluşturun.",
