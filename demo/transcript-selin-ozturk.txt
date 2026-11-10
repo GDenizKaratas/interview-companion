@@ -1,0 +1,9 @@
+Ayşe: Merhaba Selin, hoş geldin. Şu anki altyapınızı kısaca anlatır mısın?
+Selin: Merhaba. Yaklaşık kırk servisimiz var, hepsi Kubernetes üzerinde çalışıyor. Altyapıyı Terraform ile yönetiyoruz.
+Ayşe: Son yaşadığınız büyük kesintiyi anlatır mısın?
+Selin: Bir sertifikanın süresi gece dolmuştu, ödeme servisi yirmi dakika boyunca istek alamadı.
+Sonrasında sertifikaları cert-manager ile otomatik yeniledik ve süresi dolmadan on dört gün önce uyarı veren bir alarm ekledik.
+Ayşe: Dağıtımları nasıl yapıyorsunuz?
+Selin: Argo CD ile GitOps kullanıyoruz. Her değişiklik önce test ortamına gidiyor, sonra kademeli olarak canlıya açılıyor.
+Ayşe: Maliyetleri takip ediyor musunuz?
+Selin: Evet, her ekibin harcamasını etiketlerle ayırıyoruz. Geçen yıl kullanılmayan diskleri temizleyerek bulut faturasını yüzde on beş düşürdük.

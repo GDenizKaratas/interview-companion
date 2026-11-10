@@ -1,0 +1,36 @@
+WEBVTT
+
+NOTE
+Fictional demo Transcript for the demo set. Every person and company in it is invented.
+
+1
+00:00:03.000 --> 00:00:08.200
+<v Ayşe>Merhaba Elif, hoş geldin. Şu an üzerinde çalıştığın arayüzden bahseder misin?</v>
+
+2
+00:00:09.000 --> 00:00:21.500
+<v Elif>Merhaba. Bir e-ticaret sitesinin ürün listeleme ve sepet ekranlarını React ve TypeScript ile yazıyorum. Ekipte dört frontend geliştiriciyiz.</v>
+
+3
+00:00:22.400 --> 00:00:27.000
+<v Ayşe>Sayfa yavaşladığında sorunu nasıl buluyorsun?</v>
+
+4
+00:00:27.800 --> 00:00:44.100
+<v Elif>Önce React Profiler ile hangi bileşenin gereksiz yere yeniden çizildiğine bakıyorum. Son seferde filtre listesi her tuşta baştan çiziliyordu, useMemo ve sanal liste ile düzelttik.</v>
+
+5
+00:00:45.000 --> 00:00:49.300
+<v Ayşe>Erişilebilirlik konusunda neler yaptınız?</v>
+
+6
+00:00:50.100 --> 00:01:05.800
+<v Elif>Formların hepsine etiket ekledik, klavyeyle gezilebilmesini test ettik. Renk karşıtlığını tasarım ekibiyle birlikte yeniden belirledik.</v>
+
+7
+00:01:06.500 --> 00:01:10.000
+<v Ayşe>Durum yönetimi için ne kullanıyorsunuz?</v>
+
+8
+00:01:10.900 --> 00:01:24.400
+<v Elif>Sunucudan gelen veri için React Query, sepet gibi küçük paylaşılan durumlar için de Zustand kullanıyoruz. Redux'ı bir yıl önce kaldırdık.</v>

@@ -193,3 +193,51 @@ describe("Demo Candidate on the first start", () => {
     expect(core.listCandidates()).toEqual([]);
   });
 });
+
+describe("Demo set", () => {
+  it("loads five fictional Candidates with different roles, the demo Candidate among them", async () => {
+    const own = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+
+    const demos = await core.loadDemoCandidates();
+
+    expect(demos).toHaveLength(5);
+    expect(new Set(demos.map((c) => c.role)).size).toBe(5);
+    expect(demos.map((c) => c.name)).toContain("Deniz Yılmaz");
+    expect(core.listCandidates().map((c) => c.id).sort()).toEqual([own.id, ...demos.map((c) => c.id)].sort());
+  });
+
+  it("gives the set past, Planned, and undated Interviews, so a calendar has something to show", async () => {
+    const demos = await core.loadDemoCandidates();
+
+    const interviews = demos.flatMap((c) => core.listInterviews(c.id));
+    expect(interviews.filter((i) => i.planned).length).toBeGreaterThanOrEqual(3);
+    expect(interviews.filter((i) => i.date !== null && !i.planned).length).toBeGreaterThanOrEqual(3);
+    expect(interviews.some((i) => i.date === null)).toBe(true);
+  });
+
+  it("includes a CV-less Candidate, a WebVTT Transcript with times, and a Transcript whose Speaker Mapping is confirmed", async () => {
+    const demos = await core.loadDemoCandidates();
+
+    expect(demos.some((c) => core.getCv(c.id) === undefined)).toBe(true);
+    const transcripts = demos
+      .flatMap((c) => core.listInterviews(c.id))
+      .map((i) => core.getTranscript(i.id))
+      .filter((t) => t !== undefined);
+    expect(transcripts.some((t) => t.format === "webvtt" && t.segments.every((s) => s.startMs !== null))).toBe(true);
+    expect(transcripts.some((t) => t.speakerMappingConfirmedAt !== null)).toBe(true);
+    expect(transcripts.some((t) => t.speakerMappingConfirmedAt === null)).toBe(true);
+  });
+
+  it("replaces the set with a fresh copy when loaded again, without duplicates or leftover CV files", async () => {
+    const first = await core.loadDemoCandidates();
+    const before = first.map((c) => contentOf(c.id));
+    core.addSavedQuestion({ candidateId: first[1]!.id, text: "Added while exploring?" });
+
+    const second = await core.loadDemoCandidates();
+
+    expect(second.map((c) => contentOf(c.id))).toEqual(before);
+    expect(core.listCandidates()).toHaveLength(5);
+    const cvCount = second.filter((c) => core.getCv(c.id) !== undefined).length;
+    expect(readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((path) => path.endsWith(".pdf"))).toHaveLength(cvCount);
+  });
+});
