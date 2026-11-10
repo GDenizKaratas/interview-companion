@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { requireCandidate } from "./candidates.ts";
+import { inTransaction } from "./database.ts";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
 
 // Where a Saved Question came from: written by the Interviewer, or copied from a Suggested Question.
@@ -77,14 +78,7 @@ export function moveSavedQuestion(db: DatabaseSync, id: string, position: number
   order.splice(order.indexOf(id), 1);
   order.splice(position, 0, id);
   const update = db.prepare("UPDATE saved_question SET position = ? WHERE id = ?");
-  db.exec("BEGIN");
-  try {
-    order.forEach((questionId, index) => update.run(index, questionId));
-    db.exec("COMMIT");
-  } catch (error) {
-    db.exec("ROLLBACK");
-    throw error;
-  }
+  inTransaction(db, () => order.forEach((questionId, index) => update.run(index, questionId)));
 }
 
 function findSavedQuestion(db: DatabaseSync, id: string): SavedQuestion {

@@ -183,6 +183,11 @@ button.quiet:disabled {
   margin-bottom: 1rem;
 }
 
+/* Kept away from everyday controls, at the far end of the header. */
+.workspace-header .delete-candidate {
+  margin-left: auto;
+}
+
 .interview-bar,
 .interview-form {
   display: flex;

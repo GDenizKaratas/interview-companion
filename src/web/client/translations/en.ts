@@ -28,6 +28,12 @@ const text = {
     loading: "Loading…",
     notFound: "This Candidate does not exist.",
     loadFailed: "The Workspace could not be loaded. Check that the app is still running.",
+    deleteCandidate: "Delete Candidate",
+    confirmDeleteCandidate: "Delete this Candidate?",
+    deleteCandidateDetails: "Their Interviews, notes, questions, and files are deleted too. This cannot be undone.",
+    delete: "Delete",
+    cancel: "Cancel",
+    deleteCandidateFailed: "The Candidate could not be deleted.",
   },
   interviews: {
     label: "Interview",

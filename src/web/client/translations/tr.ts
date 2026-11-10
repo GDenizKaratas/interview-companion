@@ -28,6 +28,12 @@ const translation: TranslationFile = {
       loading: "Yükleniyor…",
       notFound: "Böyle bir aday yok.",
       loadFailed: "Çalışma alanı yüklenemedi. Uygulamanın hâlâ çalıştığını kontrol edin.",
+      deleteCandidate: "Adayı sil",
+      confirmDeleteCandidate: "Bu aday silinsin mi?",
+      deleteCandidateDetails: "Mülakatları, notları, soruları ve dosyaları da silinir. Bu geri alınamaz.",
+      delete: "Sil",
+      cancel: "Vazgeç",
+      deleteCandidateFailed: "Aday silinemedi.",
     },
     interviews: {
       label: "Mülakat",

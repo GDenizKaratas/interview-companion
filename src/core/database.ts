@@ -57,24 +57,49 @@ const migrations: string[] = [
    ) STRICT;`,
 ];
 
-export function openDatabase(path: string): DatabaseSync {
-  const db = new DatabaseSync(path);
+// Opens the database file and brings its schema up to date. created is true when the file
+// was new, or empty, before this call.
+export function openDatabase(path: string): { db: DatabaseSync; created: boolean } {
+  // The web server, the MCP server, and `npm run demo` can have the file open at once, so a
+  // connection waits up to five seconds for another one to finish instead of failing at once.
+  const db = new DatabaseSync(path, { timeout: 5000 });
   db.exec("PRAGMA foreign_keys = ON;");
+  const created = schemaVersion(db) === 0;
   migrate(db);
-  return db;
+  return { db, created };
+}
+
+function schemaVersion(db: DatabaseSync): number {
+  return (db.prepare("PRAGMA user_version").get() as { user_version: number }).user_version;
 }
 
 function migrate(db: DatabaseSync): void {
-  const row = db.prepare("PRAGMA user_version").get() as { user_version: number };
-  for (let version = row.user_version; version < migrations.length; version++) {
-    db.exec("BEGIN");
-    try {
+  for (let version = schemaVersion(db); version < migrations.length; version++) {
+    inTransaction(db, () => {
       db.exec(migrations[version]!);
       db.exec(`PRAGMA user_version = ${version + 1}`);
-      db.exec("COMMIT");
-    } catch (error) {
-      db.exec("ROLLBACK");
-      throw error;
+    });
+  }
+}
+
+// Runs work so that all of its changes are saved together or not at all. It uses a savepoint
+// instead of BEGIN, so one operation can call others that also use it, such as loading the
+// demo Candidate, which adds Interviews and notes.
+export function inTransaction<T>(db: DatabaseSync, work: () => T): T {
+  db.exec("SAVEPOINT work");
+  try {
+    const result = work();
+    db.exec("RELEASE work");
+    return result;
+  } catch (error) {
+    // Some errors make SQLite roll back the whole transaction itself, and then the savepoint
+    // is gone. The original error is what the caller needs to see, so it is always rethrown.
+    try {
+      db.exec("ROLLBACK TO work");
+      db.exec("RELEASE work");
+    } catch {
+      // Nothing is left to undo.
     }
+    throw error;
   }
 }

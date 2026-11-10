@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import * as candidates from "./candidates.ts";
 import * as cv from "./cv.ts";
 import { openDatabase } from "./database.ts";
+import * as demoCandidate from "./demo-candidate.ts";
 import * as interfaceLanguage from "./interface-language.ts";
 import * as interviewerNotes from "./interviewer-notes.ts";
 import * as interviews from "./interviews.ts";
@@ -23,6 +24,9 @@ export interface Core {
   createCandidateWithCv(input: cv.NewCandidateWithCv): Promise<candidates.Candidate>;
   listCandidates(): candidates.Candidate[];
   getCandidate(id: string): candidates.Candidate | undefined;
+  deleteCandidate(id: string): void;
+  loadDemoCandidate(): Promise<candidates.Candidate>;
+  loadDemoCandidateOnFirstStart(): Promise<candidates.Candidate | undefined>;
   listCandidateRoles(): string[];
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
@@ -55,7 +59,8 @@ export interface CoreOptions {
 // Opens (and creates, if needed) the database file at dbPath and brings its schema up to date.
 export function openCore(dbPath: string, options: CoreOptions = {}): Core {
   mkdirSync(dirname(dbPath), { recursive: true });
-  const db = openDatabase(dbPath);
+  const { db, created } = openDatabase(dbPath);
+  if (created) demoCandidate.markDemoPending(db);
   const today = options.today ?? localToday;
   const now = options.now ?? (() => new Date());
   // CV files live in a folder next to the database file.
@@ -65,6 +70,9 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     createCandidateWithCv: (input) => cv.createCandidateWithCv(db, cvFolder, now, input),
     listCandidates: () => candidates.listCandidates(db),
     getCandidate: (id) => candidates.getCandidate(db, id),
+    deleteCandidate: (id) => cv.deleteCandidateAndCv(db, cvFolder, id),
+    loadDemoCandidate: () => demoCandidate.loadDemoCandidate(db, cvFolder, today, now),
+    loadDemoCandidateOnFirstStart: () => demoCandidate.loadDemoCandidateOnFirstStart(db, cvFolder, today, now),
     listCandidateRoles: () => candidates.listCandidateRoles(db),
     addInterview: (input) => interviews.addInterview(db, today, input),
     listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),

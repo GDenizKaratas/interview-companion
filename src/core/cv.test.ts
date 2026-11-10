@@ -74,6 +74,14 @@ describe("CV", () => {
     expect(core.getCv(candidate.id)).toBeUndefined();
   });
 
+  it("refuses an empty file as a missing CV", async () => {
+    const candidate = core.createCandidate({ name: "Ece Yalın", role: "Backend Engineer" });
+
+    await expect(core.attachCv(candidate.id, { fileName: "", bytes: new Uint8Array() })).rejects.toThrow(
+      expect.objectContaining({ field: "cv", rule: "required" }),
+    );
+  });
+
   it("replaces the old CV's file and text when a new CV is uploaded", async () => {
     const candidate = core.createCandidate({ name: "Ece Yalın", role: "Backend Engineer" });
     await core.attachCv(candidate.id, { fileName: "old.pdf", bytes: cvWithText });

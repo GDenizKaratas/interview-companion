@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
-import { createCandidate, requireCandidate, type Candidate, type NewCandidate } from "./candidates.ts";
+import { createCandidate, deleteCandidate, requireCandidate, type Candidate, type NewCandidate } from "./candidates.ts";
+import { inTransaction } from "./database.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { InvalidInputError } from "./errors.ts";
 import { readPdfText, UnreadablePdfError, type PdfTextPage } from "./pdf-text.ts";
@@ -32,44 +33,50 @@ interface CvRow {
   uploaded_at: string;
 }
 
-// Where the CV files live: a folder next to the database file.
-export type CvFolder = string;
-
 export interface NewCandidateWithCv extends NewCandidate {
   cv: CvFile;
 }
 
+// A CV file whose text has been read and accepted, ready to be stored.
+export interface AcceptedCv {
+  file: CvFile;
+  pages: PdfTextPage[];
+}
+
+// folder is where the CV files live: a folder next to the database file.
 export async function attachCv(
   db: DatabaseSync,
-  folder: CvFolder,
+  folder: string,
   now: Now,
   candidateId: string,
   file: CvFile,
 ): Promise<Cv> {
   requireCandidate(db, candidateId);
-  const pages = await readCvText(file);
-  saveCv(db, folder, now, file, pages, () => candidateId);
+  const cv = await acceptCv(file);
+  // The Candidate is checked again: it may have been deleted while the PDF was read.
+  storeCv(db, folder, now, cv, () => {
+    requireCandidate(db, candidateId);
+    return { id: candidateId };
+  });
   return getCv(db, candidateId)!;
 }
 
 // Creates the Candidate and attaches the CV together: if either is refused, neither is saved.
 export async function createCandidateWithCv(
   db: DatabaseSync,
-  folder: CvFolder,
+  folder: string,
   now: Now,
   input: NewCandidateWithCv,
 ): Promise<Candidate> {
-  const pages = await readCvText(input.cv);
-  let candidate: Candidate | undefined;
-  saveCv(db, folder, now, input.cv, pages, () => {
-    candidate = createCandidate(db, input);
-    return candidate.id;
-  });
-  return candidate!;
+  const cv = await acceptCv(input.cv);
+  return storeCv(db, folder, now, cv, () => createCandidate(db, input));
 }
 
-// Reads the text of each page, or refuses a file that is not a readable PDF or has no text.
-async function readCvText(file: CvFile): Promise<PdfTextPage[]> {
+// Reads the text of each page, or refuses a file that is missing, is not a readable PDF, or has no text.
+export async function acceptCv(file: CvFile): Promise<AcceptedCv> {
+  if (file.bytes.length === 0) {
+    throw new InvalidInputError("cv", "required", "Choose a CV file.");
+  }
   let pages: PdfTextPage[];
   try {
     pages = await readPdfText(file.bytes);
@@ -82,52 +89,68 @@ async function readCvText(file: CvFile): Promise<PdfTextPage[]> {
   if (pages.every((page) => page.text === "")) {
     throw new InvalidInputError("cv", "readableText", "This PDF has no readable text.");
   }
-  return pages;
+  return { file, pages };
 }
 
-// Stores the file and its text for the Candidate that owner() names, replacing any earlier CV.
-// owner() runs inside the same transaction, so a Candidate it creates is saved only with the CV.
-// The new file is written first under a new name; the database then switches to it in one
-// transaction, and only after that is the old file removed. If anything fails, nothing changes.
-function saveCv(
+// Runs change(), which names the Candidate (and may create it), and stores the CV for that
+// Candidate, replacing any earlier CV, all in one transaction. The new file is written first
+// under a new name; only after the database has switched to it are the replaced files removed
+// (the Candidate's earlier CV, and any listed in replacedFiles). If anything fails, the new
+// file is removed and nothing else changes.
+export function storeCv<T extends { id: string }>(
   db: DatabaseSync,
-  folder: CvFolder,
+  folder: string,
   now: Now,
-  file: CvFile,
-  pages: PdfTextPage[],
-  owner: () => string,
-): void {
+  cv: AcceptedCv,
+  change: () => T,
+  replacedFiles: string[] = [],
+): T {
   // The file gets a name made by core, so a name chosen by the Interviewer never becomes a path.
   const storedName = `${randomUUID()}.pdf`;
   mkdirSync(folder, { recursive: true });
-  writeFileSync(join(folder, storedName), file.bytes);
-  let previous: CvRow | undefined;
+  writeFileSync(join(folder, storedName), cv.file.bytes);
+  let result: { owner: T; previous: string | undefined };
   try {
-    db.exec("BEGIN");
-    try {
-      const candidateId = owner();
-      previous = findRow(db, candidateId);
-      db.prepare("DELETE FROM cv WHERE candidate_id = ?").run(candidateId);
+    result = inTransaction(db, () => {
+      const owner = change();
+      const previous = storedFileName(db, owner.id);
+      db.prepare("DELETE FROM cv WHERE candidate_id = ?").run(owner.id);
       db.prepare("INSERT INTO cv (candidate_id, file_name, stored_name, uploaded_at) VALUES (?, ?, ?, ?)").run(
-        candidateId,
-        file.fileName,
+        owner.id,
+        cv.file.fileName,
         storedName,
         now().toISOString(),
       );
       const insertPage = db.prepare("INSERT INTO cv_page (candidate_id, number, text) VALUES (?, ?, ?)");
-      for (const [i, page] of pages.entries()) {
-        insertPage.run(candidateId, i + 1, page.text);
+      for (const [i, page] of cv.pages.entries()) {
+        insertPage.run(owner.id, i + 1, page.text);
       }
-      db.exec("COMMIT");
-    } catch (error) {
-      db.exec("ROLLBACK");
-      throw error;
-    }
+      return { owner, previous };
+    });
   } catch (error) {
-    rmSync(join(folder, storedName), { force: true });
+    removeCvFile(folder, storedName);
     throw error;
   }
-  if (previous) rmSync(join(folder, previous.stored_name), { force: true });
+  for (const name of [result.previous, ...replacedFiles]) {
+    if (name !== undefined) removeCvFile(folder, name);
+  }
+  return result.owner;
+}
+
+// Deletes the Candidate with everything about them, including the CV file (decision 28).
+export function deleteCandidateAndCv(db: DatabaseSync, folder: string, candidateId: string): void {
+  const file = storedFileName(db, candidateId);
+  deleteCandidate(db, candidateId);
+  if (file !== undefined) removeCvFile(folder, file);
+}
+
+// The name the Candidate's CV file is stored under, if they have a CV.
+export function storedFileName(db: DatabaseSync, candidateId: string): string | undefined {
+  return findRow(db, candidateId)?.stored_name;
+}
+
+function removeCvFile(folder: string, storedName: string): void {
+  rmSync(join(folder, storedName), { force: true });
 }
 
 export function getCv(db: DatabaseSync, candidateId: string): Cv | undefined {
@@ -136,15 +159,10 @@ export function getCv(db: DatabaseSync, candidateId: string): Cv | undefined {
   const pages = db
     .prepare("SELECT number, text FROM cv_page WHERE candidate_id = ? ORDER BY number")
     .all(candidateId) as unknown as CvPage[];
-  return {
-    candidateId: row.candidate_id,
-    fileName: row.file_name,
-    uploadedAt: row.uploaded_at,
-    pages: pages.map(({ number, text }) => ({ number, text })),
-  };
+  return { candidateId: row.candidate_id, fileName: row.file_name, uploadedAt: row.uploaded_at, pages };
 }
 
-export function readCvFile(db: DatabaseSync, folder: CvFolder, candidateId: string): CvFile | undefined {
+export function readCvFile(db: DatabaseSync, folder: string, candidateId: string): CvFile | undefined {
   const row = findRow(db, candidateId);
   if (!row) return undefined;
   return { fileName: row.file_name, bytes: new Uint8Array(readFileSync(join(folder, row.stored_name))) };

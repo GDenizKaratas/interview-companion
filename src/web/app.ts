@@ -56,6 +56,13 @@ export function createApi(core: Core): Hono {
     return candidate ? c.json(candidate) : c.json({ error: "Candidate not found." }, 404);
   });
 
+  api.delete("/candidates/:id", (c) =>
+    respondOrRefuse(c, () => {
+      core.deleteCandidate(c.req.param("id"));
+      return c.body(null, 204);
+    }),
+  );
+
   api.get("/candidates/:id/interviews", (c) =>
     respondOrRefuse(c, () => c.json(core.listInterviews(c.req.param("id")))),
   );

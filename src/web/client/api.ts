@@ -58,6 +58,7 @@ export const api = {
   listCandidateRoles: () => request<string[]>("/candidate-roles"),
   getCandidate: (id: string) => request<Candidate>(`/candidates/${encodeURIComponent(id)}`),
   createCandidate: (input: NewCandidate) => request<Candidate>("/candidates", sendJson("POST", input)),
+  deleteCandidate: (id: string) => request<void>(`/candidates/${encodeURIComponent(id)}`, { method: "DELETE" }),
   createCandidateWithCv: (input: NewCandidate, cv: File) =>
     request<Candidate>("/candidates", sendForm({ ...input, cv })),
   guessCandidateName: (cv: File) => request<{ name: string }>("/cv-name-guess", sendForm({ cv })),
