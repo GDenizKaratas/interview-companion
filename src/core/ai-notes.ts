@@ -161,15 +161,23 @@ function getAiNote(db: DatabaseSync, id: string): AiNote {
 }
 
 function setReviewState(db: DatabaseSync, id: string, reviewState: ReviewState): AiNote {
-  getAiNote(db, id);
   db.prepare("UPDATE ai_note SET review_state = ? WHERE id = ?").run(reviewState, id);
   return getAiNote(db, id);
+}
+
+// A Dismissed note is hidden, so it is shown again before it can be confirmed or corrected.
+function requireShown(note: AiNote): void {
+  if (note.reviewState === "dismissed") {
+    throw new PreconditionError("noteDismissed", "This note was dismissed. Show it again first.");
+  }
 }
 
 // The Interviewer says the note reflects its Evidence. It says nothing about whether the Candidate was right.
 // A Corrected note cannot be confirmed: that would put the AI's text back above the Interviewer's.
 export function confirmAiNote(db: DatabaseSync, id: string): AiNote {
-  if (getAiNote(db, id).reviewState === "corrected") {
+  const note = getAiNote(db, id);
+  requireShown(note);
+  if (note.reviewState === "corrected") {
     throw new PreconditionError("noteCorrected", "This note was corrected. Edit the correction instead.");
   }
   return setReviewState(db, id, "confirmed");
@@ -180,13 +188,14 @@ export function confirmAiNote(db: DatabaseSync, id: string): AiNote {
 export function correctAiNote(db: DatabaseSync, id: string, correction: string): AiNote {
   const text = correction.trim();
   if (text === "") throw new InvalidInputError("correction", "required", "Write the corrected note.");
-  getAiNote(db, id);
+  requireShown(getAiNote(db, id));
   db.prepare("UPDATE ai_note SET review_state = 'corrected', correction = ? WHERE id = ?").run(text, id);
   return getAiNote(db, id);
 }
 
 // Hidden from the panel, never deleted, so it can be shown again.
 export function dismissAiNote(db: DatabaseSync, id: string): AiNote {
+  getAiNote(db, id);
   return setReviewState(db, id, "dismissed");
 }
 

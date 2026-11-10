@@ -126,7 +126,11 @@ function InterviewAiNotes({
       {notes && notes.length === 0 && dropped === 0 && apiKeySaved && transcript && confirmed && !generating && (
         <p className="empty">{t.empty}</p>
       )}
-      {visibleNotes.some((note) => note.stale) && <p className="stale-banner">{t.staleBanner}</p>}
+      {/* Regenerating replaces Unreviewed Stale notes, so the warning goes away once it is done.
+          Reviewed Stale notes are kept and still carry their own tag. */}
+      {visibleNotes.some((note) => note.stale && note.reviewState === "unreviewed") && (
+        <p className="stale-banner">{t.staleBanner}</p>
+      )}
       {visibleNotes.length > 0 && (
         <ul className="ai-note-list">
           {visibleNotes.map((note) => (

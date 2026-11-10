@@ -220,6 +220,7 @@ const translation: TranslationFile = {
             speakerMappingNotConfirmed: "AI Notu oluşturmadan önce kimin konuştuğunu onaylayın.",
             transcriptChanged: "Oluşturma sırasında transkript veya konuşmacılar değişti. Hiçbir şey kaydedilmedi; yeniden oluşturun.",
             noteCorrected: "Bu not düzeltildi. Onun yerine düzeltmeyi değiştirin.",
+            noteDismissed: "Bu not gizlendi. Önce yeniden gösterin.",
           },
         },
       },

@@ -12,7 +12,7 @@ interface AiNoteItemProps {
   onChanged: (note: AiNote) => void;
 }
 
-// One AI Note: its statement (or the Interviewer's correction above the AI's text), its quotes,
+// One AI Note: its statement (or, once corrected, the Interviewer's correction above the AI's text), its quotes,
 // its Review State, and the review actions that fit that state.
 export function AiNoteItem({ note, segmentTimes, onShowEvidence, onChanged }: AiNoteItemProps) {
   const { text } = useText();
@@ -68,12 +68,20 @@ export function AiNoteItem({ note, segmentTimes, onShowEvidence, onChanged }: Ai
             <button type="button" disabled={busy} onClick={() => void run(() => api.correctAiNote(note.id, draft))}>
               {t.save}
             </button>
-            <button type="button" className="link-button" onClick={() => setEditing(false)}>
+            <button
+              type="button"
+              className="link-button"
+              disabled={busy}
+              onClick={() => {
+                setEditing(false);
+                setError(undefined);
+              }}
+            >
               {t.cancel}
             </button>
           </div>
         </div>
-      ) : corrected && note.correction !== null ? (
+      ) : note.correction !== null ? (
         <>
           <p className="ai-note-statement">{note.correction}</p>
           <p className="ai-note-original">
@@ -151,7 +159,7 @@ function reviewErrorMessage(text: Text, error: unknown): string {
   const t = text.panels.aiNotes;
   if (error instanceof ApiError) {
     if (error.field === "correction" && error.rule === "required") return t.correctionRequired;
-    if (error.reason === "noteCorrected") return t.errors.reasons.noteCorrected;
+    if (error.reason === "noteCorrected" || error.reason === "noteDismissed") return t.errors.reasons[error.reason];
   }
   return t.reviewFailed;
 }

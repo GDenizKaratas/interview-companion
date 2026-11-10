@@ -30,7 +30,8 @@ export type Precondition =
   | "noTranscript"
   | "speakerMappingNotConfirmed"
   | "transcriptChanged"
-  | "noteCorrected";
+  | "noteCorrected"
+  | "noteDismissed";
 
 // Thrown when an action is refused because a step must come first, such as confirming the
 // Speaker Mapping before AI Notes. The web interface shows the reason in the chosen language.

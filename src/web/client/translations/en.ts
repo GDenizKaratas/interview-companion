@@ -231,6 +231,7 @@ const text = {
           speakerMappingNotConfirmed: "Confirm who is speaking before generating AI Notes.",
           transcriptChanged: "The Transcript or its speakers changed during generation. Nothing was saved; generate again.",
           noteCorrected: "This note was corrected. Edit the correction instead.",
+          noteDismissed: "This note was dismissed. Show it again first.",
         },
       },
     },

@@ -379,6 +379,15 @@ describe("AI Note review", () => {
     ]);
   });
 
+  it("refuses to confirm or correct a Dismissed note until it is shown again", async () => {
+    const [note] = await generated();
+    core.dismissAiNote(note!.id);
+
+    expect(() => core.confirmAiNote(note!.id)).toThrow(expect.objectContaining({ reason: "noteDismissed" }));
+    expect(() => core.correctAiNote(note!.id, "Metin.")).toThrow(expect.objectContaining({ reason: "noteDismissed" }));
+    expect(core.listAiNotes(interview.id)[0]).toMatchObject({ reviewState: "dismissed", correction: null });
+  });
+
   it("refuses to review an unknown AI Note", () => {
     expect(() => core.confirmAiNote("no-such-note")).toThrow(NotFoundError);
     expect(() => core.correctAiNote("no-such-note", "Metin.")).toThrow(NotFoundError);
