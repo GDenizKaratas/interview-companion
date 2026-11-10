@@ -11,8 +11,18 @@ import {
 } from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
-export function createApi(core: Core): Hono {
+// mcpServerPath is the absolute path of the MCP server's file, so the interface can show the
+// exact command that connects an AI client to it.
+export function createApi(core: Core, options: { mcpServerPath?: string } = {}): Hono {
   const api = new Hono();
+
+  // Every Candidate's overview, newest Candidate first, for the Candidate list and the calendar.
+  api.get("/candidate-overviews", (c) => c.json(core.listCandidates().map((candidate) => core.getCandidateOverview(candidate.id))));
+
+  // The command that adds the MCP server to Claude Code, or null when the path is not known.
+  api.get("/mcp-setup", (c) =>
+    c.json({ command: options.mcpServerPath ? `claude mcp add interview-companion -- node ${shellQuoted(options.mcpServerPath)}` : null }),
+  );
 
   api.get("/candidates", (c) => c.json(core.listCandidates()));
 
@@ -313,4 +323,9 @@ async function respondOrRefuse(c: Context, run: () => Response | Promise<Respons
     }
     throw error;
   }
+}
+
+// A path as one shell word: as it is when it has only safe characters, in single quotes otherwise.
+function shellQuoted(path: string): string {
+  return /^[\w@%+=:,./-]+$/.test(path) ? path : `'${path.replaceAll("'", "'\\''")}'`;
 }

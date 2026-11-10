@@ -23,7 +23,7 @@ try {
 }
 const app = new Hono();
 
-app.route("/api", createApi(core));
+app.route("/api", createApi(core, { mcpServerPath: fileURLToPath(new URL("../mcp/server.ts", import.meta.url)) }));
 
 if (existsSync(indexHtml)) {
   app.use("/*", serveStatic({ root: clientDir }));

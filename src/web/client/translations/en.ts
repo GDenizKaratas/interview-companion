@@ -83,11 +83,50 @@ const text = {
     saveFailed: "The Interview could not be saved.",
     loadFailed: "Interviews could not be loaded.",
   },
+  home: {
+    filterPlaceholder: "Filter by name or role",
+    filterLabel: "Filter Candidates",
+    noMatch: "No Candidate matches the filter.",
+    columns: { candidate: "Candidate", interviews: "Interviews", next: "Next Interview", cv: "CV", notes: "Notes", questions: "Questions" },
+    // {count} is replaced by a number.
+    plannedCount: "{count} planned",
+    noNext: "None planned",
+    // {count} is replaced by the number of pages.
+    cvPages: "{count} pages",
+    cvOnePage: "1 page",
+    noCv: "No CV",
+  },
+  calendar: {
+    title: "Interview calendar",
+    previous: "Previous month",
+    next: "Next month",
+    today: "Today",
+    legendPast: "Taken place",
+    legendPlanned: "Planned",
+    upcoming: "Upcoming Interviews",
+    noUpcoming: "No Planned Interviews.",
+    // {count} is replaced by a number.
+    undated: "{count} Interviews without a date",
+    undatedOne: "1 Interview without a date",
+  },
+  noKey: {
+    title: "Use AI without an API key",
+    intro:
+      "Connect Claude Code or Claude Desktop to Interview Companion. Your AI client then reads and searches your Candidates through a read-only connection (MCP) and writes a Candidate Brief in its own chat.",
+    stepAdd: "1. Add the connection once, in a terminal:",
+    copy: "Copy",
+    copied: "Copied",
+    stepAsk: "2. Start Claude Code and ask, for example: “What did Deniz say about Redis? Use Interview Companion.”",
+    stepBrief: "3. For a full brief, type /mcp__interview-companion__candidate_brief and give the Candidate's name.",
+    desktop: "For Claude Desktop, see docs/mcp.md in the project folder.",
+    readOnly: "The AI client can read and search, never change anything. Quotes in a Candidate Brief are not checked by the app; check them with the search here.",
+  },
   search: {
     label: "Search the CV and Transcripts",
     placeholder: "Search for a word, such as Redis",
     submit: "Search",
     searching: "Searching…",
+    closeResults: "Close the results",
     clear: "Clear",
     sourcesLabel: "Sources",
     sources: { all: "CV and Transcripts", cv: "CV only", transcripts: "Transcripts only" },
@@ -109,6 +148,8 @@ const text = {
     failed: "The search could not be run.",
   },
   panels: {
+    expand: "Open full screen",
+    collapse: "Close full screen",
     cv: {
       title: "CV",
       empty: "No CV uploaded.",

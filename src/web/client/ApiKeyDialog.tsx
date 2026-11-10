@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { NoKeyGuide } from "./NoKeyGuide.tsx";
 import { useText } from "./text.tsx";
 
 // Fired on window when the API key is saved or removed, so the AI Notes panel can update.
@@ -92,6 +93,7 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
         <p>{t.whatIsSent}</p>
         <p>{t.notSent}</p>
       </div>
+      {saved === false && <NoKeyGuide className="compact" />}
       {error && <p className="error">{error}</p>}
       <div className="confirm-dialog-actions">
         {saved && (

@@ -111,23 +111,39 @@ export function Workspace({ candidateId }: { candidateId: string }) {
 
   return (
     <main className="workspace">
-      <header className="workspace-header">
-        <a href="/" onClick={linkTo("/")}>
+      {/* One row: who, which Interview, the search, and Delete at the far end. */}
+      <header className="workspace-bar">
+        <a className="back-link" href="/" onClick={linkTo("/")}>
           {text.workspace.back}
         </a>
         {load.state === "ready" && (
-          <h1>
-            {load.candidate.name} · <span className="role">{load.candidate.role}</span>
+          <h1 title={`${load.candidate.name} · ${load.candidate.role}`}>
+            {load.candidate.name} <span className="role">{load.candidate.role}</span>
           </h1>
+        )}
+        {load.state === "ready" && (
+          <InterviewSelector
+            interviews={interviews}
+            loadError={interviewsFailed}
+            candidateId={candidateId}
+            selected={interviewId}
+            onSelect={setInterviewId}
+            onAdded={handleInterviewAdded}
+          />
+        )}
+        {load.state === "ready" && (
+          <EvidenceSearch candidateId={candidateId} interviews={interviews} onOpen={openEvidence} />
         )}
         {load.state === "ready" && (
           <button
             type="button"
-            className="quiet delete-candidate"
+            className="icon-button danger-quiet delete-candidate"
             disabled={deleting}
+            aria-label={text.workspace.deleteCandidate}
+            title={text.workspace.deleteCandidate}
             onClick={() => setConfirmingDelete(true)}
           >
-            {text.workspace.deleteCandidate}
+            <TrashIcon />
           </button>
         )}
       </header>
@@ -145,19 +161,6 @@ export function Workspace({ candidateId }: { candidateId: string }) {
           </p>
           <p>{text.workspace.deleteCandidateDetails}</p>
         </ConfirmDialog>
-      )}
-      {load.state === "ready" && (
-        <InterviewSelector
-          interviews={interviews}
-          loadError={interviewsFailed}
-          candidateId={candidateId}
-          selected={interviewId}
-          onSelect={setInterviewId}
-          onAdded={handleInterviewAdded}
-        />
-      )}
-      {load.state === "ready" && (
-        <EvidenceSearch candidateId={candidateId} interviews={interviews} onOpen={openEvidence} />
       )}
       {load.state === "loading" && <p>{text.workspace.loading}</p>}
       {load.state === "notFound" && <p className="error">{text.workspace.notFound}</p>}
@@ -206,14 +209,86 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   );
 }
 
+// A panel of the Workspace. Its full-screen button shows on hover and opens the panel almost full
+// screen, over the rest; the same component stays mounted, so nothing typed or loaded is lost.
 function Panel({ area, title, label, children }: { area: string; title: string; label?: string; children: ReactNode }) {
+  const { text } = useText();
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!expanded) return;
+    // Escape closes the panel, unless it belongs to a field or a dialog inside it.
+    function onKey(event: KeyboardEvent) {
+      const target = event.target as Element;
+      if (event.key !== "Escape" || target.closest("input, textarea, select, dialog")) return;
+      setExpanded(false);
+    }
+    document.addEventListener("keydown", onKey);
+    document.body.classList.add("panel-open");
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.classList.remove("panel-open");
+    };
+  }, [expanded]);
+
+  const toggleLabel = expanded ? text.panels.collapse : text.panels.expand;
   return (
-    <section className={`panel panel-${area}`} aria-label={title}>
-      <h2>
-        {title}
-        {label && <span className="ai-label">{label}</span>}
-      </h2>
-      {children}
-    </section>
+    <>
+      {expanded && <div className="panel-backdrop" onClick={() => setExpanded(false)} />}
+      <section
+        className={`panel panel-${area}${expanded ? " expanded" : ""}`}
+        aria-label={title}
+        {...(expanded ? { role: "dialog", "aria-modal": true } : {})}
+      >
+        <header className="panel-head">
+          <h2>
+            {title}
+            {label && <span className="ai-label">{label}</span>}
+          </h2>
+          <button
+            type="button"
+            className="icon-button panel-expand"
+            aria-label={toggleLabel}
+            title={toggleLabel}
+            aria-pressed={expanded}
+            onClick={() => setExpanded(!expanded)}
+          >
+            {expanded ? <CollapseIcon /> : <ExpandIcon />}
+          </button>
+        </header>
+        <div className="panel-body">{children}</div>
+      </section>
+    </>
+  );
+}
+
+function ExpandIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CollapseIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.75 6.5v4.5M9.25 6.5v4.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

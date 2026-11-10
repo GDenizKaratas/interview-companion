@@ -6,8 +6,10 @@ import { MarkedText } from "./MarkedText.tsx";
 import { useText } from "./text.tsx";
 import { formatTime } from "./transcript-text.ts";
 
-// One search over the Candidate's CV and Transcripts. Each result shows the exact excerpt and
-// where it is; clicking it opens that place in the CV or Transcript panel.
+// One search over the Candidate's CV and Transcripts, in the Workspace bar. The results open in
+// a panel under the bar, over the Workspace, so they never push the panels down. Each result
+// shows the exact excerpt and where it is; clicking it closes the results and opens that place
+// in the CV or Transcript panel. The results can be shown again until the search is cleared.
 export function EvidenceSearch({
   candidateId,
   interviews,
@@ -25,10 +27,12 @@ export function EvidenceSearch({
   const [searching, setSearching] = useState(false);
   const [search, setSearch] = useState<SearchResult | undefined>();
   const [error, setError] = useState<string | undefined>();
+  const [open, setOpen] = useState(false);
 
   async function runSearch(options = { sources, candidateOnly }) {
     setSearching(true);
     setError(undefined);
+    setOpen(true);
     try {
       setSearch(await api.searchEvidence(candidateId, query, options.sources, options.candidateOnly));
     } catch (failure) {
@@ -68,10 +72,22 @@ export function EvidenceSearch({
     setQuery("");
     setSearch(undefined);
     setError(undefined);
+    setOpen(false);
   }
 
+  function openResult(result: EvidenceResult) {
+    setOpen(false);
+    onOpen(result);
+  }
+
+  const resultCount = search ? (search.results.length === 1 ? t.countOne : fill(t.count, { count: String(search.results.length) })) : "";
+
   return (
-    <section className="evidence-search" aria-label={t.label}>
+    <section
+      className="evidence-search"
+      aria-label={t.label}
+      onKeyDown={(event) => event.key === "Escape" && open && (event.stopPropagation(), setOpen(false))}
+    >
       <form className="evidence-search-form" onSubmit={submit}>
         <input
           type="search"
@@ -92,15 +108,27 @@ export function EvidenceSearch({
         <button type="submit" disabled={searching}>
           {searching ? t.searching : t.submit}
         </button>
+        {search && !open && (
+          <button type="button" className="quiet" onClick={() => setOpen(true)}>
+            {resultCount}
+          </button>
+        )}
         {(search || error) && (
           <button type="button" className="quiet" onClick={clear}>
             {t.clear}
           </button>
         )}
       </form>
-      {error && <p className="error">{error}</p>}
-      {search && (
+      {error && open && (
         <div className="evidence-results">
+          <p className="error">{error}</p>
+        </div>
+      )}
+      {search && open && (
+        <div className="evidence-results">
+          <button type="button" className="icon-button evidence-close" aria-label={t.closeResults} title={t.closeResults} onClick={() => setOpen(false)}>
+            ×
+          </button>
           {search.results.length === 0 ? (
             <p className="empty">
               {t.nothingFound} <span className="hint">{t.nothingFoundDetail}</span>
@@ -112,9 +140,7 @@ export function EvidenceSearch({
                   places: [...(search.foundIn.cv ? [t.cv] : []), ...search.foundIn.interviewIds.map(nameOf)].join(" · "),
                 })}
               </strong>
-              <span className="hint">
-                {search.results.length === 1 ? t.countOne : fill(t.count, { count: String(search.results.length) })}
-              </span>
+              <span className="hint">{resultCount}</span>
             </p>
           )}
           {search.unconfirmedInterviewIds.length > 0 && (
@@ -124,7 +150,7 @@ export function EvidenceSearch({
             <ol className="evidence-list">
               {search.results.map((result) => (
                 <li key={result.source === "cv" ? `cv-${result.page}-${result.excerptStart}` : `${result.interviewId}-${result.segmentNumber}`}>
-                  <button type="button" className="evidence-result" onClick={() => onOpen(result)}>
+                  <button type="button" className="evidence-result" onClick={() => openResult(result)}>
                     <span className="evidence-place">{placeOf(result)}</span>
                     <span className="evidence-excerpt">
                       <MarkedText text={result.excerpt} highlights={result.highlights} />

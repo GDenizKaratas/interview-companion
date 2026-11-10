@@ -5,7 +5,7 @@ import { interviewLabel } from "./interview-names.ts";
 import type { Text } from "./languages.ts";
 import { useText } from "./text.tsx";
 
-// The Interview row of the Workspace header: choose "All" or one Interview, or add a new one.
+// The Interview part of the Workspace bar: choose "All" or one Interview, or add a new one.
 export function InterviewSelector({
   interviews,
   loadError,
@@ -33,7 +33,7 @@ export function InterviewSelector({
   return (
     <div className="interview-bar">
       <label className="interview-select">
-        {text.interviews.label}
+        <span className="visually-hidden">{text.interviews.label}</span>
         <select value={selected ?? ""} onChange={(e) => onSelect(e.target.value || null)}>
           <option value="">{text.interviews.all}</option>
           {interviews.map((interview) => (
@@ -82,8 +82,8 @@ function NewInterviewForm({
   return (
     <form className="interview-form" onSubmit={handleSubmit} onKeyDown={(e) => e.key === "Escape" && onCancel()}>
       <label>
-        {text.interviews.dateLabel}
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} autoFocus />
+        <span className="visually-hidden">{text.interviews.dateLabel}</span>
+        <input type="date" value={date} title={text.interviews.dateLabel} onChange={(e) => setDate(e.target.value)} autoFocus />
       </label>
       <AddButton type="submit" disabled={saving}>
         {text.interviews.save}

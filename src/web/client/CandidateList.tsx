@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
-import { api, ApiError, type Candidate } from "./api.ts";
+import { api, ApiError, type CandidateOverview } from "./api.ts";
 import { cvRefusalMessage } from "./cv-refusal.ts";
-import { candidatePath, linkTo } from "./navigation.ts";
-import type { Text } from "./languages.ts";
+import { InterviewCalendar } from "./InterviewCalendar.tsx";
+import { interviewName } from "./interview-names.ts";
+import { candidatePath, linkTo, navigate } from "./navigation.ts";
+import { fill, type Text } from "./languages.ts";
+import { NoKeyGuide } from "./NoKeyGuide.tsx";
 import { useText } from "./text.tsx";
 
+// The home page: every Candidate in one table with the form to add one, and beside it the
+// calendar of all Interviews and how to use AI without an API key.
 export function CandidateList() {
   const { text } = useText();
-  const [candidates, setCandidates] = useState<Candidate[] | undefined>();
+  const [candidates, setCandidates] = useState<CandidateOverview[] | undefined>();
+  const [filter, setFilter] = useState("");
   const [roles, setRoles] = useState<string[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [name, setName] = useState("");
@@ -24,9 +30,13 @@ export function CandidateList() {
   const guessFor = useRef<File | undefined>(undefined);
 
   useEffect(() => {
-    api.listCandidates().then(setCandidates, () => setLoadError(true));
+    loadCandidates();
     loadRoles();
   }, []);
+
+  function loadCandidates() {
+    api.listCandidateOverviews().then(setCandidates, () => setLoadError(true));
+  }
 
   // Earlier roles are only suggestions; if they cannot be loaded the form still works.
   function loadRoles() {
@@ -59,8 +69,9 @@ export function CandidateList() {
     setSaving(true);
     setSaveError(undefined);
     try {
-      const created = cv ? await api.createCandidateWithCv({ name, role }, cv) : await api.createCandidate({ name, role });
-      setCandidates((current) => [created, ...(current ?? [])]);
+      if (cv) await api.createCandidateWithCv({ name, role }, cv);
+      else await api.createCandidate({ name, role });
+      loadCandidates();
       loadRoles();
       setName("");
       setRole("");
@@ -72,64 +83,144 @@ export function CandidateList() {
     }
   }
 
+  const t = text.home;
+  const needle = filter.trim().toLocaleLowerCase();
+  const shown = candidates?.filter(
+    ({ candidate }) =>
+      needle === "" || candidate.name.toLocaleLowerCase().includes(needle) || candidate.role.toLocaleLowerCase().includes(needle),
+  );
+
   return (
-    <main className="page">
-      <h1 className="page-title">{text.candidates.title}</h1>
-      <form className="candidate-form" onSubmit={handleSubmit}>
-        <label>
-          {text.candidates.nameLabel}
-          <input value={name} onChange={(e) => setName(e.target.value)} />
-        </label>
-        <label>
-          {text.candidates.roleLabel}
-          <input value={role} onChange={(e) => setRole(e.target.value)} list="known-roles" autoComplete="off" />
-          <datalist id="known-roles">
-            {roles.map((knownRole) => (
-              <option key={knownRole} value={knownRole} />
-            ))}
-          </datalist>
-        </label>
-        {/* The browser's own file box speaks the system's language, so it stays hidden behind a button. */}
-        <div className="cv-choice">
-          <span>{text.candidates.cvLabel}</span>
-          <span className="cv-choice-row">
-            <input ref={cvInput} type="file" accept="application/pdf,.pdf" hidden onChange={handleCvChosen} />
-            {/* Once a file is chosen, the button shows its name; clicking it chooses another. */}
-            <button
-              type="button"
-              className="secondary cv-choose"
-              title={cv?.name}
-              onClick={() => cvInput.current?.click()}
-            >
-              {cv ? cv.name : text.candidates.cvChoose}
-            </button>
-            {cv && (
-              <button type="button" className="quiet" onClick={clearCv}>
-                {text.candidates.cvRemove}
+    <main className="home">
+      <section className="home-main" aria-labelledby="candidates-title">
+        <header className="section-head">
+          <h1 id="candidates-title">
+            {text.candidates.title}
+            {candidates && <span className="count">{candidates.length}</span>}
+          </h1>
+          <input
+            type="search"
+            className="filter"
+            value={filter}
+            placeholder={t.filterPlaceholder}
+            aria-label={t.filterLabel}
+            onChange={(event) => setFilter(event.target.value)}
+          />
+        </header>
+        <form className="candidate-form card" onSubmit={handleSubmit}>
+          <label>
+            {text.candidates.nameLabel}
+            <input value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+          <label>
+            {text.candidates.roleLabel}
+            <input value={role} onChange={(e) => setRole(e.target.value)} list="known-roles" autoComplete="off" />
+            <datalist id="known-roles">
+              {roles.map((knownRole) => (
+                <option key={knownRole} value={knownRole} />
+              ))}
+            </datalist>
+          </label>
+          {/* The browser's own file box speaks the system's language, so it stays hidden behind a button. */}
+          <div className="cv-choice">
+            <span>{text.candidates.cvLabel}</span>
+            <span className="cv-choice-row">
+              <input ref={cvInput} type="file" accept="application/pdf,.pdf" hidden onChange={handleCvChosen} />
+              {/* Once a file is chosen, the button shows its name; clicking it chooses another. */}
+              <button
+                type="button"
+                className="secondary cv-choose"
+                title={cv?.name}
+                onClick={() => cvInput.current?.click()}
+              >
+                {cv ? cv.name : text.candidates.cvChoose}
               </button>
-            )}
-          </span>
-        </div>
-        <AddButton type="submit" disabled={saving}>
-          {text.candidates.add}
-        </AddButton>
-      </form>
-      {cv && saveError === undefined && <p className="form-hint">{text.candidates.cvHint}</p>}
-      {saveError !== undefined && <p className="error">{refusalMessage(text, saveError)}</p>}
-      {loadError && <p className="error">{text.candidates.loadFailed}</p>}
-      {candidates && candidates.length === 0 && <p className="empty">{text.candidates.empty}</p>}
-      {candidates && candidates.length > 0 && (
-        <ul className="candidate-list">
-          {candidates.map((candidate) => (
-            <li key={candidate.id}>
-              <a href={candidatePath(candidate.id)} onClick={linkTo(candidatePath(candidate.id))}>
-                <strong>{candidate.name}</strong> · {candidate.role}
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+              {cv && (
+                <button type="button" className="quiet" onClick={clearCv}>
+                  {text.candidates.cvRemove}
+                </button>
+              )}
+            </span>
+          </div>
+          <AddButton type="submit" disabled={saving}>
+            {text.candidates.add}
+          </AddButton>
+        </form>
+        {cv && saveError === undefined && <p className="form-hint">{text.candidates.cvHint}</p>}
+        {saveError !== undefined && <p className="error">{refusalMessage(text, saveError)}</p>}
+        {loadError && <p className="error">{text.candidates.loadFailed}</p>}
+        {candidates && candidates.length === 0 && <p className="empty">{text.candidates.empty}</p>}
+        {shown && candidates!.length > 0 && shown.length === 0 && <p className="empty">{t.noMatch}</p>}
+        {shown && shown.length > 0 && (
+          <table className="candidate-table card">
+            <thead>
+              <tr>
+                <th>{t.columns.candidate}</th>
+                <th>{t.columns.interviews}</th>
+                <th>{t.columns.next}</th>
+                <th>{t.columns.cv}</th>
+                <th className="number">{t.columns.notes}</th>
+                <th className="number">{t.columns.questions}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((overview) => (
+                <CandidateRow key={overview.candidate.id} overview={overview} />
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+      <aside className="home-side">
+        {candidates && <InterviewCalendar overviews={candidates} />}
+        <NoKeyGuide className="card" />
+      </aside>
     </main>
+  );
+}
+
+// One Candidate in the table. The whole row opens the Workspace; the name is the real link,
+// so it also works with the keyboard and opens in a new tab.
+function CandidateRow({ overview }: { overview: CandidateOverview }) {
+  const { text, languageCode } = useText();
+  const t = text.home;
+  const { candidate, cv, interviews } = overview;
+  const path = candidatePath(candidate.id);
+  const planned = interviews.filter((interview) => interview.planned);
+  const next = [...planned].sort((a, b) => a.date!.localeCompare(b.date!))[0];
+  const dateFormat = new Intl.DateTimeFormat(languageCode, { day: "numeric", month: "short", weekday: "short", timeZone: "UTC" });
+  return (
+    <tr onClick={(event) => !(event.target as Element).closest("a") && navigate(path)}>
+      <td>
+        <a className="candidate-name" href={path} onClick={linkTo(path)}>
+          {candidate.name}
+        </a>
+        <span className="candidate-role">{candidate.role}</span>
+      </td>
+      <td>
+        {interviews.length}
+        {planned.length > 0 && <span className="pill planned">{fill(t.plannedCount, { count: String(planned.length) })}</span>}
+      </td>
+      <td>
+        {next ? (
+          <>
+            {dateFormat.format(new Date(`${next.date}T00:00:00Z`))}
+            <span className="muted"> · {interviewName(text, next)}</span>
+          </>
+        ) : (
+          <span className="muted">{t.noNext}</span>
+        )}
+      </td>
+      <td>
+        {cv ? (
+          <span>{cv.pageCount === 1 ? t.cvOnePage : fill(t.cvPages, { count: String(cv.pageCount) })}</span>
+        ) : (
+          <span className="muted">{t.noCv}</span>
+        )}
+      </td>
+      <td className="number">{overview.interviewerNoteCount}</td>
+      <td className="number">{overview.savedQuestionCount}</td>
+    </tr>
   );
 }
 
