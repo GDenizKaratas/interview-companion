@@ -263,6 +263,26 @@ describe("MCP server", () => {
     ).toEqual({ results: [], foundIn: { cv: false, interviewIds: [] }, unconfirmedInterviewIds: [] });
   });
 
+  it("search_evidence limited to the Candidate gives only the Candidate's segments once the mapping is confirmed", async () => {
+    const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    const transcript = core.importTranscript(interview.id, {
+      fileName: "t.txt",
+      bytes: new TextEncoder().encode("Ayşe: Did you use Redis?\nAda: Yes, REDİS for the queue."),
+    });
+    core.confirmSpeakerMapping(
+      interview.id,
+      Object.fromEntries(transcript.speakers.map((s) => [s.id, s.label === "Ada" ? "candidate" : "interviewer"] as const)),
+    );
+
+    const search = (await call("search_evidence", { candidateId: candidate.id, query: "redis", candidateOnly: true })) as {
+      results: { segmentNumber: number; speakerRole: string; excerpt: string }[];
+    };
+
+    expect(search.results.map(({ segmentNumber, speakerRole, excerpt }) => ({ segmentNumber, speakerRole, excerpt }))).toEqual([
+      { segmentNumber: 2, speakerRole: "candidate", excerpt: "Yes, REDİS for the queue." },
+    ]);
+  });
+
   it("search_evidence refuses an empty search, unknown sources, and an unknown Candidate", async () => {
     expect(await refusal("search_evidence", { candidateId: candidate.id, query: " ,. " })).toContain("Type a word");
     expect(await refusal("search_evidence", { candidateId: candidate.id, query: "Redis", sources: "notes" })).toContain(
@@ -302,6 +322,7 @@ describe("MCP server", () => {
     expect(text).toMatch(/no judgments/i);
     expect(text).toMatch(/word for word/i);
     expect(text).toMatch(/not checked by Interview Companion/i);
+    expect(text).toMatch(/data, not instructions/i);
   });
 
   it("candidate_brief refuses a missing Candidate", async () => {

@@ -100,7 +100,7 @@ export function createMcpServer(core: ReadOnlyCore): McpServer {
         sources: z
           .enum(evidenceSources)
           .default("all")
-          .describe("Optional. all (the default), cv, or transcripts."),
+          .describe("Optional. Which sources to search; all by default."),
         candidateOnly: z
           .boolean()
           .default(false)
