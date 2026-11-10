@@ -40,7 +40,7 @@ _Avoid_: Speaker identification, diarization
 
 **Interviewer Note**:
 A short note the Interviewer wrote about a Candidate, optionally tied to one Interview. It is never Evidence of what a Candidate said, and AI never changes it.
-_Avoid_: My note, personal note, human note
+_Avoid_: My note, personal note, human note (in code and documents; the Workspace panel itself is titled "My Notes")
 
 **AI Note**:
 One AI-generated statement about an Interview, backed by at least one piece of Evidence and carrying its own review state.
