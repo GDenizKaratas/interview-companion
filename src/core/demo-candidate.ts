@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
-import { deleteCandidateIfExists, hasAnyCandidate, insertCandidate, type Candidate } from "./candidates.ts";
-import { acceptCv, storeCv, storedFileName, type AcceptedCv } from "./cv.ts";
+import { deleteCandidateIfExists, getCandidate, hasAnyCandidate, insertCandidate, type Candidate } from "./candidates.ts";
+import { acceptCv, deleteCandidateAndCv, storeCv, storedFileName, type AcceptedCv } from "./cv.ts";
 import { inTransaction } from "./database.ts";
 import { addInterviewerNotes, type Now } from "./interviewer-notes.ts";
 import { addInterview, type Today } from "./interviews.ts";
@@ -33,10 +33,12 @@ export async function loadDemoCandidates(db: DatabaseSync, folder: string, today
       deleteCandidateIfExists(db, demo.id);
       return addSetCandidate(db, today, now, demo);
     };
-    const earlierCvFile = storedFileName(db, demo.id);
     if (cv) {
+      const earlierCvFile = storedFileName(db, demo.id);
       loaded.push(storeCv(db, folder, now, cv, add, earlierCvFile === undefined ? [] : [earlierCvFile]));
     } else {
+      // The earlier copy may have been given a CV while exploring; its file goes with it.
+      if (getCandidate(db, demo.id)) deleteCandidateAndCv(db, folder, demo.id);
       loaded.push(inTransaction(db, add));
     }
   }

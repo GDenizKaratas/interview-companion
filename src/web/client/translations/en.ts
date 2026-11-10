@@ -87,7 +87,7 @@ const text = {
     filterPlaceholder: "Filter by name or role",
     filterLabel: "Filter Candidates",
     noMatch: "No Candidate matches the filter.",
-    columns: { candidate: "Candidate", interviews: "Interviews", next: "Next Interview", cv: "CV", notes: "Notes", questions: "Questions" },
+    columns: { candidate: "Candidate", interviews: "Interviews", next: "Next Interview", cv: "CV", notes: "My Notes", questions: "Questions" },
     // {count} is replaced by a number.
     plannedCount: "{count} planned",
     noNext: "None planned",
@@ -103,8 +103,8 @@ const text = {
     today: "Today",
     legendPast: "Taken place",
     legendPlanned: "Planned",
-    upcoming: "Upcoming Interviews",
-    noUpcoming: "No Planned Interviews.",
+    plannedList: "Next Planned Interviews",
+    noPlanned: "No Planned Interviews.",
     // {count} is replaced by a number.
     undated: "{count} Interviews without a date",
     undatedOne: "1 Interview without a date",

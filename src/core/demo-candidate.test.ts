@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -237,6 +237,17 @@ describe("Demo set", () => {
 
     expect(second.map((c) => contentOf(c.id))).toEqual(before);
     expect(core.listCandidates()).toHaveLength(5);
+    const cvCount = second.filter((c) => core.getCv(c.id) !== undefined).length;
+    expect(readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((path) => path.endsWith(".pdf"))).toHaveLength(cvCount);
+  });
+
+  it("leaves no CV file behind when a CV was added to a demo Candidate without one and the set is loaded again", async () => {
+    const first = await core.loadDemoCandidates();
+    const withoutCv = first.find((c) => core.getCv(c.id) === undefined)!;
+    await core.attachCv(withoutCv.id, { fileName: "cv.pdf", bytes: new Uint8Array(readFileSync(new URL("../../demo/cv.pdf", import.meta.url))) });
+
+    const second = await core.loadDemoCandidates();
+
     const cvCount = second.filter((c) => core.getCv(c.id) !== undefined).length;
     expect(readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((path) => path.endsWith(".pdf"))).toHaveLength(cvCount);
   });

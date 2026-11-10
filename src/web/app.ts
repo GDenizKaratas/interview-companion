@@ -11,18 +11,24 @@ import {
 } from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
-// mcpServerPath is the absolute path of the MCP server's file, so the interface can show the
-// exact command that connects an AI client to it.
-export function createApi(core: Core, options: { mcpServerPath?: string } = {}): Hono {
+// mcpServerPath is the absolute path of the MCP server's file, and dataDir the data folder the
+// server was started with, if any, so the interface can show the exact command that connects an
+// AI client to the same data.
+export function createApi(core: Core, options: { mcpServerPath?: string; dataDir?: string } = {}): Hono {
   const api = new Hono();
 
   // Every Candidate's overview, newest Candidate first, for the Candidate list and the calendar.
   api.get("/candidate-overviews", (c) => c.json(core.listCandidates().map((candidate) => core.getCandidateOverview(candidate.id))));
 
-  // The command that adds the MCP server to Claude Code, or null when the path is not known.
-  api.get("/mcp-setup", (c) =>
-    c.json({ command: options.mcpServerPath ? `claude mcp add interview-companion -- node ${shellQuoted(options.mcpServerPath)}` : null }),
-  );
+  // The command that adds the MCP server to Claude Code for every folder, or null when the path
+  // is not known. A data folder other than the default is passed on, so both read the same data.
+  api.get("/mcp-setup", (c) => {
+    if (!options.mcpServerPath) return c.json({ command: null });
+    const dataDir = options.dataDir ? ` -e DATA_DIR=${shellQuoted(options.dataDir)}` : "";
+    return c.json({
+      command: `claude mcp add --scope user interview-companion${dataDir} -- node ${shellQuoted(options.mcpServerPath)}`,
+    });
+  });
 
   api.get("/candidates", (c) => c.json(core.listCandidates()));
 

@@ -43,7 +43,7 @@ function QuoteMark() {
       <rect width="32" height="32" rx="5" fill="currentColor" />
       <path
         d="M8.5 22.5v-4.2c0-3.9 1.9-6.9 5.4-8.3l1 1.7c-1.9.9-2.9 2.4-3.1 4.1h3.1v6.7zm9 0v-4.2c0-3.9 1.9-6.9 5.4-8.3l1 1.7c-1.9.9-2.9 2.4-3.1 4.1h3.1v6.7z"
-        fill="#ffffff"
+        fill="var(--surface)"
       />
     </svg>
   );

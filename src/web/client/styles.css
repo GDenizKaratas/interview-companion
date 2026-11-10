@@ -486,16 +486,6 @@ button.link-button:hover:not(:disabled) {
 }
 
 /* The Interview calendar. */
-.calendar {
-  padding: 0.85rem 0.9rem 0.9rem;
-}
-
-.calendar-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .calendar-nav {
   display: flex;
   align-items: center;
@@ -503,7 +493,7 @@ button.link-button:hover:not(:disabled) {
 }
 
 .calendar-month {
-  margin: 0.25rem 0 0.5rem;
+  margin: 0 0 0.5rem;
   font-family: var(--font-head);
   font-size: 1.05rem;
   font-weight: 600;
@@ -592,6 +582,30 @@ button.link-button:hover:not(:disabled) {
   color: var(--muted);
 }
 
+/* Outside full screen a day shows two Interviews and a "+n" count; full screen shows them all. */
+.calendar:not(.expanded) .calendar-event:nth-of-type(n + 3),
+.calendar.expanded .calendar-more {
+  display: none;
+}
+
+.calendar.expanded .calendar-day {
+  min-height: 9vh;
+  padding: 4px 6px;
+}
+
+.calendar.expanded .calendar-date,
+.calendar.expanded .calendar-event {
+  font-size: 0.85rem;
+}
+
+.calendar.expanded .calendar-event {
+  padding: 1px 6px;
+}
+
+.calendar.expanded .calendar-month {
+  font-size: 1.3rem;
+}
+
 .calendar-legend {
   display: flex;
   align-items: center;
@@ -620,13 +634,13 @@ button.link-button:hover:not(:disabled) {
   border-top: 1px solid var(--line);
 }
 
-.upcoming-list {
+.planned-list {
   list-style: none;
   margin: 0.4rem 0 0;
   padding: 0;
 }
 
-.upcoming-list a {
+.planned-list a {
   display: grid;
   grid-template-columns: 6.2rem minmax(0, 1fr);
   column-gap: 0.5rem;
@@ -636,22 +650,22 @@ button.link-button:hover:not(:disabled) {
   border-radius: var(--radius);
 }
 
-.upcoming-list a:hover {
+.planned-list a:hover {
   background: var(--accent-tint);
 }
 
-.upcoming-date {
+.planned-date {
   grid-row: span 2;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   color: var(--accent-strong);
 }
 
-.upcoming-who {
+.planned-who {
   font-weight: 500;
 }
 
-.upcoming-which {
+.planned-which {
   font-size: 0.78rem;
   color: var(--muted);
 }
@@ -664,8 +678,10 @@ button.link-button:hover:not(:disabled) {
 
 /* How to use AI without an API key. */
 .no-key-guide {
-  padding: 0.85rem 0.9rem;
   font-size: 0.85rem;
+}
+
+.no-key-card {
   border-left: 3px solid var(--accent);
 }
 
@@ -692,6 +708,7 @@ button.link-button:hover:not(:disabled) {
 
 .no-key-guide.compact {
   margin-top: 1rem;
+  border-left: 3px solid var(--accent);
   padding: 0.7rem 0.8rem;
   background: var(--accent-tint);
   border-radius: var(--radius);
@@ -945,7 +962,7 @@ button.link-button:hover:not(:disabled) {
       "questions questions";
   }
 
-  .panel:not(.expanded) {
+  .panels .panel:not(.expanded) {
     max-height: 34rem;
   }
 

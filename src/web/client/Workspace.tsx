@@ -5,6 +5,7 @@ import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { CvPanel } from "./CvPanel.tsx";
 import type { CvFocus } from "./evidence-focus.ts";
 import { EvidenceSearch } from "./EvidenceSearch.tsx";
+import { ExpandableCard } from "./ExpandableCard.tsx";
 import { InterviewSelector } from "./InterviewSelector.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, navigate } from "./navigation.ts";
@@ -209,72 +210,12 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   );
 }
 
-// A panel of the Workspace. Its full-screen button shows on hover and opens the panel almost full
-// screen, over the rest; the same component stays mounted, so nothing typed or loaded is lost.
+// A panel of the Workspace, with the full-screen button every card has.
 function Panel({ area, title, label, children }: { area: string; title: string; label?: string; children: ReactNode }) {
-  const { text } = useText();
-  const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    if (!expanded) return;
-    // Escape closes the panel, unless it belongs to a field or a dialog inside it.
-    function onKey(event: KeyboardEvent) {
-      const target = event.target as Element;
-      if (event.key !== "Escape" || target.closest("input, textarea, select, dialog")) return;
-      setExpanded(false);
-    }
-    document.addEventListener("keydown", onKey);
-    document.body.classList.add("panel-open");
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.classList.remove("panel-open");
-    };
-  }, [expanded]);
-
-  const toggleLabel = expanded ? text.panels.collapse : text.panels.expand;
   return (
-    <>
-      {expanded && <div className="panel-backdrop" onClick={() => setExpanded(false)} />}
-      <section
-        className={`panel panel-${area}${expanded ? " expanded" : ""}`}
-        aria-label={title}
-        {...(expanded ? { role: "dialog", "aria-modal": true } : {})}
-      >
-        <header className="panel-head">
-          <h2>
-            {title}
-            {label && <span className="ai-label">{label}</span>}
-          </h2>
-          <button
-            type="button"
-            className="icon-button panel-expand"
-            aria-label={toggleLabel}
-            title={toggleLabel}
-            aria-pressed={expanded}
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? <CollapseIcon /> : <ExpandIcon />}
-          </button>
-        </header>
-        <div className="panel-body">{children}</div>
-      </section>
-    </>
-  );
-}
-
-function ExpandIcon() {
-  return (
-    <svg viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function CollapseIcon() {
-  return (
-    <svg viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
+    <ExpandableCard className={`panel panel-${area}`} title={title} label={label}>
+      {children}
+    </ExpandableCard>
   );
 }
 

@@ -70,7 +70,7 @@ The rules say: every statement about the Candidate cites Evidence by number; quo
 
 ## Setup
 
-The Candidate list in the app shows this setup too, under "Use AI without an API key", with the command for your copy ready to copy. So does "AI settings" while no API key is saved.
+The Candidate list in the app shows this setup too, under "Use AI without an API key", with the command for your copy ready to copy. So does "AI settings" while no API key is saved. That command uses `--scope user`, so the server works in every folder, and it passes `DATA_DIR` when the app runs with one.
 
 You need Node.js 24 or later and a copy of this project with its packages installed (`npm install`). No API key is needed.
 

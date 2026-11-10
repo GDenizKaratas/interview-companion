@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type MouseEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
 import { api, ApiError, type CandidateOverview } from "./api.ts";
 import { cvRefusalMessage } from "./cv-refusal.ts";
+import { ExpandableCard } from "./ExpandableCard.tsx";
 import { InterviewCalendar } from "./InterviewCalendar.tsx";
 import { interviewName } from "./interview-names.ts";
 import { candidatePath, linkTo, navigate } from "./navigation.ts";
@@ -84,10 +85,9 @@ export function CandidateList() {
   }
 
   const t = text.home;
-  const needle = filter.trim().toLocaleLowerCase();
+  const needle = folded(filter.trim());
   const shown = candidates?.filter(
-    ({ candidate }) =>
-      needle === "" || candidate.name.toLocaleLowerCase().includes(needle) || candidate.role.toLocaleLowerCase().includes(needle),
+    ({ candidate }) => needle === "" || folded(candidate.name).includes(needle) || folded(candidate.role).includes(needle),
   );
 
   return (
@@ -173,7 +173,9 @@ export function CandidateList() {
       </section>
       <aside className="home-side">
         {candidates && <InterviewCalendar overviews={candidates} />}
-        <NoKeyGuide className="card" />
+        <ExpandableCard className="panel no-key-card" title={text.noKey.title}>
+          <NoKeyGuide withTitle={false} />
+        </ExpandableCard>
       </aside>
     </main>
   );
@@ -187,10 +189,11 @@ function CandidateRow({ overview }: { overview: CandidateOverview }) {
   const { candidate, cv, interviews } = overview;
   const path = candidatePath(candidate.id);
   const planned = interviews.filter((interview) => interview.planned);
-  const next = [...planned].sort((a, b) => a.date!.localeCompare(b.date!))[0];
+  // Core lists Interviews in date order, so the first Planned one is the next.
+  const next = planned[0];
   const dateFormat = new Intl.DateTimeFormat(languageCode, { day: "numeric", month: "short", weekday: "short", timeZone: "UTC" });
   return (
-    <tr onClick={(event) => !(event.target as Element).closest("a") && navigate(path)}>
+    <tr onClick={(event) => openRow(event, path)}>
       <td>
         <a className="candidate-name" href={path} onClick={linkTo(path)}>
           {candidate.name}
@@ -222,6 +225,20 @@ function CandidateRow({ overview }: { overview: CandidateOverview }) {
       <td className="number">{overview.savedQuestionCount}</td>
     </tr>
   );
+}
+
+// A click anywhere on a row opens the Workspace, like its name link: with Ctrl or Cmd in a new
+// tab. A click that ends a text selection, or one on the link itself, does nothing more.
+function openRow(event: MouseEvent, path: string) {
+  if ((event.target as Element).closest("a") || window.getSelection()?.toString()) return;
+  if (event.metaKey || event.ctrlKey) window.open(path, "_blank");
+  else navigate(path);
+}
+
+// Text for the filter, so that case and the dotted and dotless i do not matter: "elif" finds
+// "ELİF", and "ivan" finds "IVAN". Only for this filter; the Evidence search has its own rule in core.
+function folded(value: string): string {
+  return value.toLocaleLowerCase("tr").replaceAll("ı", "i");
 }
 
 // Core decides whether a Candidate is valid; this only says why, in the current language.

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ExpandableCard } from "./ExpandableCard.tsx";
 import type { CandidateOverview, Interview } from "./api.ts";
 import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
@@ -31,7 +32,7 @@ export function InterviewCalendar({ overviews }: { overviews: CandidateOverview[
     if (entry.interview.date === null) continue;
     byDay.set(entry.interview.date, [...(byDay.get(entry.interview.date) ?? []), entry]);
   }
-  const upcoming = entries
+  const plannedList = entries
     .filter((entry) => entry.interview.planned)
     .sort((a, b) => a.interview.date!.localeCompare(b.interview.date!))
     .slice(0, 6);
@@ -52,9 +53,10 @@ export function InterviewCalendar({ overviews }: { overviews: CandidateOverview[
   }
 
   return (
-    <section className="calendar card" aria-labelledby="calendar-title">
-      <header className="calendar-head">
-        <h2 id="calendar-title">{t.title}</h2>
+    <ExpandableCard
+      className="panel calendar"
+      title={t.title}
+      actions={
         <div className="calendar-nav">
           <button type="button" className="icon-button" aria-label={t.previous} title={t.previous} onClick={() => setMonth(shiftMonth(month, -1))}>
             ‹
@@ -66,7 +68,8 @@ export function InterviewCalendar({ overviews }: { overviews: CandidateOverview[
             ›
           </button>
         </div>
-      </header>
+      }
+    >
       <p className="calendar-month">{monthTitle}</p>
       <div className="calendar-grid" role="grid" aria-label={monthTitle}>
         {weekdays.map((weekday) => (
@@ -83,7 +86,8 @@ export function InterviewCalendar({ overviews }: { overviews: CandidateOverview[
           return (
             <div key={day} className={classes.join(" ")} role="gridcell">
               <span className="calendar-date">{Number(day.slice(8))}</span>
-              {dayEntries.slice(0, 2).map((entry) => (
+              {/* Every Interview is listed; outside full screen, CSS shows two and the "+n" count. */}
+              {dayEntries.map((entry) => (
                 <a
                   key={entry.interview.id}
                   className={entry.interview.planned ? "calendar-event planned" : "calendar-event"}
@@ -107,24 +111,24 @@ export function InterviewCalendar({ overviews }: { overviews: CandidateOverview[
         <span className="legend-swatch past" /> {t.legendPast}
         <span className="legend-swatch planned" /> {t.legendPlanned}
       </p>
-      <h3 className="calendar-subtitle">{t.upcoming}</h3>
-      {upcoming.length === 0 ? (
-        <p className="empty">{t.noUpcoming}</p>
+      <h3 className="calendar-subtitle">{t.plannedList}</h3>
+      {plannedList.length === 0 ? (
+        <p className="empty">{t.noPlanned}</p>
       ) : (
-        <ol className="upcoming-list">
-          {upcoming.map((entry) => (
+        <ol className="planned-list">
+          {plannedList.map((entry) => (
             <li key={entry.interview.id}>
               <a href={candidatePath(entry.candidateId)} onClick={linkTo(candidatePath(entry.candidateId))}>
-                <span className="upcoming-date">{shortDate.format(utcDate(entry.interview.date!))}</span>
-                <span className="upcoming-who">{entry.candidateName}</span>
-                <span className="upcoming-which">{interviewName(text, entry.interview)}</span>
+                <span className="planned-date">{shortDate.format(utcDate(entry.interview.date!))}</span>
+                <span className="planned-who">{entry.candidateName}</span>
+                <span className="planned-which">{interviewName(text, entry.interview)}</span>
               </a>
             </li>
           ))}
         </ol>
       )}
       {undated > 0 && <p className="calendar-undated">{undated === 1 ? t.undatedOne : fill(t.undated, { count: String(undated) })}</p>}
-    </section>
+    </ExpandableCard>
   );
 }
 

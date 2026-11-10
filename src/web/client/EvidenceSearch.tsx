@@ -86,7 +86,11 @@ export function EvidenceSearch({
     <section
       className="evidence-search"
       aria-label={t.label}
-      onKeyDown={(event) => event.key === "Escape" && open && (event.stopPropagation(), setOpen(false))}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape" || !open) return;
+        event.stopPropagation();
+        setOpen(false);
+      }}
     >
       <form className="evidence-search-form" onSubmit={submit}>
         <input
