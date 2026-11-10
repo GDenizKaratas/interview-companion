@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { AiNotesPanel } from "./AiNotesPanel.tsx";
 import { api, ApiError, type Candidate, type EvidenceResult, type Interview } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { CvPanel } from "./CvPanel.tsx";
-import type { EvidenceFocus } from "./evidence-focus.ts";
+import type { CvFocus } from "./evidence-focus.ts";
 import { EvidenceSearch } from "./EvidenceSearch.tsx";
 import { InterviewSelector } from "./InterviewSelector.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, navigate } from "./navigation.ts";
 import { SavedQuestions } from "./SavedQuestions.tsx";
-import { TranscriptPanel } from "./TranscriptPanel.tsx";
+import { TranscriptPanel, type SegmentHighlight } from "./TranscriptPanel.tsx";
 import { useText } from "./text.tsx";
 
 type Load =
@@ -27,23 +28,32 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  // The search result the Interviewer opened last.
-  const [focus, setFocus] = useState<EvidenceFocus | undefined>();
-  const focusCount = useRef(0);
+  // Counts changes to the selected Interview's Transcript, so the AI Notes panel loads again.
+  const [transcriptVersion, setTranscriptVersion] = useState(0);
+  // The Transcript segment an AI Note's quote points to. `request` changes on every click, so
+  // clicking the same quote again scrolls to it again.
+  const [highlight, setHighlight] = useState<SegmentHighlight>();
+  // The CV match an Evidence search result points to. `id` changes on every click, too.
+  const [cvFocus, setCvFocus] = useState<CvFocus>();
 
-  // A Transcript result selects its Interview, since the Transcript panel shows one Interview.
+  // A Transcript result selects its Interview, since the Transcript panel shows one Interview,
+  // and is shown the same way as an AI Note's quote, with the matched words marked.
   function openEvidence(result: EvidenceResult) {
-    const id = ++focusCount.current;
     if (result.source === "cv") {
       // The CV panel marks the match in the page's whole text, not only in the excerpt.
       const highlights = result.highlights.map(({ start, end }) => ({
         start: result.excerptStart + start,
         end: result.excerptStart + end,
       }));
-      setFocus({ id, source: "cv", page: result.page, highlights });
+      setCvFocus((current) => ({ id: (current?.id ?? 0) + 1, page: result.page, highlights }));
     } else {
       setInterviewId(result.interviewId);
-      setFocus({ id, source: "transcript", interviewId: result.interviewId, segmentNumber: result.segmentNumber, highlights: result.highlights });
+      setHighlight((current) => ({
+        interviewId: result.interviewId,
+        segmentNumber: result.segmentNumber,
+        request: (current?.request ?? 0) + 1,
+        marks: result.highlights,
+      }));
     }
   }
 
@@ -153,7 +163,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
       {load.state === "ready" && (
         <div className="panels">
           <Panel area="cv" title={text.panels.cv.title}>
-            <CvPanel candidateId={load.candidate.id} focus={focus?.source === "cv" ? focus : undefined} />
+            <CvPanel candidateId={load.candidate.id} focus={cvFocus} />
           </Panel>
           <Panel area="notes" title={text.panels.interviewerNotes.title}>
             <NotesPanel
@@ -167,11 +177,23 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             <TranscriptPanel
               interviews={interviews}
               selectedInterviewId={interviewId}
-              focus={focus?.source === "transcript" ? focus : undefined}
+              highlight={highlight}
+              onChanged={() => {
+                setTranscriptVersion((version) => version + 1);
+                // A replaced Transcript has different segments, so an old highlight would point to the wrong one.
+                setHighlight(undefined);
+              }}
             />
           </Panel>
           <Panel area="ai" title={text.panels.aiNotes.title} label={text.panels.aiNotes.label}>
-            <p className="empty">{text.panels.aiNotes.empty}</p>
+            <AiNotesPanel
+              interviews={interviews}
+              selectedInterviewId={interviewId}
+              transcriptVersion={transcriptVersion}
+              onShowEvidence={(id, segmentNumber) =>
+                setHighlight((current) => ({ interviewId: id, segmentNumber, request: (current?.request ?? 0) + 1 }))
+              }
+            />
           </Panel>
           <Panel area="questions" title={text.panels.questions.title}>
             <SavedQuestions candidateId={load.candidate.id} />

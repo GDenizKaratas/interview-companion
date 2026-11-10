@@ -2,8 +2,12 @@
 import { mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import * as aiNotes from "./ai-notes.ts";
+import type { AiProviderFactory } from "./ai-provider.ts";
+import * as aiSettings from "./ai-settings.ts";
 import * as candidateOverview from "./candidate-overview.ts";
 import * as candidates from "./candidates.ts";
+import { claudeProvider } from "./claude-provider.ts";
 import * as cv from "./cv.ts";
 import { openDatabase } from "./database.ts";
 import * as evidenceSearch from "./evidence-search.ts";
@@ -15,6 +19,8 @@ import * as nameGuess from "./name-guess.ts";
 import * as savedQuestions from "./saved-questions.ts";
 import * as transcripts from "./transcripts.ts";
 
+export type { AiNote, AiNoteEvidence, AiNoteGeneration, ReviewState } from "./ai-notes.ts";
+export type { AiNoteRequest, AiProvider, AiProviderFactory, ProposedAiNote } from "./ai-provider.ts";
 export type { CandidateOverview, InterviewOverview } from "./candidate-overview.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
@@ -26,7 +32,15 @@ export type {
   Highlight,
   TranscriptEvidence,
 } from "./evidence-search.ts";
-export { InvalidInputError, NotFoundError, type InputRule } from "./errors.ts";
+export {
+  AiProviderError,
+  InvalidInputError,
+  type AiFailure,
+  NotFoundError,
+  PreconditionError,
+  type InputRule,
+  type Precondition,
+} from "./errors.ts";
 export type { InterviewerNote, NewInterviewerNotes, NoteFilter } from "./interviewer-notes.ts";
 export type { Interview, NewInterview } from "./interviews.ts";
 export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
@@ -65,6 +79,11 @@ export interface Core {
   listTranscriptFormats(): transcripts.TranscriptFormat[];
   confirmSpeakerMapping(interviewId: string, roles: Record<string, transcripts.SpeakerRole>): transcripts.Transcript;
   searchEvidence(candidateId: string, query: evidenceSearch.EvidenceQuery): evidenceSearch.EvidenceSearch;
+  saveApiKey(apiKey: string): void;
+  removeApiKey(): void;
+  hasApiKey(): boolean;
+  generateAiNotes(interviewId: string): Promise<aiNotes.AiNoteGeneration>;
+  listAiNotes(interviewId: string): aiNotes.AiNote[];
   close(): void;
 }
 
@@ -96,6 +115,8 @@ export interface CoreOptions {
   today?: interviews.Today;
   // The current time, used as the time a note is saved. Defaults to the system clock; tests fix it.
   now?: interviewerNotes.Now;
+  // Makes the model provider for AI generation. Defaults to Claude; tests use a fake provider.
+  aiProvider?: AiProviderFactory;
 }
 
 // Opens (and creates, if needed) the database file at dbPath and brings its schema up to date.
@@ -105,6 +126,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
   if (created) demoCandidate.markDemoPending(db);
   const today = options.today ?? localToday;
   const now = options.now ?? (() => new Date());
+  const aiProvider = options.aiProvider ?? claudeProvider;
   // CV files live in a folder next to the database file.
   const cvFolder = join(dirname(dbPath), "cv-files");
   return {
@@ -140,6 +162,11 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listTranscriptFormats: () => transcripts.listTranscriptFormats(),
     confirmSpeakerMapping: (interviewId, roles) => transcripts.confirmSpeakerMapping(db, now, interviewId, roles),
     searchEvidence: (candidateId, query) => evidenceSearch.searchEvidence(db, today, candidateId, query),
+    saveApiKey: (apiKey) => aiSettings.saveApiKey(db, apiKey),
+    removeApiKey: () => aiSettings.removeApiKey(db),
+    hasApiKey: () => aiSettings.hasApiKey(db),
+    generateAiNotes: (interviewId) => aiNotes.generateAiNotes(db, now, aiProvider, interviewId),
+    listAiNotes: (interviewId) => aiNotes.listAiNotes(db, interviewId),
     close: () => db.close(),
   };
 }

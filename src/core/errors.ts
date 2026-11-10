@@ -23,3 +23,32 @@ export class NotFoundError extends Error {
     this.name = "NotFoundError";
   }
 }
+
+// Why an action cannot run yet, although its input is fine: something the Interviewer must do first.
+export type Precondition = "apiKeyMissing" | "noTranscript" | "speakerMappingNotConfirmed" | "transcriptChanged";
+
+// Thrown when an action is refused because a step must come first, such as confirming the
+// Speaker Mapping before AI Notes. The web interface shows the reason in the chosen language.
+export class PreconditionError extends Error {
+  readonly reason: Precondition;
+
+  constructor(reason: Precondition, message: string) {
+    super(message);
+    this.name = "PreconditionError";
+    this.reason = reason;
+  }
+}
+
+// Why a model call failed, so the interface can say what to do about it.
+export type AiFailure = "apiKeyRefused" | "rateLimited" | "unavailable" | "declined" | "unusableAnswer";
+
+// Thrown when the AI model could not be reached or gave no usable answer. Nothing was changed.
+export class AiProviderError extends Error {
+  readonly failure: AiFailure;
+
+  constructor(failure: AiFailure, message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "AiProviderError";
+    this.failure = failure;
+  }
+}

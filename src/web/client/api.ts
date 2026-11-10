@@ -1,6 +1,9 @@
 // The browser's only way to reach core: the local server's /api routes.
 // Only types come from core; they are erased before the code reaches the browser.
 import type {
+  AiFailure,
+  AiNote,
+  AiNoteGeneration,
   Candidate,
   Cv,
   CvPage,
@@ -14,25 +17,36 @@ import type {
   NewCandidate,
   NewInterview,
   NewInterviewerNotes,
+  Precondition,
   SavedQuestion,
   SpeakerRole,
   Transcript,
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { Candidate, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, Candidate, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
   // Set when core refused the input: which field, and which rule it broke.
   readonly field: string | undefined;
   readonly rule: InputRule | undefined;
+  // Set when core refused because another step must come first.
+  readonly reason: Precondition | undefined;
+  // Set when the AI model call failed.
+  readonly failure: AiFailure | undefined;
 
-  constructor(status: number, message: string, field?: string, rule?: InputRule) {
+  constructor(
+    status: number,
+    message: string,
+    details: { field?: string; rule?: InputRule; reason?: Precondition; failure?: AiFailure } = {},
+  ) {
     super(message);
     this.status = status;
-    this.field = field;
-    this.rule = rule;
+    this.field = details.field;
+    this.rule = details.rule;
+    this.reason = details.reason;
+    this.failure = details.failure;
   }
 }
 
@@ -41,12 +55,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (response.status === 204) return undefined as T;
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      typeof body.error === "string" ? body.error : response.statusText,
-      typeof body.field === "string" ? body.field : undefined,
-      typeof body.rule === "string" ? (body.rule as InputRule) : undefined,
-    );
+    throw new ApiError(response.status, typeof body.error === "string" ? body.error : response.statusText, {
+      field: typeof body.field === "string" ? body.field : undefined,
+      rule: typeof body.rule === "string" ? (body.rule as InputRule) : undefined,
+      reason: typeof body.reason === "string" ? (body.reason as Precondition) : undefined,
+      failure: typeof body.failure === "string" ? (body.failure as AiFailure) : undefined,
+    });
   }
   return body as T;
 }
@@ -89,6 +103,12 @@ export const api = {
     request<Transcript>(`/interviews/${encodeURIComponent(interviewId)}/transcript`, sendForm({ transcript })),
   confirmSpeakerMapping: (interviewId: string, roles: Record<string, SpeakerRole>) =>
     request<Transcript>(`/interviews/${encodeURIComponent(interviewId)}/speaker-mapping`, sendJson("PUT", { roles })),
+  getApiKeyStatus: () => request<{ saved: boolean }>("/ai/api-key"),
+  saveApiKey: (apiKey: string) => request<{ saved: boolean }>("/ai/api-key", sendJson("PUT", { apiKey })),
+  removeApiKey: () => request<void>("/ai/api-key", { method: "DELETE" }),
+  listAiNotes: (interviewId: string) => request<AiNote[]>(`/interviews/${encodeURIComponent(interviewId)}/ai-notes`),
+  generateAiNotes: (interviewId: string) =>
+    request<AiNoteGeneration>(`/interviews/${encodeURIComponent(interviewId)}/ai-notes`, { method: "POST" }),
   getInterfaceLanguage: () => request<{ language: string }>("/interface-language"),
   setInterfaceLanguage: (language: string) =>
     request<{ language: string }>("/interface-language", sendJson("PUT", { language })),

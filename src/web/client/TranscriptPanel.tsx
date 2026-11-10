@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
-import { api, type Interview, type Transcript, type TranscriptFormat } from "./api.ts";
+import { api, type Highlight, type Interview, type Transcript, type TranscriptFormat } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
-import type { TranscriptFocus } from "./evidence-focus.ts";
 import { MarkedText } from "./MarkedText.tsx";
 import { SpeakerMapping } from "./SpeakerMapping.tsx";
 import { interviewName } from "./interview-names.ts";
@@ -10,18 +9,27 @@ import { fill } from "./languages.ts";
 import { useText } from "./text.tsx";
 import { formatNames, formatTime, transcriptRefusalMessage } from "./transcript-text.ts";
 
-// The Transcript panel. A Transcript belongs to one Interview, so it shows the selected
-// Interview's Transcript, or asks the Interviewer to select one.
-export function TranscriptPanel({
-  interviews,
-  selectedInterviewId,
-  focus,
-}: {
+export interface SegmentHighlight {
+  interviewId: string;
+  segmentNumber: number;
+  // Changes on every request, so the same segment can be shown again.
+  request: number;
+  // Words to mark inside the segment's text, as positions in it, such as an Evidence search match.
+  marks?: Highlight[];
+}
+
+interface TranscriptPanelProps {
   interviews: Interview[];
   selectedInterviewId: string | null;
-  // A search result to scroll to and mark, if it belongs to the shown Interview.
-  focus?: TranscriptFocus;
-}) {
+  // The segment an AI Note's quote points to, scrolled into view and highlighted.
+  highlight: SegmentHighlight | undefined;
+  // Called after a Transcript is imported or its speakers are confirmed.
+  onChanged: () => void;
+}
+
+// The Transcript panel. A Transcript belongs to one Interview, so it shows the selected
+// Interview's Transcript, or asks the Interviewer to select one.
+export function TranscriptPanel({ interviews, selectedInterviewId, highlight, onChanged }: TranscriptPanelProps) {
   const { text } = useText();
   const t = text.panels.transcript;
   const selected = interviews.find((interview) => interview.id === selectedInterviewId);
@@ -29,11 +37,24 @@ export function TranscriptPanel({
   if (!selected) return <p className="empty">{t.selectInterview}</p>;
   // The key starts each Interview with a fresh state, so nothing of another Interview shows.
   return (
-    <InterviewTranscript key={selected.id} interview={selected} focus={focus?.interviewId === selected.id ? focus : undefined} />
+    <InterviewTranscript
+      key={selected.id}
+      interview={selected}
+      highlight={highlight?.interviewId === selected.id ? highlight : undefined}
+      onChanged={onChanged}
+    />
   );
 }
 
-function InterviewTranscript({ interview, focus: openedFocus }: { interview: Interview; focus?: TranscriptFocus }) {
+function InterviewTranscript({
+  interview,
+  highlight,
+  onChanged,
+}: {
+  interview: Interview;
+  highlight: SegmentHighlight | undefined;
+  onChanged: () => void;
+}) {
   const { text } = useText();
   const t = text.panels.transcript;
   // undefined while loading, null when the Interview has no Transcript.
@@ -46,24 +67,20 @@ function InterviewTranscript({ interview, focus: openedFocus }: { interview: Int
   const [replacement, setReplacement] = useState<File | undefined>();
   const fileInput = useRef<HTMLInputElement>(null);
   const segmentList = useRef<HTMLOListElement>(null);
-  // A result found in a Transcript that has since been replaced points at text that is gone.
-  const [replacedFocusId, setReplacedFocusId] = useState<number | undefined>();
-  const focus = openedFocus && openedFocus.id !== replacedFocusId ? openedFocus : undefined;
-  const scrolledFocusId = useRef<number | undefined>(undefined);
-
-  // Brings the found segment into view once per click, after the Transcript is shown.
-  useEffect(() => {
-    if (!focus || !transcript || scrolledFocusId.current === focus.id) return;
-    scrolledFocusId.current = focus.id;
-    segmentList.current
-      ?.querySelector(`[data-segment="${focus.segmentNumber}"]`)
-      ?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [focus, transcript]);
 
   useEffect(() => {
     api.getTranscript(interview.id).then(setTranscript, () => setLoadFailed(true));
     api.listTranscriptFormats().then(setFormats, () => setLoadFailed(true));
   }, [interview.id]);
+
+  // Scrolls the highlighted segment into view once it is on screen.
+  const highlighted = highlight?.segmentNumber;
+  useEffect(() => {
+    if (highlighted === undefined || !transcript) return;
+    segmentList.current
+      ?.querySelector(`[data-segment="${highlighted}"]`)
+      ?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [highlighted, highlight?.request, transcript]);
 
   function handleFileChosen(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -79,7 +96,7 @@ function InterviewTranscript({ interview, focus: openedFocus }: { interview: Int
     setImportError(undefined);
     try {
       setTranscript(await api.importTranscript(interview.id, file));
-      setReplacedFocusId(openedFocus?.id);
+      onChanged();
     } catch (error) {
       setImportError(error);
     } finally {
@@ -116,13 +133,23 @@ function InterviewTranscript({ interview, focus: openedFocus }: { interview: Int
             </button>
           </div>
           {/* Keyed by import, so a replaced Transcript never keeps roles chosen for the old speakers. */}
-          <SpeakerMapping key={transcript.importedAt} transcript={transcript} onConfirmed={setTranscript} />
-          <ol ref={segmentList} className="segments">
+          <SpeakerMapping
+            key={transcript.importedAt}
+            transcript={transcript}
+            onConfirmed={(updated) => {
+              setTranscript(updated);
+              onChanged();
+            }}
+          />
+          <ol className="segments" ref={segmentList}>
             {transcript.segments.map((segment) => {
               const speaker = labels.get(segment.speakerId);
-              const found = focus?.segmentNumber === segment.number ? focus : undefined;
               return (
-                <li key={segment.number} className={found ? "segment found" : "segment"} data-segment={segment.number}>
+                <li
+                  key={segment.number}
+                  data-segment={segment.number}
+                  className={segment.number === highlighted ? "segment highlighted" : "segment"}
+                >
                   <div className="segment-head">
                     {segment.startMs === null ? (
                       <span className="segment-time missing" title={t.noTimeDetail}>
@@ -139,7 +166,11 @@ function InterviewTranscript({ interview, focus: openedFocus }: { interview: Int
                     )}
                   </div>
                   <p className="segment-text">
-                    {found ? <MarkedText text={segment.text} highlights={found.highlights} /> : segment.text}
+                    {segment.number === highlighted && highlight?.marks ? (
+                      <MarkedText text={segment.text} highlights={highlight.marks} />
+                    ) : (
+                      segment.text
+                    )}
                   </p>
                 </li>
               );
