@@ -1,4 +1,5 @@
 import { mkdtempSync, rmSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -94,5 +95,72 @@ describe("Demo Candidate", () => {
       { number: 1, date: first, planned: false },
       { number: 2, date: second, planned: true },
     ]);
+  });
+});
+
+describe("Demo Candidate on the first start", () => {
+  it("loads the demo Candidate when the app starts for the first time with no Candidates", () => {
+    const demo = core.loadDemoCandidateOnFirstStart();
+
+    expect(demo).toBeDefined();
+    expect(core.listCandidates()).toEqual([demo]);
+  });
+
+  it("loads nothing when the Interviewer already has Candidates", () => {
+    const own = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+
+    expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
+    expect(core.listCandidates()).toEqual([own]);
+  });
+
+  it("does not bring the demo Candidate back on a later start after it was deleted", () => {
+    const demo = core.loadDemoCandidateOnFirstStart()!;
+    core.deleteCandidate(demo.id);
+    core.close();
+
+    core = openCore(dbPath);
+
+    expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
+    expect(core.listCandidates()).toEqual([]);
+  });
+
+  it("does not load the demo Candidate later when the Interviewer deletes all of their own Candidates", () => {
+    const own = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+    core.loadDemoCandidateOnFirstStart();
+    core.deleteCandidate(own.id);
+    core.close();
+
+    core = openCore(dbPath);
+
+    expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
+    expect(core.listCandidates()).toEqual([]);
+  });
+
+  it("still loads the demo Candidate when asked for by the demo command", () => {
+    const demo = core.loadDemoCandidateOnFirstStart()!;
+    core.deleteCandidate(demo.id);
+
+    expect(core.loadDemoCandidate()).toEqual(expect.objectContaining({ name: demo.name }));
+  });
+
+  it("does not load the demo Candidate into an empty database that an earlier version of the app created", () => {
+    core.close();
+    // Earlier versions kept nothing in the setting table except the interface language.
+    const earlier = new DatabaseSync(dbPath);
+    earlier.exec("DELETE FROM setting");
+    earlier.close();
+
+    core = openCore(dbPath);
+
+    expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
+    expect(core.listCandidates()).toEqual([]);
+  });
+
+  it("does not load the demo Candidate on the first start after the demo command loaded it and it was deleted", () => {
+    const demo = core.loadDemoCandidate();
+    core.deleteCandidate(demo.id);
+
+    expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
+    expect(core.listCandidates()).toEqual([]);
   });
 });
