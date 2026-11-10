@@ -44,18 +44,24 @@ const migrations: string[] = [
    CREATE INDEX saved_question_candidate ON saved_question (candidate_id, position);`,
 ];
 
-export function openDatabase(path: string): DatabaseSync {
+// Opens the database file and brings its schema up to date. created is true when the file
+// was new, or empty, before this call.
+export function openDatabase(path: string): { db: DatabaseSync; created: boolean } {
   // The web server, the MCP server, and `npm run demo` can have the file open at once, so a
   // connection waits up to five seconds for another one to finish instead of failing at once.
   const db = new DatabaseSync(path, { timeout: 5000 });
   db.exec("PRAGMA foreign_keys = ON;");
+  const created = schemaVersion(db) === 0;
   migrate(db);
-  return db;
+  return { db, created };
+}
+
+function schemaVersion(db: DatabaseSync): number {
+  return (db.prepare("PRAGMA user_version").get() as { user_version: number }).user_version;
 }
 
 function migrate(db: DatabaseSync): void {
-  const row = db.prepare("PRAGMA user_version").get() as { user_version: number };
-  for (let version = row.user_version; version < migrations.length; version++) {
+  for (let version = schemaVersion(db); version < migrations.length; version++) {
     inTransaction(db, () => {
       db.exec(migrations[version]!);
       db.exec(`PRAGMA user_version = ${version + 1}`);

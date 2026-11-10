@@ -1,4 +1,5 @@
 import { mkdtempSync, rmSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -127,6 +128,9 @@ describe("Demo Candidate on the first start", () => {
     const own = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
     core.loadDemoCandidateOnFirstStart();
     core.deleteCandidate(own.id);
+    core.close();
+
+    core = openCore(dbPath);
 
     expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
     expect(core.listCandidates()).toEqual([]);
@@ -137,5 +141,26 @@ describe("Demo Candidate on the first start", () => {
     core.deleteCandidate(demo.id);
 
     expect(core.loadDemoCandidate()).toEqual(expect.objectContaining({ name: demo.name }));
+  });
+
+  it("does not load the demo Candidate into an empty database that an earlier version of the app created", () => {
+    core.close();
+    // Earlier versions kept nothing in the setting table except the interface language.
+    const earlier = new DatabaseSync(dbPath);
+    earlier.exec("DELETE FROM setting");
+    earlier.close();
+
+    core = openCore(dbPath);
+
+    expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
+    expect(core.listCandidates()).toEqual([]);
+  });
+
+  it("does not load the demo Candidate on the first start after the demo command loaded it and it was deleted", () => {
+    const demo = core.loadDemoCandidate();
+    core.deleteCandidate(demo.id);
+
+    expect(core.loadDemoCandidateOnFirstStart()).toBeUndefined();
+    expect(core.listCandidates()).toEqual([]);
   });
 });

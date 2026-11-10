@@ -51,7 +51,8 @@ export interface CoreOptions {
 // Opens (and creates, if needed) the database file at dbPath and brings its schema up to date.
 export function openCore(dbPath: string, options: CoreOptions = {}): Core {
   mkdirSync(dirname(dbPath), { recursive: true });
-  const db = openDatabase(dbPath);
+  const { db, created } = openDatabase(dbPath);
+  if (created) demoCandidate.markDemoPending(db);
   const today = options.today ?? localToday;
   const now = options.now ?? (() => new Date());
   return {

@@ -65,6 +65,10 @@ export function deleteCandidateIfExists(db: DatabaseSync, id: string): boolean {
   return db.prepare("DELETE FROM candidate WHERE id = ?").run(id).changes > 0;
 }
 
+export function hasAnyCandidate(db: DatabaseSync): boolean {
+  return db.prepare("SELECT 1 FROM candidate LIMIT 1").get() !== undefined;
+}
+
 // Refuses with NotFoundError when the Candidate does not exist.
 export function requireCandidate(db: DatabaseSync, id: string): void {
   if (!getCandidate(db, id)) {
