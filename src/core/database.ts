@@ -10,6 +10,10 @@ const migrations: string[] = [
      role TEXT NOT NULL,
      created_at TEXT NOT NULL
    ) STRICT;`,
+  `CREATE TABLE setting (
+     key TEXT PRIMARY KEY,
+     value TEXT NOT NULL
+   ) STRICT;`,
 ];
 
 export function openDatabase(path: string): DatabaseSync {

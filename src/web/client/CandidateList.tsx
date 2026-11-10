@@ -1,15 +1,17 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, type Candidate } from "./api.ts";
+import { api, ApiError, type Candidate } from "./api.ts";
 import { candidatePath, linkTo } from "./navigation.ts";
-import { text } from "./text.ts";
+import type { Text } from "./languages.ts";
+import { useText } from "./text.tsx";
 
 export function CandidateList() {
+  const { text } = useText();
   const [candidates, setCandidates] = useState<Candidate[] | undefined>();
   const [roles, setRoles] = useState<string[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
-  const [saveError, setSaveError] = useState<string | undefined>();
+  const [saveError, setSaveError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function CandidateList() {
       setName("");
       setRole("");
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : text.candidates.saveFailed);
+      setSaveError(error);
     } finally {
       setSaving(false);
     }
@@ -60,7 +62,7 @@ export function CandidateList() {
           {text.candidates.add}
         </button>
       </form>
-      {saveError && <p className="error">{saveError}</p>}
+      {saveError !== undefined && <p className="error">{refusalMessage(text, saveError)}</p>}
       {loadError && <p className="error">{text.candidates.loadFailed}</p>}
       {candidates && candidates.length === 0 && <p className="empty">{text.candidates.empty}</p>}
       {candidates && candidates.length > 0 && (
@@ -76,4 +78,15 @@ export function CandidateList() {
       )}
     </main>
   );
+}
+
+// Core decides whether a Candidate is valid; this only says why, in the current language.
+// The message is worked out when shown, so it follows a change of language.
+function refusalMessage(text: Text, error: unknown): string {
+  if (error instanceof ApiError && error.rule === "required") {
+    const messages: Record<string, string> = text.candidates.required;
+    const message = error.field !== undefined && Object.hasOwn(messages, error.field) ? messages[error.field] : undefined;
+    if (message) return message;
+  }
+  return text.candidates.saveFailed;
 }

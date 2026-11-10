@@ -1,8 +1,11 @@
 import { linkTo } from "./navigation.ts";
-import { text } from "./text.ts";
+import { languages } from "./languages.ts";
+import { useText } from "./text.tsx";
 
-// The bar at the top of every page: the app's mark, its name, and what it is for.
+// The bar at the top of every page: the app's mark, its name, what it is for,
+// and the interface language switch.
 export function AppBar() {
+  const { text, languageCode, chooseLanguage } = useText();
   return (
     <header className="app-bar">
       <a className="brand" href="/" onClick={linkTo("/")}>
@@ -10,6 +13,18 @@ export function AppBar() {
         <span className="brand-name">{text.appName}</span>
       </a>
       <span className="tagline">{text.tagline}</span>
+      <select
+        className="language-switch"
+        aria-label={text.languageLabel}
+        value={languageCode}
+        onChange={(event) => chooseLanguage(event.target.value)}
+      >
+        {languages.map((language) => (
+          <option key={language.code} value={language.code} lang={language.code}>
+            {language.name}
+          </option>
+        ))}
+      </select>
     </header>
   );
 }
