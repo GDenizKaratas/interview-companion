@@ -89,6 +89,12 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 64 | Adding or listing Interviews for a Candidate that does not exist is refused by core with a `NotFoundError`. The local server turns it into a 404 response in the same place where it turns a refused input into 400. | The database would refuse it too, but with a message that is not meant for people. With its own error type, the check lives only in core. | Relying on the database error alone; checking the Candidate again in the HTTP route. |
 | 65 | Every button that adds something looks the same: dark, with a plus icon before its label. One `AddButton` component draws them. | The same action should look the same everywhere. Chosen by the owner. | A light "New Interview" button next to dark "Add" buttons. |
 
+## 2026-11-10 — #4 follow-up: Interviews numbered by date
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 66 | An Interview's number is its place in the date order, worked out by core each time the Interviews are read: the earliest date is 1, Interviews on the same day keep the order they were added, and Interviews without a date come after the dated ones. Adding an Interview with an earlier date moves the later ones up by one. The database keeps only the order the Interviews were added (`added_order`, migration 4). This replaces the stored number of decision 59. | "First Interview" should be the one that happened first. Chosen by the owner. Interviewer Notes and Transcripts will point to an Interview by its id, so a changed number moves nothing. | Keeping the number given when the Interview was added, which can show "Second Interview" before "First Interview". |
+
 ## Open questions
 
 - The exact format of Google Meet transcripts. To be researched at the start of Milestone 2.

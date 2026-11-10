@@ -32,16 +32,29 @@ describe("Interviews", () => {
     expect(added.date).toBe("2026-11-03");
   });
 
-  it("numbers a Candidate's Interviews in the order they are added", () => {
+  it("numbers a Candidate's Interviews by date, earliest first, then undated ones in the order added", () => {
     const other = core.createCandidate({ name: "Can Aksoy", role: "Data Engineer" });
 
-    const first = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
-    const second = core.addInterview({ candidateId: candidate.id });
-    const othersFirst = core.addInterview({ candidateId: other.id });
-    const third = core.addInterview({ candidateId: candidate.id, date: "2026-11-20" });
+    const later = core.addInterview({ candidateId: candidate.id, date: "2026-11-20" });
+    const undated = core.addInterview({ candidateId: candidate.id });
+    const othersOnly = core.addInterview({ candidateId: other.id, date: "2026-12-01" });
+    const earlier = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
 
-    expect([first.number, second.number, third.number]).toEqual([1, 2, 3]);
-    expect(othersFirst.number).toBe(1);
+    expect(core.listInterviews(candidate.id).map((i) => [i.id, i.number])).toEqual([
+      [earlier.id, 1],
+      [later.id, 2],
+      [undated.id, 3],
+    ]);
+    expect(earlier.number).toBe(1);
+    expect(othersOnly.number).toBe(1);
+  });
+
+  it("gives Interviews on the same day their numbers in the order they were added", () => {
+    const first = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    const second = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+
+    expect([first.number, second.number]).toEqual([1, 2]);
+    expect(core.listInterviews(candidate.id).map((i) => i.id)).toEqual([first.id, second.id]);
   });
 
   it("lists several Interviews of one Candidate, earliest date first and undated ones last", () => {
