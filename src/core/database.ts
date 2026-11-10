@@ -136,6 +136,25 @@ const migrations: string[] = [
   // Who wrote an AI Note or a Suggested Question: the app with its API key, or the AI client through MCP.
   `ALTER TABLE ai_note ADD COLUMN source TEXT NOT NULL DEFAULT 'app' CHECK (source IN ('app', 'aiClient'));
    ALTER TABLE suggested_question ADD COLUMN source TEXT NOT NULL DEFAULT 'app' CHECK (source IN ('app', 'aiClient'));`,
+  // A Candidate has at most one Candidate Brief, written by the AI client. Its Evidence is kept as
+  // the client gave it, with no foreign key to the CV or a Transcript: each quote is checked
+  // against the sources when the brief is read, so a replaced source shows as not found.
+  `CREATE TABLE candidate_brief (
+     candidate_id TEXT PRIMARY KEY REFERENCES candidate (id) ON DELETE CASCADE,
+     text TEXT NOT NULL,
+     saved_at TEXT NOT NULL
+   ) STRICT;
+   CREATE TABLE candidate_brief_evidence (
+     candidate_id TEXT NOT NULL REFERENCES candidate_brief (candidate_id) ON DELETE CASCADE,
+     number INTEGER NOT NULL,
+     cv_page INTEGER,
+     interview_id TEXT,
+     segment_number INTEGER,
+     quote TEXT NOT NULL,
+     PRIMARY KEY (candidate_id, number),
+     CHECK ((cv_page IS NOT NULL AND interview_id IS NULL AND segment_number IS NULL)
+         OR (cv_page IS NULL AND interview_id IS NOT NULL AND segment_number IS NOT NULL))
+   ) STRICT;`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

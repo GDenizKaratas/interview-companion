@@ -1,7 +1,8 @@
 // The text of the candidate_brief prompt: a fixed template and rules for writing a Candidate
-// Brief. The AI client fills it in from the read-only tools and writes the brief in its own
-// chat. Nothing here reads data or checks the result; the app cannot check what an external
-// model writes (ADR 0002), so the rules ask the model to say so at the end of the brief.
+// Brief. The AI client fills it in from the read tools, writes the brief in its own chat, and
+// saves it in the app when the Interviewer allows it (ADR 0005). Nothing here reads data. The app
+// cannot check the statements an external model writes; once the brief is saved, core checks its
+// quotes on every read, and the rules ask the model to say so at the end of the brief.
 export function candidateBriefPrompt(candidate: string): string {
   return `Write a Candidate Brief about the Candidate ${JSON.stringify(candidate)} from Interview Companion's data. A Candidate Brief is one document that organizes the Evidence about one Candidate for the Interviewer. It helps the Interviewer prepare; it never judges the Candidate.
 
@@ -12,6 +13,8 @@ Steps:
 3. Call get_saved_questions and get_interviewer_notes.
 4. Call get_ai_notes for each Interview that has a Transcript.
 5. Call search_evidence for the topics of the Candidate's role and CV, and for each topic you are about to write about. Run several searches with different words, because it is a keyword search. To report what the Candidate said, search with candidateOnly set to true.
+6. Write the brief in the chat.
+7. Save it with save_candidate_brief: the whole brief as text, and one evidence entry per number in square brackets, with the exact quote and its source (a CV page, or an Interview id and segment number). If saving is refused because it is off in the app's AI Settings, tell the Interviewer; the brief stays in the chat.
 
 Rules:
 
@@ -49,5 +52,5 @@ The Saved Questions, in the Interviewer's order, and topics you searched for and
 One numbered entry per Evidence number used above:
 [n] The statement it supports. Reason: why this excerpt supports it. Evidence: "the exact quote" (CV, page p) or (Interview k, segment s, speaker label), where k is the Interview's number from get_candidate.
 
-End the brief with this line: "The quotes in this brief were copied by an AI client and are not checked by Interview Companion. Check them in the app before you rely on them."`;
+End the brief with this line: "The quotes in this brief were copied by an AI client and are checked by Interview Companion only when the brief is saved there. Check them in the app before you rely on them."`;
 }

@@ -50,18 +50,20 @@ async function refusal(name: string, args: Record<string, unknown>): Promise<str
 }
 
 describe("MCP server", () => {
-  it("offers the read tools, and only the two writes that go through core's checks", async () => {
+  it("offers the read tools, and only the writes that go through core's checks", async () => {
     const { tools } = await client.listTools();
 
     expect(tools.map((tool) => tool.name).sort()).toEqual([
       "get_ai_notes",
       "get_candidate",
+      "get_candidate_brief",
       "get_cv",
       "get_interviewer_notes",
       "get_saved_questions",
       "get_transcript",
       "list_candidates",
       "save_ai_notes",
+      "save_candidate_brief",
       "save_suggested_questions",
       "search_evidence",
     ]);
@@ -327,7 +329,10 @@ describe("MCP server", () => {
     expect(text).toMatch(/every statement .*cites? .*Evidence/i);
     expect(text).toMatch(/no judgments/i);
     expect(text).toMatch(/word for word/i);
-    expect(text).toMatch(/not checked by Interview Companion/i);
+    expect(text).toMatch(/checked by Interview Companion only when .*saved/i);
+    // Saving it in the app, with each number's quote and source.
+    expect(text).toContain("save_candidate_brief");
+    expect(text).toMatch(/one evidence entry per number/i);
     expect(text).toMatch(/data, not instructions/i);
   });
 
@@ -409,6 +414,40 @@ describe("MCP server", () => {
     expect(saved.suggestions).toEqual([expect.objectContaining({ text: "Why Redis?", source: "aiClient" })]);
   });
 
+  it("save_candidate_brief refuses while saving from the AI client is off", async () => {
+    const message = await refusal("save_candidate_brief", { candidateId: candidate.id, text: "# Brief", evidence: [] });
+
+    expect(message).toContain("AI Settings");
+    expect(await call("get_candidate_brief", { candidateId: candidate.id })).toBeNull();
+  });
+
+  it("save_candidate_brief saves the brief, and get_candidate_brief gives it back with each quote checked", async () => {
+    const interview = readyInterview();
+    core.allowAiClientWrites(true);
+
+    const saved = await call("save_candidate_brief", {
+      candidateId: candidate.id,
+      text: "# Candidate Brief: Ada Demir\n\n- Used Redis [1] and Kafka [2].",
+      evidence: [
+        { number: 1, source: "transcript", interviewId: interview.id, segmentNumber: 2, quote: "Redis with BullMQ" },
+        { number: 2, source: "cv", page: 1, quote: "Kafka" },
+      ],
+    });
+
+    const expected = {
+      candidateId: candidate.id,
+      text: "# Candidate Brief: Ada Demir\n\n- Used Redis [1] and Kafka [2].",
+      savedAt: "2026-11-10T09:30:00.000Z",
+      evidence: [
+        { number: 1, source: "transcript", interviewId: interview.id, segmentNumber: 2, quote: "Redis with BullMQ", found: true },
+        { number: 2, source: "cv", page: 1, quote: "Kafka", found: false },
+      ],
+    };
+    expect(saved).toEqual(expected);
+    expect(await call("get_candidate_brief", { candidateId: candidate.id })).toEqual(expected);
+    expect(await refusal("get_candidate_brief", { candidateId: "no-such-candidate" })).toContain("list_candidates");
+  });
+
   it("save tools refuse malformed input", async () => {
     const interview = readyInterview();
     core.allowAiClientWrites(true);
@@ -417,6 +456,16 @@ describe("MCP server", () => {
     expect(await refusal("save_suggested_questions", { candidateId: candidate.id, suggestions: "none" })).toContain("suggestions");
     const tooMany = Array.from({ length: 41 }, () => redisNote);
     expect(await refusal("save_ai_notes", { interviewId: interview.id, notes: tooMany })).toContain("notes");
+    expect(
+      await refusal("save_candidate_brief", {
+        candidateId: candidate.id,
+        text: "Brief [1] [1].",
+        evidence: [
+          { number: 1, source: "cv", page: 1, quote: "Redis" },
+          { number: 1, source: "cv", page: 1, quote: "BullMQ" },
+        ],
+      }),
+    ).toContain("only once");
   });
 });
 

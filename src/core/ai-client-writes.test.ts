@@ -149,6 +149,7 @@ describe("The AI client's view of core", () => {
     expect(Object.keys(view)).toContain("listCandidates");
     expect(Object.keys(view)).toContain("saveAiNotesFromClient");
     expect(Object.keys(view)).toContain("saveSuggestedQuestionsFromClient");
+    expect(Object.keys(view)).toContain("saveCandidateBriefFromClient");
     expect(Object.keys(view)).not.toContain("allowAiClientWrites");
     expect(Object.keys(view)).not.toContain("addInterviewerNotes");
     expect(Object.keys(view)).not.toContain("deleteCandidate");

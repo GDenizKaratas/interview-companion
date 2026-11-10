@@ -63,6 +63,29 @@ const text = {
     delete: "Delete",
     cancel: "Cancel",
     deleteCandidateFailed: "The Candidate could not be deleted.",
+    openBrief: "Brief",
+    openBriefHint: "The Candidate Brief your AI client saved",
+  },
+  brief: {
+    title: "Candidate Brief",
+    close: "Close the brief",
+    loadFailed: "The brief could not be loaded. Check that the app is still running.",
+    none: "No Candidate Brief is saved for this Candidate yet.",
+    noneHint:
+      "Turn on saving from your AI client in AI Settings, then ask Claude Code or Claude Desktop for a brief with the candidate_brief prompt. It saves the brief here.",
+    fromAiClient: "Written by your AI client",
+    savedAt: "Saved {date}",
+    notChecked:
+      "The app did not write this brief and does not check its statements. It checks only that each quote below is still in the CV or a Transcript, word for word.",
+    evidenceTitle: "Evidence",
+    noEvidence: "This brief cites no Evidence.",
+    allFound: "Every quote was found word for word in its source.",
+    someNotFound: "{count} of {total} quotes were not found word for word in their source. Do not rely on the statements that cite them.",
+    found: "Found",
+    notFound: "Not found",
+    cvPage: "CV, page {page}",
+    segment: "{interview}, segment {segment}",
+    unknownInterview: "an Interview that is not this Candidate's, segment {segment}",
   },
   interviews: {
     label: "Interview",
@@ -125,7 +148,7 @@ const text = {
     stepAsk: "2. Start Claude Code and ask, for example: “What did Deniz say about Redis? Use Interview Companion.”",
     stepBrief: "3. For a full brief, type /mcp__interview-companion__candidate_brief and give the Candidate's name.",
     desktop: "For Claude Desktop, see docs/mcp.md in the project folder.",
-    readOnly: "Unless you allow it in AI Settings, the AI client can only read and search. Allowed, it can also save AI Notes and Suggested Questions, which the app checks; it can never change your own notes, questions, or Candidates. Quotes in a Candidate Brief are not checked by the app; check them with the search here.",
+    readOnly: "Unless you allow it in AI Settings, the AI client can only read and search. Allowed, it can also save AI Notes and Suggested Questions, which the app checks; it can never change your own notes, questions, or Candidates. When a Candidate Brief is saved here, the app checks that its quotes are in the CV or a Transcript; a brief kept only in the chat is not checked.",
   },
   search: {
     label: "Search the CV and Transcripts",
