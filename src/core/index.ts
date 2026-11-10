@@ -4,15 +4,18 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as candidates from "./candidates.ts";
 import { openDatabase } from "./database.ts";
+import * as interfaceLanguage from "./interface-language.ts";
 
 export type { Candidate, NewCandidate } from "./candidates.ts";
-export { InvalidInputError } from "./errors.ts";
+export { InvalidInputError, type InputRule } from "./errors.ts";
 
 export interface Core {
   createCandidate(input: candidates.NewCandidate): candidates.Candidate;
   listCandidates(): candidates.Candidate[];
   getCandidate(id: string): candidates.Candidate | undefined;
   listCandidateRoles(): string[];
+  getInterfaceLanguage(): string;
+  setInterfaceLanguage(language: string): void;
   close(): void;
 }
 
@@ -25,6 +28,8 @@ export function openCore(dbPath: string): Core {
     listCandidates: () => candidates.listCandidates(db),
     getCandidate: (id) => candidates.getCandidate(db, id),
     listCandidateRoles: () => candidates.listCandidateRoles(db),
+    getInterfaceLanguage: () => interfaceLanguage.getInterfaceLanguage(db),
+    setInterfaceLanguage: (language) => interfaceLanguage.setInterfaceLanguage(db, language),
     close: () => db.close(),
   };
 }

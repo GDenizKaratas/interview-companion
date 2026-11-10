@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, type Candidate } from "./api.ts";
 import { linkTo } from "./navigation.ts";
-import { text } from "./text.ts";
+import { useText } from "./text.tsx";
 
 type Load =
   | { state: "loading" }
@@ -10,6 +10,7 @@ type Load =
   | { state: "failed" };
 
 export function Workspace({ candidateId }: { candidateId: string }) {
+  const { text } = useText();
   const [load, setLoad] = useState<Load>({ state: "loading" });
 
   useEffect(() => {

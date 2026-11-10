@@ -93,7 +93,7 @@ function collapseSpaces(value: string): string {
 function requireText(field: string, value: string): string {
   const trimmed = value.trim();
   if (trimmed === "") {
-    throw new InvalidInputError(field, `A Candidate needs a ${field}.`);
+    throw new InvalidInputError(field, "required", `A Candidate needs a ${field}.`);
   }
   return trimmed;
 }

@@ -72,6 +72,17 @@ a {
   font-size: 0.9rem;
 }
 
+.language-switch {
+  margin-left: auto;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.25rem 0.4rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
 .page-title {
   margin-bottom: 1rem;
 }

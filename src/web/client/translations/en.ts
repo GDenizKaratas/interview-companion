@@ -1,7 +1,9 @@
-// All interface text in one place. Issue #3 turns this into translation files.
-export const text = {
+// English, the default language. Every other translation file has exactly these keys.
+// To add a language, copy this file to <language code>.ts and translate the text.
+const text = {
   appName: "Interview Companion",
   tagline: "Your interviews, all in one place.",
+  languageLabel: "Language",
   candidates: {
     title: "Candidates",
     empty: "No Candidates yet. Add the first one above.",
@@ -10,6 +12,10 @@ export const text = {
     add: "Add Candidate",
     saveFailed: "The Candidate could not be saved.",
     loadFailed: "Candidates could not be loaded.",
+    required: {
+      name: "A Candidate needs a name.",
+      role: "A Candidate needs a role.",
+    },
   },
   workspace: {
     back: "← Candidates",
@@ -25,3 +31,5 @@ export const text = {
     questions: { title: "Questions", empty: "No questions saved." },
   },
 };
+
+export default { name: "English", text };
