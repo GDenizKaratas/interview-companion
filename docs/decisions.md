@@ -37,6 +37,9 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 27 | Stack: one TypeScript project with `core`, `web`, and `mcp` folders; React and Vite; Hono; SQLite; pdf.js; Vitest; the official MCP SDK. | Light, common, one command to run. `web` and `mcp` may only call `core`, so business rules exist once. | Next.js; a multi-package monorepo. |
 | 28 | Development and tests use only fictional data. Deleting a Candidate deletes everything about them, including the CV file. License: MIT. | Real candidate data must never reach the public repository. | — |
 | 29 | No fixed deadline. Milestones are reviewed one at a time. | Understanding each step matters more than speed. | Cutting scope to ship in one day. |
+| 30 | Tests go through core's public interface with a real temporary SQLite file. AI tests use a fake provider. MCP gets a thin test through an in-memory client. The interface has no automated tests in the MVP. | Rules live in core, so testing there covers them once. A fake provider makes AI tests repeatable and free. | Database mocks; browser tests. |
+| 31 | The repository starts private and becomes public once a working version exists. | Private to public is one step; the reverse cannot be undone. | Public from the first commit. |
+| 32 | The full MVP spec is tracked as a GitHub issue and will be split into one issue per milestone. | One place for the agreed scope; small issues for the actual work. | Spec only as a file in the repository. |
 
 ## Open questions
 
