@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), Transcript import through adapters (plain text and WebVTT), the Speaker Mapping, Evidence search over the CV and Transcripts, AI Note generation with an API key (Claude behind a provider interface, every quote checked before saving), AI Note review (Review States and the Stale flag), Suggested Questions on request (accept, edit, dismiss, regenerate, every quote checked), the six MCP tools and the `candidate_brief` prompt. Setup and an introduction to MCP are in [mcp.md](mcp.md).
+Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), Transcript import through adapters (plain text and WebVTT), the Speaker Mapping, Evidence search over the CV and Transcripts, AI Note generation with an API key (Claude behind a provider interface, every quote checked before saving), AI Note review (Review States and the Stale flag), Suggested Questions on request (accept, edit, dismiss, regenerate, every quote checked), the MCP tools (reads, and the checked saves of ADR 0005, including the Candidate Brief) and the `candidate_brief` prompt. Setup and an introduction to MCP are in [mcp.md](mcp.md).
 
 Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md). Reasons for each choice are in the [decision log](decisions.md).
 
@@ -91,7 +91,7 @@ Notes on the model:
 
 **Suggest questions (in-app mode).** Runs only on request. Core sends the CV, earlier Transcripts, Interviewer Notes, and Saved Questions, plus an optional focus. Suggestions are stored until dismissed or regenerated. Accepting one copies it into Saved Questions.
 
-**Candidate Brief (MCP mode).** The AI client calls the MCP prompt, which gives it a fixed template and rules. It then calls read-only tools to fetch the data and writes the brief in its own chat.
+**Candidate Brief (MCP mode).** The AI client calls the MCP prompt, which gives it a fixed template and rules. It then calls the read tools to fetch the data, writes the brief in its own chat, and, when saving from the AI client is on, saves it with `save_candidate_brief`. Core keeps one brief per Candidate and checks each of its quotes against the CV and Transcripts every time it is read. The Workspace opens it from the bar.
 
 ## Rules enforced in code
 
@@ -105,7 +105,8 @@ Notes on the model:
 | A Suggested Question's quotes must exist word for word in the CV or a Transcript. | Core, before a suggestion is saved. |
 | Replacing a CV or Transcript removes the suggestions that quote it. | The database, through a foreign key and a trigger. |
 | No generation without a request. | Generation is only reachable from explicit actions. |
-| The MCP server can only read, except for checked AI work the Interviewer allowed. | The MCP server gets `aiClientCore(core)`, a view that holds core's reads and only `saveAiNotesFromClient` and `saveSuggestedQuestionsFromClient`; both refuse while the setting is off and run the same checks as in-app generation (ADR 0005). |
+| The MCP server can only read, except for checked AI work the Interviewer allowed. | The MCP server gets `aiClientCore(core)`, a view that holds core's reads and only `saveAiNotesFromClient`, `saveSuggestedQuestionsFromClient`, and `saveCandidateBriefFromClient`; all refuse while the setting is off. The first two run the same checks as in-app generation (ADR 0005). |
+| A saved Candidate Brief's quotes are shown as found only when they are in this Candidate's CV or Transcripts now. | Core, every time the brief is read. |
 
 Model output itself is not deterministic. These checks are.
 
@@ -125,6 +126,8 @@ Tools (read-only unless noted):
 | `get_cv` | A Candidate's CV text, page by page. |
 | `save_ai_notes` | Writes, when allowed: AI Notes the client wrote, checked and saved Unreviewed. |
 | `save_suggested_questions` | Writes, when allowed: Suggested Questions the client wrote, checked and saved. |
+| `save_candidate_brief` | Writes, when allowed: the Candidate Brief, with its Evidence references. Replaces the earlier one. |
+| `get_candidate_brief` | The saved Candidate Brief, each quote marked found or not found. |
 
 Prompt:
 
@@ -136,5 +139,5 @@ Prompt:
 
 - **Keyword search only.** Simple and explainable, but a search for "caching" will not find "Redis". An AI client can run several searches to cover this.
 - **Notes without an exact quote are dropped.** We lose some useful notes to keep the Evidence guarantee.
-- **The Candidate Brief is not verified by our code.** See [ADR 0002](adr/0002-two-ai-modes.md).
+- **The Candidate Brief's statements are not verified by our code.** Only its quotes are checked, once it is saved. See [ADR 0002](adr/0002-two-ai-modes.md) and [ADR 0005](adr/0005-ai-client-saves-through-core.md).
 - **One Interviewer only.** Collaboration would need a real redesign. See [ADR 0001](adr/0001-local-single-user-sqlite.md).

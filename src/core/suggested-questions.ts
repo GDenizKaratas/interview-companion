@@ -12,6 +12,7 @@ import type { Now } from "./interviewer-notes.ts";
 import { listInterviewerNotes } from "./interviewer-notes.ts";
 import { listInterviews, type Today } from "./interviews.ts";
 import { insertSavedQuestion, listSavedQuestions, type SavedQuestion } from "./saved-questions.ts";
+import { containsQuote } from "./quotes.ts";
 import { getTranscript } from "./transcripts.ts";
 
 // One exact excerpt a Suggested Question cites: part of a CV page or of a Transcript segment.
@@ -200,14 +201,13 @@ function isBacked(
 ): boolean {
   if (suggestion.question.trim() === "" || suggestion.reason.trim() === "") return false;
   return suggestion.evidence.every((evidence) => {
-    if (evidence.quote.trim() === "") return false;
     if (evidence.source === "cv") {
       if (!sent.cv || sent.cv.stamp !== current.cv) return false;
-      return sent.cv.pages.get(evidence.page)?.includes(evidence.quote) ?? false;
+      return containsQuote(sent.cv.pages.get(evidence.page), evidence.quote);
     }
     const transcript = sent.transcripts.get(evidence.interviewId);
     if (!transcript || transcript.stamp !== current.transcripts.get(evidence.interviewId)) return false;
-    return transcript.segments.get(evidence.segmentNumber)?.includes(evidence.quote) ?? false;
+    return containsQuote(transcript.segments.get(evidence.segmentNumber), evidence.quote);
   });
 }
 

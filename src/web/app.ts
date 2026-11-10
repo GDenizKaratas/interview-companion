@@ -258,6 +258,11 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
     });
   });
 
+  // The brief an AI client saved through MCP, with each quote checked now; null when there is none.
+  api.get("/candidates/:id/candidate-brief", (c) =>
+    respondOrRefuse(c, () => c.json(core.getCandidateBrief(c.req.param("id")))),
+  );
+
   api.get("/candidates/:id/suggested-questions", (c) =>
     respondOrRefuse(c, () => c.json(core.listSuggestedQuestions(c.req.param("id")))),
   );

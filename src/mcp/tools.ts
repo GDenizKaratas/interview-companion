@@ -5,13 +5,29 @@ import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, t
 
 // Bounds on what the AI client can save in one call, so a runaway client cannot flood the
 // Workspace. They are generous for a real Interview.
-const limits = { notes: 40, suggestions: 25, evidence: 8 };
-const text = { long: 2000 };
+const limits = { notes: 40, suggestions: 25, evidence: 8, briefEvidence: 100 };
+const textLimits = { long: 2000, brief: 50_000 };
+
+const briefNumber = z.number().int().positive().describe("The number in square brackets in the text, such as 1 for [1].");
 
 // Every tool that is about one Candidate takes their id, as list_candidates gives it.
 const candidateId = z.string().min(1).describe("The Candidate's id, as given by list_candidates.");
 
-// Builds the MCP server and its tools. It gets core's read operations and only the two writes
+// Where a quote is from: a CV page or one Transcript segment. Suggested Questions and the
+// Candidate Brief cite Evidence in this shape.
+const cvQuote = {
+  source: z.literal("cv"),
+  page: z.number().int().positive().describe("The CV page number, from get_cv."),
+  quote: z.string().max(textLimits.long).describe("Words copied exactly from that page."),
+};
+const transcriptQuote = {
+  source: z.literal("transcript"),
+  interviewId: z.string().min(1),
+  segmentNumber: z.number().int().positive().describe("The segment's number, from get_transcript."),
+  quote: z.string().max(textLimits.long).describe("Words copied exactly from that segment."),
+};
+
+// Builds the MCP server and its tools. It gets core's read operations and only the writes
 // the AI client may make, which go through the same checks as the app's own AI and are refused
 // while the Interviewer has not turned them on. No tool can change anything else. Transport
 // (stdio in server.ts, in-memory in tests) is attached by the caller.
@@ -154,12 +170,12 @@ export function createMcpServer(core: AiClientCore): McpServer {
         notes: z
           .array(
             z.object({
-              statement: z.string().max(text.long).describe("One short, neutral statement, in the Interviewer's language."),
+              statement: z.string().max(textLimits.long).describe("One short, neutral statement, in the Interviewer's language."),
               evidence: z
                 .array(
                   z.object({
                     segmentNumber: z.number().int().positive().describe("The segment's number, from get_transcript."),
-                    quote: z.string().max(text.long).describe("Words copied exactly from that segment."),
+                    quote: z.string().max(textLimits.long).describe("Words copied exactly from that segment."),
                   }),
                 )
                 .min(1)
@@ -189,23 +205,11 @@ export function createMcpServer(core: AiClientCore): McpServer {
         suggestions: z
           .array(
             z.object({
-              question: z.string().max(text.long).describe("The question, in the Interviewer's language."),
-              reason: z.string().max(text.long).describe("One short line on why it is worth asking."),
-              evidence: z.array(
-                z.discriminatedUnion("source", [
-                  z.object({
-                    source: z.literal("cv"),
-                    page: z.number().int().positive().describe("The CV page number, from get_cv."),
-                    quote: z.string().max(text.long).describe("Words copied exactly from that page."),
-                  }),
-                  z.object({
-                    source: z.literal("transcript"),
-                    interviewId: z.string().min(1),
-                    segmentNumber: z.number().int().positive().describe("The segment's number, from get_transcript."),
-                    quote: z.string().max(text.long).describe("Words copied exactly from that segment."),
-                  }),
-                ]),
-              ).max(limits.evidence),
+              question: z.string().max(textLimits.long).describe("The question, in the Interviewer's language."),
+              reason: z.string().max(textLimits.long).describe("One short line on why it is worth asking."),
+              evidence: z
+                .array(z.discriminatedUnion("source", [z.object(cvQuote), z.object(transcriptQuote)]))
+                .max(limits.evidence),
             }),
           )
           .max(limits.suggestions)
@@ -214,6 +218,45 @@ export function createMcpServer(core: AiClientCore): McpServer {
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
     },
     ({ candidateId, suggestions }) => toolResult(() => core.saveSuggestedQuestionsFromClient(candidateId, suggestions)),
+  );
+  server.registerTool(
+    "save_candidate_brief",
+    {
+      description:
+        "Save the Candidate Brief you wrote into Interview Companion, so the Interviewer can read it in the " +
+        "Candidate's Workspace. text is the whole brief in Markdown (headings, lists, and paragraphs). evidence " +
+        "has one entry per number in square brackets in the text: the exact quote and where it is from, a CV page " +
+        "(see get_cv) or a Transcript segment (see get_transcript). The app does not check your statements, but it " +
+        "checks every quote against the CV and Transcripts each time the brief is read, and shows the Interviewer " +
+        "which ones are not found word for word. Saving replaces the Candidate's earlier brief. Refused while " +
+        "saving from the AI client is off in the app's AI Settings.",
+      inputSchema: {
+        candidateId,
+        text: z.string().max(textLimits.brief).describe("The whole brief, as Markdown, in the Interviewer's language."),
+        evidence: z
+          .array(
+            z.discriminatedUnion("source", [
+              z.object({ number: briefNumber, ...cvQuote }),
+              z.object({ number: briefNumber, ...transcriptQuote }),
+            ]),
+          )
+          .max(limits.briefEvidence)
+          .describe("One entry per Evidence number used in the text."),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+    },
+    ({ candidateId, text, evidence }) => toolResult(() => core.saveCandidateBriefFromClient(candidateId, { text, evidence })),
+  );
+  server.registerTool(
+    "get_candidate_brief",
+    {
+      description:
+        "Get the Candidate Brief saved for a Candidate by an AI client, or null when there is none. Each Evidence " +
+        "entry has found: whether its quote is, word for word, in that CV page or Transcript segment now.",
+      inputSchema: { candidateId },
+      annotations: readOnly,
+    },
+    ({ candidateId }) => toolResult(() => core.getCandidateBrief(candidateId)),
   );
   server.registerTool(
     "search_evidence",
@@ -251,7 +294,8 @@ export function createMcpServer(core: AiClientCore): McpServer {
       title: "Candidate Brief",
       description:
         "Write a Candidate Brief: one document about a Candidate in which every statement cites Evidence, " +
-        "with no judgments, and the reasons and quotes listed at the end. The brief is not stored in the app.",
+        "with no judgments, and the reasons and quotes listed at the end. When saving from the AI client is on, " +
+        "the brief is saved in the app with save_candidate_brief.",
       argsSchema: {
         candidate: z.string().min(1).describe("The Candidate's name or id, as list_candidates gives it."),
       },

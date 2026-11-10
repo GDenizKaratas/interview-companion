@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { AiNotesPanel } from "./AiNotesPanel.tsx";
+import { CandidateBriefDialog } from "./CandidateBriefDialog.tsx";
 import { api, ApiError, type Candidate, type EvidenceResult, type Interview } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { CvPanel } from "./CvPanel.tsx";
@@ -29,6 +30,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [briefOpen, setBriefOpen] = useState(false);
   // Counts changes to the selected Interview's Transcript, so the AI Notes panel loads again.
   const [transcriptVersion, setTranscriptVersion] = useState(0);
   // Counts CV uploads, so the Suggested Questions load again.
@@ -136,6 +138,11 @@ export function Workspace({ candidateId }: { candidateId: string }) {
           <EvidenceSearch candidateId={candidateId} interviews={interviews} onOpen={openEvidence} />
         )}
         {load.state === "ready" && (
+          <button type="button" className="secondary brief-button" title={text.workspace.openBriefHint} onClick={() => setBriefOpen(true)}>
+            {text.workspace.openBrief}
+          </button>
+        )}
+        {load.state === "ready" && (
           <button
             type="button"
             className="icon-button danger-quiet delete-candidate"
@@ -148,6 +155,9 @@ export function Workspace({ candidateId }: { candidateId: string }) {
           </button>
         )}
       </header>
+      {briefOpen && load.state === "ready" && (
+        <CandidateBriefDialog candidate={load.candidate} interviews={interviews} onClose={() => setBriefOpen(false)} />
+      )}
       {deleteFailed && <p className="error">{text.workspace.deleteCandidateFailed}</p>}
       {confirmingDelete && load.state === "ready" && (
         <ConfirmDialog

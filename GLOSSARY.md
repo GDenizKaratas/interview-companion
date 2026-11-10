@@ -71,7 +71,7 @@ An AI application the Interviewer runs outside the app, such as Claude Code or C
 _Avoid_: Agent, assistant, bot
 
 **Candidate Brief**:
-A single document about one Candidate that an external AI client writes from the application's data, with the reason and Evidence for each statement listed at the end. It is not stored in the application.
+A single document about one Candidate that an external AI client writes from the application's data, with the reason and Evidence for each statement listed at the end. When saving from the AI client is on, the client saves it in the application: one per Candidate, replaced by the next one. The application does not check its statements, but it checks each quote against the CV and Transcripts every time the brief is read.
 _Avoid_: Report, profile, summary
 
 ### Workspace

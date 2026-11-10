@@ -62,6 +62,29 @@ const translation: TranslationFile = {
       delete: "Sil",
       cancel: "Vazgeç",
       deleteCandidateFailed: "Aday silinemedi.",
+      openBrief: "Özet",
+      openBriefHint: "AI istemcinizin kaydettiği Aday Özeti",
+    },
+    brief: {
+      title: "Aday Özeti",
+      close: "Özeti kapat",
+      loadFailed: "Özet yüklenemedi. Uygulamanın hâlâ çalıştığını kontrol edin.",
+      none: "Bu aday için henüz kaydedilmiş bir Aday Özeti yok.",
+      noneHint:
+        "AI Ayarları'nda AI istemcinizden kaydetmeyi açın, sonra Claude Code veya Claude Desktop'tan candidate_brief komutuyla bir özet isteyin. Özet buraya kaydedilir.",
+      fromAiClient: "AI istemciniz yazdı",
+      savedAt: "Kaydedilme: {date}",
+      notChecked:
+        "Bu özeti uygulama yazmadı ve içindeki ifadeleri kontrol etmez. Yalnızca aşağıdaki her alıntının CV'de veya bir transkriptte kelimesi kelimesine hâlâ bulunduğunu kontrol eder.",
+      evidenceTitle: "Kanıtlar",
+      noEvidence: "Bu özet hiçbir kanıta dayanmıyor.",
+      allFound: "Her alıntı kaynağında kelimesi kelimesine bulundu.",
+      someNotFound: "{total} alıntıdan {count} tanesi kaynağında kelimesi kelimesine bulunamadı. Bunlara dayanan ifadelere güvenmeyin.",
+      found: "Bulundu",
+      notFound: "Bulunamadı",
+      cvPage: "CV, sayfa {page}",
+      segment: "{interview}, {segment}. bölüm",
+      unknownInterview: "bu adaya ait olmayan bir mülakat, {segment}. bölüm",
     },
     interviews: {
       label: "Mülakat",
@@ -121,7 +144,7 @@ const translation: TranslationFile = {
       stepAsk: "2. Claude Code'u açıp örneğin şunu sorun: “Deniz Redis hakkında ne dedi? Interview Companion'ı kullan.”",
       stepBrief: "3. Tam bir özet için /mcp__interview-companion__candidate_brief yazıp adayın adını verin.",
       desktop: "Claude Desktop için proje klasöründeki docs/mcp.md dosyasına bakın.",
-      readOnly: "AI Ayarları'nda izin vermediğiniz sürece istemci yalnızca okuyabilir ve arayabilir. İzin verirseniz uygulamanın kontrol ettiği AI Notları ve önerilen sorular da kaydedebilir; kendi notlarınızı, sorularınızı ve adaylarınızı asla değiştiremez. Aday Özeti'ndeki alıntıları uygulama kontrol etmez; buradaki aramayla kontrol edin.",
+      readOnly: "AI Ayarları'nda izin vermediğiniz sürece istemci yalnızca okuyabilir ve arayabilir. İzin verirseniz uygulamanın kontrol ettiği AI Notları ve önerilen sorular da kaydedebilir; kendi notlarınızı, sorularınızı ve adaylarınızı asla değiştiremez. Aday Özeti buraya kaydedildiğinde uygulama alıntılarının CV'de veya bir transkriptte bulunduğunu kontrol eder; yalnızca sohbette kalan bir özet kontrol edilmez.",
     },
     search: {
       label: "CV ve transkriptlerde ara",

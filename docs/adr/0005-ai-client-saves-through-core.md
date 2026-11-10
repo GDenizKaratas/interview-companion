@@ -27,4 +27,5 @@ We now let the AI client save AI Notes and Suggested Questions through MCP. They
 - New saves replace Unreviewed notes and unaccepted suggestions whoever wrote them, the app or the client, as regenerating does.
 - One call is bounded (40 notes, 25 suggestions, 8 quotes each, 2000 characters per text), so a runaway client cannot flood the Workspace.
 - The MCP server needs the full Transcript and CV text to quote from, so `get_transcript` and `get_cv` are added.
+- Later (#46, approved by the owner) the AI client may also save a Candidate Brief under the same switch. Unlike AI Notes, it is saved even when a quote is not found: core keeps one brief per Candidate and marks each quote found or not found every time it is read. This replaces ADR 0002's "the Candidate Brief is not stored".
 - ADR 0002 still holds for the two modes; its "MCP is read-only" consequence is replaced by this ADR.

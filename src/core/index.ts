@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import * as aiNotes from "./ai-notes.ts";
 import type { AiProviderFactory, ProposedAiNote, ProposedQuestion } from "./ai-provider.ts";
 import * as aiSettings from "./ai-settings.ts";
+import * as candidateBrief from "./candidate-brief.ts";
 import * as candidateOverview from "./candidate-overview.ts";
 import * as candidates from "./candidates.ts";
 import { claudeProvider } from "./claude-provider.ts";
@@ -30,6 +31,7 @@ export type {
   ProposedQuestionEvidence,
   QuestionRequest,
 } from "./ai-provider.ts";
+export type { BriefEvidence, CandidateBrief, NewBriefEvidence, NewCandidateBrief } from "./candidate-brief.ts";
 export type { CandidateOverview, InterviewOverview } from "./candidate-overview.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
@@ -107,6 +109,8 @@ export interface Core {
     candidateId: string,
     suggestions: ProposedQuestion[],
   ): suggestedQuestions.SuggestedQuestionGeneration;
+  saveCandidateBriefFromClient(candidateId: string, brief: candidateBrief.NewCandidateBrief): candidateBrief.CandidateBrief;
+  getCandidateBrief(candidateId: string): candidateBrief.CandidateBrief | null;
   listAiNotes(interviewId: string): aiNotes.AiNote[];
   confirmAiNote(id: string): aiNotes.AiNote;
   correctAiNote(id: string, correction: string): aiNotes.AiNote;
@@ -138,13 +142,17 @@ const readOperations = [
   "listTranscriptFormats",
   "listAiNotes",
   "searchEvidence",
+  "getCandidateBrief",
 ] as const satisfies readonly (keyof Core)[];
 
 export type ReadOnlyCore = Pick<Core, (typeof readOperations)[number]>;
 
-// The writes the AI client may make through MCP, each going through the same checks as the app's
-// own AI and refused while the Interviewer has not allowed it. The switch itself is not here.
-const aiClientWriteOperations = ["saveAiNotesFromClient", "saveSuggestedQuestionsFromClient"] as const satisfies readonly (keyof Core)[];
+// The writes the AI client may make through MCP, each going through core's checks and refused while the Interviewer has not allowed it. The switch itself is not here.
+const aiClientWriteOperations = [
+  "saveAiNotesFromClient",
+  "saveSuggestedQuestionsFromClient",
+  "saveCandidateBriefFromClient",
+] as const satisfies readonly (keyof Core)[];
 
 export type AiClientCore = Pick<Core, (typeof readOperations)[number] | (typeof aiClientWriteOperations)[number]>;
 
@@ -224,6 +232,9 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     saveAiNotesFromClient: (interviewId, notes) => aiNotes.saveAiNotesFromClient(db, now, interviewId, notes),
     saveSuggestedQuestionsFromClient: (candidateId, suggestions) =>
       suggestedQuestions.saveSuggestedQuestionsFromClient(db, today, now, candidateId, suggestions),
+    saveCandidateBriefFromClient: (candidateId, brief) =>
+      candidateBrief.saveCandidateBriefFromClient(db, now, candidateId, brief),
+    getCandidateBrief: (candidateId) => candidateBrief.getCandidateBrief(db, candidateId),
     listAiNotes: (interviewId) => aiNotes.listAiNotes(db, interviewId),
     confirmAiNote: (id) => aiNotes.confirmAiNote(db, id),
     correctAiNote: (id, correction) => aiNotes.correctAiNote(db, id, correction),

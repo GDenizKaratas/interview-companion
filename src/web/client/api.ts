@@ -4,7 +4,9 @@ import type {
   AiFailure,
   AiNote,
   AiNoteGeneration,
+  BriefEvidence,
   Candidate,
+  CandidateBrief,
   CandidateOverview,
   Cv,
   CvPage,
@@ -28,7 +30,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, Candidate, CandidateOverview, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, BriefEvidence, Candidate, CandidateBrief, CandidateOverview, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -150,6 +152,8 @@ export const api = {
   deleteSavedQuestion: (id: string) => request<void>(`/saved-questions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   moveSavedQuestion: (id: string, position: number) =>
     request<void>(`/saved-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position })),
+  getCandidateBrief: (candidateId: string) =>
+    request<CandidateBrief | null>(`/candidates/${encodeURIComponent(candidateId)}/candidate-brief`),
   listSuggestedQuestions: (candidateId: string) =>
     request<SuggestedQuestion[]>(`/candidates/${encodeURIComponent(candidateId)}/suggested-questions`),
   generateSuggestedQuestions: (candidateId: string, focus: string) =>
