@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:02.310 --> 00:00:06.020
+Ayşe Demir: Kuyruğu nasıl kurdunuz?
+
+2
+00:00:06.900 --> 00:00:11.480
+Ece Yalın: Redis ile BullMQ kullandık. Saat 10:30 gibi yük artıyordu.

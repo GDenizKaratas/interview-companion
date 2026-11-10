@@ -111,7 +111,10 @@ const translation: TranslationFile = {
         replace: "Transkripti değiştir",
         importing: "İçe aktarılıyor…",
         supported: "Desteklenen biçimler: {formats}.",
-        formats: { "plain-text": "düz metin, her satırda bir konuşma: Konuşmacı: metin" },
+        formats: {
+          "plain-text": "düz metin, her satırda bir konuşma: Konuşmacı: metin",
+          webvtt: "zamanlı WebVTT altyazısı, Teams ve Zoom’un verdiği gibi",
+        },
         noTime: "zaman yok",
         noTimeDetail: "Dosyada bu bölümün zamanı yok.",
         unverified: "doğrulanmadı",

@@ -117,7 +117,10 @@ const text = {
       // {formats} is replaced by the list of supported formats.
       supported: "Supported formats: {formats}.",
       // The name of each format core can import, by its id.
-      formats: { "plain-text": "plain text, one line per turn as Speaker: text" },
+      formats: {
+        "plain-text": "plain text, one line per turn as Speaker: text",
+        webvtt: "WebVTT captions with times, as Teams and Zoom export them",
+      },
       noTime: "no time",
       noTimeDetail: "The file has no time for this part.",
       unverified: "unverified",

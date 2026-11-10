@@ -1,0 +1,3 @@
+Ayşe: Bize son projenden bahseder misin?
+Ece: Ödeme servislerini Node.js ile yazdım.
+Ayşe: Hataları nasıl yönettiniz?
