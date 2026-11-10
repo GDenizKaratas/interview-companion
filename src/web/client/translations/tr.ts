@@ -88,10 +88,9 @@ const translation: TranslationFile = {
       noMatch: "Süzgece uyan aday yok.",
       columns: { candidate: "Aday", interviews: "Mülakatlar", next: "Sıradaki mülakat", cv: "CV", notes: "Notlarım", questions: "Sorular" },
       plannedCount: "{count} planlı",
+      viewCv: "CV'yi gör",
+      closeCv: "CV'yi kapat",
       noNext: "Planlı yok",
-      cvPages: "{count} sayfa",
-      cvOnePage: "1 sayfa",
-      noCv: "CV yok",
     },
     calendar: {
       title: "Mülakat takvimi",

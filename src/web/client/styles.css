@@ -1862,3 +1862,62 @@ mark {
 .suggestion-quote:hover:not(:disabled) {
   background: var(--page);
 }
+
+/* The CV shortcut in the Candidate list, and the CV it opens over the list. */
+button.cv-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--accent-strong);
+}
+
+button.cv-shortcut svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.cv-preview-dialog {
+  width: 95vw;
+  max-width: 95vw;
+  height: 95vh;
+  max-height: 95vh;
+  padding: 0;
+  box-shadow: var(--shadow-raised);
+}
+
+.cv-preview-dialog {
+  box-sizing: border-box;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+/* Shown as a column only while open; a closed dialog stays hidden. */
+.cv-preview-dialog[open] {
+  display: flex;
+}
+
+.cv-preview-dialog::backdrop {
+  background: rgb(10 37 64 / 0.45);
+}
+
+.cv-preview-dialog .panel-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.cv-preview-dialog .pdf-page-frame,
+.cv-preview-dialog .pdf-page-nav {
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cv-preview-dialog .panel-head h2 {
+  gap: 0.5rem;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
