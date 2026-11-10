@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
+import { sameLetter } from "./turkish-letters.ts";
 
 export interface Candidate {
   id: string;
@@ -96,25 +97,12 @@ function existingSpelling(db: DatabaseSync, role: string): string {
   return rolesInOrderWritten(db).find((existing) => isSameRole(existing, role)) ?? role;
 }
 
-// Two roles are the same if they differ only in letter case. Capital I is i in English but
-// ı in Turkish, and one role can mix both languages ("SENIOR YAZILIM MÜHENDİSİ"), so the
-// comparison goes letter by letter and lets I stand for either. The machine's default
-// language is never used, so the result is the same on every computer.
+// Two roles are the same if they differ only in letter case. One role can mix Turkish and
+// English ("SENIOR YAZILIM MÜHENDİSİ"), so the comparison goes letter by letter.
 function isSameRole(a: string, b: string): boolean {
   const left = [...a.normalize("NFC")];
   const right = [...b.normalize("NFC")];
   return left.length === right.length && left.every((letter, i) => sameLetter(letter, right[i]!));
-}
-
-function sameLetter(a: string, b: string): boolean {
-  const options = lowerCaseOptions(b);
-  return lowerCaseOptions(a).some((lower) => options.includes(lower));
-}
-
-function lowerCaseOptions(letter: string): string[] {
-  if (letter === "I") return ["i", "ı"];
-  if (letter === "İ") return ["i"];
-  return [letter.toLocaleLowerCase("en")];
 }
 
 function collapseSpaces(value: string): string {

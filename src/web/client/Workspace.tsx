@@ -1,8 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { AiNotesPanel } from "./AiNotesPanel.tsx";
-import { api, ApiError, type Candidate, type Interview } from "./api.ts";
+import { api, ApiError, type Candidate, type EvidenceResult, type Interview } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { CvPanel } from "./CvPanel.tsx";
+import type { CvFocus } from "./evidence-focus.ts";
+import { EvidenceSearch } from "./EvidenceSearch.tsx";
 import { InterviewSelector } from "./InterviewSelector.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, navigate } from "./navigation.ts";
@@ -31,6 +33,29 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   // The Transcript segment an AI Note's quote points to. `request` changes on every click, so
   // clicking the same quote again scrolls to it again.
   const [highlight, setHighlight] = useState<SegmentHighlight>();
+  // The CV match an Evidence search result points to. `id` changes on every click, too.
+  const [cvFocus, setCvFocus] = useState<CvFocus>();
+
+  // A Transcript result selects its Interview, since the Transcript panel shows one Interview,
+  // and is shown the same way as an AI Note's quote, with the matched words marked.
+  function openEvidence(result: EvidenceResult) {
+    if (result.source === "cv") {
+      // The CV panel marks the match in the page's whole text, not only in the excerpt.
+      const highlights = result.highlights.map(({ start, end }) => ({
+        start: result.excerptStart + start,
+        end: result.excerptStart + end,
+      }));
+      setCvFocus((current) => ({ id: (current?.id ?? 0) + 1, page: result.page, highlights }));
+    } else {
+      setInterviewId(result.interviewId);
+      setHighlight((current) => ({
+        interviewId: result.interviewId,
+        segmentNumber: result.segmentNumber,
+        request: (current?.request ?? 0) + 1,
+        marks: result.highlights,
+      }));
+    }
+  }
 
   function loadInterviews(id: string): Promise<void> {
     return api.listInterviews(id).then(
@@ -129,13 +154,16 @@ export function Workspace({ candidateId }: { candidateId: string }) {
           onAdded={handleInterviewAdded}
         />
       )}
+      {load.state === "ready" && (
+        <EvidenceSearch candidateId={candidateId} interviews={interviews} onOpen={openEvidence} />
+      )}
       {load.state === "loading" && <p>{text.workspace.loading}</p>}
       {load.state === "notFound" && <p className="error">{text.workspace.notFound}</p>}
       {load.state === "failed" && <p className="error">{text.workspace.loadFailed}</p>}
       {load.state === "ready" && (
         <div className="panels">
           <Panel area="cv" title={text.panels.cv.title}>
-            <CvPanel candidateId={load.candidate.id} />
+            <CvPanel candidateId={load.candidate.id} focus={cvFocus} />
           </Panel>
           <Panel area="notes" title={text.panels.interviewerNotes.title}>
             <NotesPanel

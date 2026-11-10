@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
-import { api, type Interview, type Transcript, type TranscriptFormat } from "./api.ts";
+import { api, type Highlight, type Interview, type Transcript, type TranscriptFormat } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { MarkedText } from "./MarkedText.tsx";
 import { SpeakerMapping } from "./SpeakerMapping.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
@@ -13,6 +14,8 @@ export interface SegmentHighlight {
   segmentNumber: number;
   // Changes on every request, so the same segment can be shown again.
   request: number;
+  // Words to mark inside the segment's text, as positions in it, such as an Evidence search match.
+  marks?: Highlight[];
 }
 
 interface TranscriptPanelProps {
@@ -162,7 +165,13 @@ function InterviewTranscript({
                       speaker && <span className="unverified">{t.unverified}</span>
                     )}
                   </div>
-                  <p className="segment-text">{segment.text}</p>
+                  <p className="segment-text">
+                    {segment.number === highlighted && highlight?.marks ? (
+                      <MarkedText text={segment.text} highlights={highlight.marks} />
+                    ) : (
+                      segment.text
+                    )}
+                  </p>
                 </li>
               );
             })}

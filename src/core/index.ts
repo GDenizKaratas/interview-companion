@@ -10,6 +10,7 @@ import * as candidates from "./candidates.ts";
 import { claudeProvider } from "./claude-provider.ts";
 import * as cv from "./cv.ts";
 import { openDatabase } from "./database.ts";
+import * as evidenceSearch from "./evidence-search.ts";
 import * as demoCandidate from "./demo-candidate.ts";
 import * as interfaceLanguage from "./interface-language.ts";
 import * as interviewerNotes from "./interviewer-notes.ts";
@@ -23,6 +24,14 @@ export type { AiNoteRequest, AiProvider, AiProviderFactory, ProposedAiNote } fro
 export type { CandidateOverview, InterviewOverview } from "./candidate-overview.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
+export type {
+  EvidenceQuery,
+  EvidenceResult,
+  EvidenceSearch,
+  EvidenceSources,
+  Highlight,
+  TranscriptEvidence,
+} from "./evidence-search.ts";
 export {
   AiProviderError,
   InvalidInputError,
@@ -69,6 +78,7 @@ export interface Core {
   getTranscript(interviewId: string): transcripts.Transcript | undefined;
   listTranscriptFormats(): transcripts.TranscriptFormat[];
   confirmSpeakerMapping(interviewId: string, roles: Record<string, transcripts.SpeakerRole>): transcripts.Transcript;
+  searchEvidence(candidateId: string, query: evidenceSearch.EvidenceQuery): evidenceSearch.EvidenceSearch;
   saveApiKey(apiKey: string): void;
   removeApiKey(): void;
   hasApiKey(): boolean;
@@ -94,6 +104,7 @@ const readOperations = [
   "getTranscript",
   "listTranscriptFormats",
   "listAiNotes",
+  "searchEvidence",
 ] as const satisfies readonly (keyof Core)[];
 
 export type ReadOnlyCore = Pick<Core, (typeof readOperations)[number]>;
@@ -155,6 +166,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     getTranscript: (interviewId) => transcripts.getTranscript(db, interviewId),
     listTranscriptFormats: () => transcripts.listTranscriptFormats(),
     confirmSpeakerMapping: (interviewId, roles) => transcripts.confirmSpeakerMapping(db, now, interviewId, roles),
+    searchEvidence: (candidateId, query) => evidenceSearch.searchEvidence(db, today, candidateId, query),
     saveApiKey: (apiKey) => aiSettings.saveApiKey(db, apiKey),
     removeApiKey: () => aiSettings.removeApiKey(db),
     hasApiKey: () => aiSettings.hasApiKey(db),

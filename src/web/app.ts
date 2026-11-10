@@ -6,6 +6,7 @@ import {
   PreconditionError,
   type Core,
   type CvFile,
+  type EvidenceSources,
   type SpeakerRole,
 } from "../core/index.ts";
 
@@ -56,6 +57,20 @@ export function createApi(core: Core): Hono {
     const cv = (await fileField(await c.req.parseBody(), "cv")) ?? { fileName: "", bytes: new Uint8Array() };
     return respondOrRefuse(c, async () => c.json(await core.attachCv(c.req.param("id"), cv), 201));
   });
+
+  // Searches the Candidate's CV and Transcripts. ?q= is the search, ?sources= is all, cv, or
+  // transcripts (all when left out), and ?candidateOnly=true keeps only what the Candidate said.
+  api.get("/candidates/:id/evidence", (c) =>
+    respondOrRefuse(c, () =>
+      c.json(
+        core.searchEvidence(c.req.param("id"), {
+          query: c.req.query("q") ?? "",
+          sources: (c.req.query("sources") ?? "all") as EvidenceSources,
+          candidateOnly: c.req.query("candidateOnly") === "true",
+        }),
+      ),
+    ),
+  );
 
   // The Transcript formats core can import, so the interface can offer and name them.
   api.get("/transcript-formats", (c) => c.json(core.listTranscriptFormats()));
