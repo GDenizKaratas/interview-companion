@@ -51,7 +51,7 @@ One AI-generated statement about an Interview, backed by at least one piece of E
 _Avoid_: Summary, insight, AI summary
 
 **Stale**:
-The state of an AI Note whose Speaker Mapping changed after it was generated. A Stale AI Note stays visible but is not trusted until regenerated.
+The state of an AI Note whose Speaker Mapping changed after it was generated. A Stale AI Note stays visible but is not trusted; regenerating gives new notes made from the current mapping. A reviewed Stale note is kept and stays Stale.
 _Avoid_: Outdated, invalid
 
 **Review State**:

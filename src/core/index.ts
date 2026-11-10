@@ -84,6 +84,10 @@ export interface Core {
   hasApiKey(): boolean;
   generateAiNotes(interviewId: string): Promise<aiNotes.AiNoteGeneration>;
   listAiNotes(interviewId: string): aiNotes.AiNote[];
+  confirmAiNote(id: string): aiNotes.AiNote;
+  correctAiNote(id: string, correction: string): aiNotes.AiNote;
+  dismissAiNote(id: string): aiNotes.AiNote;
+  restoreAiNote(id: string): aiNotes.AiNote;
   close(): void;
 }
 
@@ -99,6 +103,7 @@ const readOperations = [
   "getCv",
   "getTranscript",
   "listTranscriptFormats",
+  "listAiNotes",
   "searchEvidence",
 ] as const satisfies readonly (keyof Core)[];
 
@@ -167,6 +172,10 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     hasApiKey: () => aiSettings.hasApiKey(db),
     generateAiNotes: (interviewId) => aiNotes.generateAiNotes(db, now, aiProvider, interviewId),
     listAiNotes: (interviewId) => aiNotes.listAiNotes(db, interviewId),
+    confirmAiNote: (id) => aiNotes.confirmAiNote(db, id),
+    correctAiNote: (id, correction) => aiNotes.correctAiNote(db, id, correction),
+    dismissAiNote: (id) => aiNotes.dismissAiNote(db, id),
+    restoreAiNote: (id) => aiNotes.restoreAiNote(db, id),
     close: () => db.close(),
   };
 }

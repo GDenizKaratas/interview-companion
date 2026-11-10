@@ -100,6 +100,8 @@ const migrations: string[] = [
      quote TEXT NOT NULL,
      PRIMARY KEY (ai_note_id, position)
    ) STRICT;`,
+  // The Interviewer's rewrite of an AI Note. The AI's statement stays as it was generated.
+  `ALTER TABLE ai_note ADD COLUMN correction TEXT;`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

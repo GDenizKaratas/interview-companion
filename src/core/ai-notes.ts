@@ -3,7 +3,7 @@ import type { DatabaseSync } from "node:sqlite";
 import type { AiProviderFactory, ProposedAiNote } from "./ai-provider.ts";
 import { readApiKey } from "./ai-settings.ts";
 import { inTransaction } from "./database.ts";
-import { AiProviderError, PreconditionError } from "./errors.ts";
+import { AiProviderError, InvalidInputError, NotFoundError, PreconditionError } from "./errors.ts";
 import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { requireInterview } from "./interviews.ts";
@@ -21,8 +21,10 @@ export interface AiNoteEvidence {
 export interface AiNote {
   id: string;
   interviewId: string;
-  // One statement, in the interface language at the time it was generated.
+  // The AI's statement, in the interface language at the time it was generated. It never changes.
   statement: string;
+  // The Interviewer's rewrite when the note is Corrected, kept even if the note is later Dismissed.
+  correction: string | null;
   reviewState: ReviewState;
   generatedAt: string;
   // True when the Speaker Mapping was confirmed again after the note was generated: the note
@@ -108,7 +110,9 @@ function isBacked(note: ProposedAiNote, candidateSegments: Map<number, string>):
 function saveNotes(db: DatabaseSync, now: Now, interviewId: string, notes: ProposedAiNote[]): void {
   const generatedAt = now().toISOString();
   inTransaction(db, () => {
-    db.prepare("DELETE FROM ai_note WHERE interview_id = ?").run(interviewId);
+    // Only notes the Interviewer has not touched are replaced. A Confirmed, Corrected, or
+    // Dismissed note is their work, so it stays, Stale if the mapping changed since.
+    db.prepare("DELETE FROM ai_note WHERE interview_id = ? AND review_state = 'unreviewed'").run(interviewId);
     const insertNote = db.prepare(
       "INSERT INTO ai_note (id, interview_id, statement, review_state, generated_at, position) VALUES (?, ?, ?, 'unreviewed', ?, ?)",
     );
@@ -125,22 +129,85 @@ function saveNotes(db: DatabaseSync, now: Now, interviewId: string, notes: Propo
   });
 }
 
+// The newest generation first, each in the order the model gave its notes.
 export function listAiNotes(db: DatabaseSync, interviewId: string): AiNote[] {
+  requireInterview(db, interviewId);
   const notes = db
     .prepare(
-      `SELECT ai_note.id, ai_note.interview_id, statement, review_state, generated_at,
-              generated_at < speaker_mapping_confirmed_at AS stale
-       FROM ai_note JOIN transcript ON transcript.interview_id = ai_note.interview_id
-       WHERE ai_note.interview_id = ? ORDER BY position`,
+      `${selectNotes} WHERE ai_note.interview_id = ? ORDER BY generated_at DESC, position`,
     )
-    .all(interviewId) as unknown as {
-    id: string;
-    interview_id: string;
-    statement: string;
-    review_state: ReviewState;
-    generated_at: string;
-    stale: number;
-  }[];
+    .all(interviewId) as unknown as NoteRow[];
+  return toAiNotes(db, notes);
+}
+
+const selectNotes = `SELECT ai_note.id, ai_note.interview_id, statement, correction, review_state, generated_at,
+         generated_at < speaker_mapping_confirmed_at AS stale
+  FROM ai_note JOIN transcript ON transcript.interview_id = ai_note.interview_id`;
+
+interface NoteRow {
+  id: string;
+  interview_id: string;
+  statement: string;
+  correction: string | null;
+  review_state: ReviewState;
+  generated_at: string;
+  stale: number;
+}
+
+function getAiNote(db: DatabaseSync, id: string): AiNote {
+  const row = db.prepare(`${selectNotes} WHERE ai_note.id = ?`).get(id) as unknown as NoteRow | undefined;
+  if (!row) throw new NotFoundError("AI Note not found.");
+  return toAiNotes(db, [row])[0]!;
+}
+
+function setReviewState(db: DatabaseSync, id: string, reviewState: ReviewState): AiNote {
+  db.prepare("UPDATE ai_note SET review_state = ? WHERE id = ?").run(reviewState, id);
+  return getAiNote(db, id);
+}
+
+// A Dismissed note is hidden, so it is shown again before it can be confirmed or corrected.
+function requireShown(note: AiNote): void {
+  if (note.reviewState === "dismissed") {
+    throw new PreconditionError("noteDismissed", "This note was dismissed. Show it again first.");
+  }
+}
+
+// The Interviewer says the note reflects its Evidence. It says nothing about whether the Candidate was right.
+// A Corrected note cannot be confirmed: that would put the AI's text back above the Interviewer's.
+export function confirmAiNote(db: DatabaseSync, id: string): AiNote {
+  const note = getAiNote(db, id);
+  requireShown(note);
+  if (note.reviewState === "corrected") {
+    throw new PreconditionError("noteCorrected", "This note was corrected. Edit the correction instead.");
+  }
+  return setReviewState(db, id, "confirmed");
+}
+
+// The Interviewer rewrites the note. The AI's statement and its Evidence stay, so it is always
+// visible what the AI said and what the Interviewer changed.
+export function correctAiNote(db: DatabaseSync, id: string, correction: string): AiNote {
+  const text = correction.trim();
+  if (text === "") throw new InvalidInputError("correction", "required", "Write the corrected note.");
+  requireShown(getAiNote(db, id));
+  db.prepare("UPDATE ai_note SET review_state = 'corrected', correction = ? WHERE id = ?").run(text, id);
+  return getAiNote(db, id);
+}
+
+// Hidden from the panel, never deleted, so it can be shown again.
+export function dismissAiNote(db: DatabaseSync, id: string): AiNote {
+  getAiNote(db, id);
+  return setReviewState(db, id, "dismissed");
+}
+
+// Shows a Dismissed note again. A note the Interviewer had corrected comes back with its
+// correction; any other comes back Unreviewed.
+export function restoreAiNote(db: DatabaseSync, id: string): AiNote {
+  const note = getAiNote(db, id);
+  if (note.reviewState !== "dismissed") return note;
+  return setReviewState(db, id, note.correction === null ? "unreviewed" : "corrected");
+}
+
+function toAiNotes(db: DatabaseSync, notes: NoteRow[]): AiNote[] {
   const evidenceOf = db.prepare(
     "SELECT segment_number, quote FROM ai_note_evidence WHERE ai_note_id = ? ORDER BY position",
   );
@@ -148,6 +215,7 @@ export function listAiNotes(db: DatabaseSync, interviewId: string): AiNote[] {
     id: note.id,
     interviewId: note.interview_id,
     statement: note.statement,
+    correction: note.correction,
     reviewState: note.review_state,
     generatedAt: note.generated_at,
     stale: note.stale === 1,

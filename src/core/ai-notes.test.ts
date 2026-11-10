@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { fakeAiProvider, type FakeAiProvider } from "./testing/fake-ai-provider.ts";
-import { AiProviderError, NotFoundError, openCore, type Core, type Interview, type Transcript } from "./index.ts";
+import { AiProviderError, NotFoundError, openCore, type AiNote, type Core, type Interview, type Transcript } from "./index.ts";
 
 let dir: string;
 let core: Core;
@@ -151,7 +151,7 @@ describe("AI Note generation", () => {
     ]);
   });
 
-  it("replaces the Interview's earlier AI Notes when generated again", async () => {
+  it("replaces the Interview's Unreviewed AI Notes when generated again", async () => {
     ready();
     fake.answer = [{ statement: "İlk.", evidence: [{ segmentNumber: 2, quote: "Redis" }] }];
     await core.generateAiNotes(interview.id);
@@ -218,9 +218,9 @@ describe("AI Note generation", () => {
     ready();
     fake.answer = [{ statement: "Not.", evidence: [{ segmentNumber: 2, quote: "Redis" }] }];
     const generation = core.generateAiNotes(interview.id);
-    // Confirming again while the model works: the notes would rest on a mapping they were not made from.
+    // Changing the mapping while the model works: the notes would rest on a mapping they were not made from.
     clock = new Date("2026-11-10T09:31:00Z");
-    confirmRoles(core.getTranscript(interview.id)!);
+    changeSpeakerMapping();
 
     await expect(generation).rejects.toMatchObject({ reason: "transcriptChanged" });
     expect(core.listAiNotes(interview.id)).toEqual([]);
@@ -248,16 +248,151 @@ describe("AI Note generation", () => {
     expect(core.listAiNotes(interview.id)).toEqual(before);
   });
 
-  it("marks AI Notes Stale when the Speaker Mapping is confirmed again after they were generated", async () => {
+  it("marks AI Notes Stale when the Speaker Mapping changes after they were generated", async () => {
     ready();
     fake.answer = [{ statement: "Not.", evidence: [{ segmentNumber: 2, quote: "Redis" }] }];
     await core.generateAiNotes(interview.id);
     expect(core.listAiNotes(interview.id).map((note) => note.stale)).toEqual([false]);
 
     clock = new Date("2026-11-10T10:00:00Z");
-    confirmRoles(core.getTranscript(interview.id)!);
+    changeSpeakerMapping();
 
     expect(core.listAiNotes(interview.id).map((note) => note.stale)).toEqual([true]);
+  });
+
+  it("does not mark AI Notes Stale when the same roles are confirmed again", async () => {
+    ready();
+    fake.answer = [{ statement: "Not.", evidence: [{ segmentNumber: 2, quote: "Redis" }] }];
+    await core.generateAiNotes(interview.id);
+
+    clock = new Date("2026-11-10T10:00:00Z");
+    confirmRoles(core.getTranscript(interview.id)!);
+
+    expect(core.listAiNotes(interview.id).map((note) => note.stale)).toEqual([false]);
+  });
+});
+
+// Moves the Interviewer to Other: a real change of the Speaker Mapping.
+function changeSpeakerMapping(): void {
+  const roles = Object.fromEntries(
+    core
+      .getTranscript(interview.id)!
+      .speakers.map((speaker) => [speaker.id, speaker.label === "Ece" ? "candidate" : "other"] as const),
+  );
+  core.confirmSpeakerMapping(interview.id, roles);
+}
+
+// Two checked notes, generated at 09:30.
+async function generated(): Promise<AiNote[]> {
+  ready();
+  fake.answer = [
+    { statement: "Redis ve BullMQ kullandı.", evidence: [{ segmentNumber: 2, quote: "Redis ile BullMQ kullandık" }] },
+    { statement: "Ödeme servisini yazdı.", evidence: [{ segmentNumber: 3, quote: "Ödeme servisini ben yazdım." }] },
+  ];
+  return (await core.generateAiNotes(interview.id)).notes;
+}
+
+describe("AI Note review", () => {
+  it("confirms a note, which keeps its text and Evidence", async () => {
+    const [note] = await generated();
+
+    const confirmed = core.confirmAiNote(note!.id);
+
+    expect(confirmed).toMatchObject({ reviewState: "confirmed", statement: "Redis ve BullMQ kullandı.", correction: null });
+    expect(core.listAiNotes(interview.id).map((n) => n.reviewState)).toEqual(["confirmed", "unreviewed"]);
+  });
+
+  it("corrects a note: the Interviewer's text is saved and the AI's text and Evidence are kept", async () => {
+    const [note] = await generated();
+
+    core.correctAiNote(note!.id, "  Redis kullandı; BullMQ'yu ekip seçmişti. ");
+
+    expect(core.listAiNotes(interview.id)[0]).toMatchObject({
+      reviewState: "corrected",
+      statement: "Redis ve BullMQ kullandı.",
+      correction: "Redis kullandı; BullMQ'yu ekip seçmişti.",
+      evidence: [{ segmentNumber: 2, quote: "Redis ile BullMQ kullandık" }],
+    });
+  });
+
+  it("refuses a blank correction and leaves the note as it was", async () => {
+    const [note] = await generated();
+
+    expect(() => core.correctAiNote(note!.id, "   ")).toThrow(
+      expect.objectContaining({ field: "correction", rule: "required" }),
+    );
+    expect(core.listAiNotes(interview.id)[0]).toMatchObject({ reviewState: "unreviewed", correction: null });
+  });
+
+  it("dismisses a note without deleting it, and shows it again as Unreviewed", async () => {
+    const [note] = await generated();
+
+    core.dismissAiNote(note!.id);
+    expect(core.listAiNotes(interview.id).map((n) => [n.statement, n.reviewState])).toEqual([
+      ["Redis ve BullMQ kullandı.", "dismissed"],
+      ["Ödeme servisini yazdı.", "unreviewed"],
+    ]);
+
+    expect(core.restoreAiNote(note!.id)).toMatchObject({ reviewState: "unreviewed" });
+  });
+
+  it("brings a corrected note back with its correction after it was dismissed", async () => {
+    const [note] = await generated();
+    core.correctAiNote(note!.id, "Redis kullandı.");
+    core.dismissAiNote(note!.id);
+
+    expect(core.restoreAiNote(note!.id)).toMatchObject({ reviewState: "corrected", correction: "Redis kullandı." });
+  });
+
+  it("changes nothing when a note that is not Dismissed is shown again", async () => {
+    const [note] = await generated();
+    core.confirmAiNote(note!.id);
+
+    expect(core.restoreAiNote(note!.id)).toMatchObject({ reviewState: "confirmed" });
+  });
+
+  it("refuses to confirm a Corrected note, so the correction stays what the Interviewer trusts", async () => {
+    const [note] = await generated();
+    core.correctAiNote(note!.id, "Redis kullandı.");
+
+    expect(() => core.confirmAiNote(note!.id)).toThrow(expect.objectContaining({ reason: "noteCorrected" }));
+    expect(core.listAiNotes(interview.id)[0]).toMatchObject({ reviewState: "corrected", correction: "Redis kullandı." });
+  });
+
+  it("keeps every reviewed note when generating again, Stale ones still Stale, and replaces only Unreviewed ones", async () => {
+    const [first, second] = await generated();
+    core.correctAiNote(first!.id, "Redis kullandı.");
+    core.confirmAiNote(second!.id);
+    clock = new Date("2026-11-10T10:00:00Z");
+    changeSpeakerMapping();
+    clock = new Date("2026-11-10T10:05:00Z");
+    fake.answer = [{ statement: "Yeni not.", evidence: [{ segmentNumber: 2, quote: "Redis" }] }];
+
+    await core.generateAiNotes(interview.id);
+
+    expect(
+      core.listAiNotes(interview.id).map((n) => [n.statement, n.reviewState, n.correction, n.stale]),
+    ).toEqual([
+      ["Yeni not.", "unreviewed", null, false],
+      ["Redis ve BullMQ kullandı.", "corrected", "Redis kullandı.", true],
+      ["Ödeme servisini yazdı.", "confirmed", null, true],
+    ]);
+  });
+
+  it("refuses to confirm or correct a Dismissed note until it is shown again", async () => {
+    const [note] = await generated();
+    core.dismissAiNote(note!.id);
+
+    expect(() => core.confirmAiNote(note!.id)).toThrow(expect.objectContaining({ reason: "noteDismissed" }));
+    expect(() => core.correctAiNote(note!.id, "Metin.")).toThrow(expect.objectContaining({ reason: "noteDismissed" }));
+    expect(core.listAiNotes(interview.id)[0]).toMatchObject({ reviewState: "dismissed", correction: null });
+  });
+
+  it("refuses to review an unknown AI Note", () => {
+    expect(() => core.confirmAiNote("no-such-note")).toThrow(NotFoundError);
+    expect(() => core.correctAiNote("no-such-note", "Metin.")).toThrow(NotFoundError);
+    expect(() => core.dismissAiNote("no-such-note")).toThrow(NotFoundError);
+    expect(() => core.restoreAiNote("no-such-note")).toThrow(NotFoundError);
   });
 });
 

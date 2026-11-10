@@ -43,6 +43,7 @@ All tools only read. The server gets a view of core that holds only the read ope
 | `get_candidate` | `candidateId` | One Candidate's overview: the CV's file name, upload time, and page count (or `null`); each Interview in order with its number, date, and Planned flag, and its Transcript's file name, format, number of segments, and whether the Speaker Mapping is confirmed (or `null`); and the number of Interviewer Notes and Saved Questions. No full texts. |
 | `get_interviewer_notes` | `candidateId`, optional `interviewId` | The Interviewer Notes, newest save first. With `interviewId`, only that Interview's notes and the untagged ones. |
 | `get_saved_questions` | `candidateId` | The Saved Questions in the Interviewer's order. |
+| `get_ai_notes` | `interviewId` | The Interview's AI Notes, newest generation first. Each has the AI's statement, the Interviewer's correction (or `null`), its Review State, its Stale flag, and its Evidence: exact quotes with the Transcript segment number. Dismissed notes are included, marked `dismissed`. |
 
 Candidate ids come from `list_candidates`; Interview ids come from `get_candidate`. Searching the CV and Transcripts for Evidence and the Candidate Brief prompt come in a later version.
 

@@ -25,7 +25,13 @@ export class NotFoundError extends Error {
 }
 
 // Why an action cannot run yet, although its input is fine: something the Interviewer must do first.
-export type Precondition = "apiKeyMissing" | "noTranscript" | "speakerMappingNotConfirmed" | "transcriptChanged";
+export type Precondition =
+  | "apiKeyMissing"
+  | "noTranscript"
+  | "speakerMappingNotConfirmed"
+  | "transcriptChanged"
+  | "noteCorrected"
+  | "noteDismissed";
 
 // Thrown when an action is refused because a step must come first, such as confirming the
 // Speaker Mapping before AI Notes. The web interface shows the reason in the chosen language.
