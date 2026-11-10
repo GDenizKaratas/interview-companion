@@ -31,20 +31,26 @@ ${template}`;
 const findCandidate =
   "1. Call list_candidates and find the Candidate whose name or id matches, or whose name starts with the words given. If none or several match, stop and ask the Interviewer which one.";
 
+// Steps both lists share, word for word.
+const readOthers = "Call get_saved_questions and get_interviewer_notes.";
+const readAiNotes = "Call get_ai_notes for each Interview that has a Transcript.";
+const search =
+  "Call search_evidence for the topics of the Candidate's role and CV, and for each topic you are about to write about. Run several searches with different words, because it is a keyword search. To report what the Candidate said, search with candidateOnly set to true.";
+
 const readingSteps = `${findCandidate}
 2. Call get_candidate for the CV and the Interviews in order.
-3. Call get_saved_questions and get_interviewer_notes.
-4. Call get_ai_notes for each Interview that has a Transcript.
-5. Call search_evidence for the topics of the Candidate's role and CV, and for each topic you are about to write about. Run several searches with different words, because it is a keyword search. To report what the Candidate said, search with candidateOnly set to true.
+3. ${readOthers}
+4. ${readAiNotes}
+5. ${search}
 6. Write the brief in the chat.`;
 
 const savingSteps = `${findCandidate}
 2. Call get_candidate for the CV and the Interviews in order, and get_cv for the CV's text.
-3. Call get_saved_questions and get_interviewer_notes.
+3. ${readOthers}
 4. AI Notes: for each Interview whose Speaker Mapping is confirmed, call get_ai_notes. If it has no AI Notes, or only Stale ones, call get_transcript, write AI Notes, and save them with save_ai_notes. Leave the other Interviews' notes as they are. The answer says how many notes were dropped because a quote was not found; do not try to save them again.
-5. Call get_ai_notes again for each Interview that has a Transcript.
-6. Call search_evidence for the topics of the Candidate's role and CV, and for each topic you are about to write about. Run several searches with different words, because it is a keyword search. To report what the Candidate said, search with candidateOnly set to true.
-7. Suggested Questions: write a few questions the Interviewer could ask next, such as about a CV claim not discussed yet, and save them with save_suggested_questions. Do not repeat a Saved Question.
+5. ${readAiNotes}
+6. ${search}
+7. Suggested Questions: write a few questions the Interviewer could ask next, such as about a CV claim not discussed yet, and save them with save_suggested_questions. Do not repeat a Saved Question. The answer says how many were dropped because a quote was not found.
 8. Write the brief in the chat.
 9. Save it with save_candidate_brief: the whole brief as text, and one evidence entry per number in square brackets, with the exact quote and its source (a CV page, or an Interview id and segment number).
 
@@ -62,7 +68,7 @@ const rules = `- Every statement about the Candidate cites Evidence with a numbe
 - Write the brief in the language the Interviewer writes to you in. Keep the headings of the template, translated to that language.`;
 
 const savingRules = `- An AI Note is one short, neutral statement about what the Candidate said, with at least one quote from a segment whose speakerRole is candidate. Never quote the Interviewer or others as the Candidate.
-- A Suggested Question has one short reason line. Back it with quotes from the CV or a Transcript when it rests on them; a general question has no quotes.
+- A Suggested Question has one short reason line. Back it with quotes from the CV, or from a Transcript whose Speaker Mapping is confirmed, when it rests on them; a suggestion quoting an unconfirmed Transcript is dropped. A general question has no quotes.
 - Write AI Notes and Suggested Questions in the language the Interviewer writes to you in. Quotes stay in the language of their source.`;
 
 const template = `# Candidate Brief: <name>, <role>

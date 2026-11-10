@@ -311,7 +311,7 @@ describe("MCP server", () => {
   });
 
   // The text of the brief prompt for one Candidate, as the AI client gets it now.
-  async function briefPrompt(candidate = "Ada Demir"): Promise<string> {
+  async function fetchBriefPrompt(candidate = "Ada Demir"): Promise<string> {
     const { messages } = await client.getPrompt({ name: "brief", arguments: { candidate } });
     expect(messages).toHaveLength(1);
     expect(messages[0]!.role).toBe("user");
@@ -319,7 +319,7 @@ describe("MCP server", () => {
   }
 
   it("brief gives a fixed template and rules for the Candidate named", async () => {
-    const text = await briefPrompt();
+    const text = await fetchBriefPrompt();
 
     // Which Candidate, and the tools to read them with.
     expect(text).toContain('"Ada Demir"');
@@ -339,7 +339,7 @@ describe("MCP server", () => {
   });
 
   it("brief only reads while saving from the AI client is off, and says where to turn it on", async () => {
-    const text = await briefPrompt();
+    const text = await fetchBriefPrompt();
 
     for (const tool of ["save_ai_notes", "save_suggested_questions", "save_candidate_brief"]) {
       expect(text, tool).not.toContain(tool);
@@ -351,7 +351,7 @@ describe("MCP server", () => {
 
   it("brief writes and saves AI Notes, Suggested Questions, and the Candidate Brief while saving is on", async () => {
     core.allowAiClientWrites(true);
-    const text = await briefPrompt();
+    const text = await fetchBriefPrompt();
 
     // In this order: notes first, so the brief can cite them; the brief last.
     const at = (tool: string) => text.indexOf(tool);

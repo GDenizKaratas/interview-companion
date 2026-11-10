@@ -150,7 +150,8 @@ const text = {
     copy: "Copy",
     copied: "Copied",
     stepAsk: "2. Start Claude Code and ask, for example: “What did Deniz say about Redis? Use Interview Companion.”",
-    stepBrief: "3. For a full brief, click Copy brief command in a Candidate's Workspace and paste it into Claude Code, or type /mcp__interview-companion__brief and the Candidate's name.",
+    // {command} is replaced by the brief command.
+    stepBrief: "3. For a full brief, click Copy brief command in a Candidate's Workspace and paste it into Claude Code, or type {command} and the Candidate's name.",
     desktop: "For Claude Desktop, see docs/mcp.md in the project folder.",
     readOnly: "Unless you allow it in AI Settings, the AI client can only read and search. Allowed, it can also save AI Notes and Suggested Questions, which the app checks; it can never change your own notes, questions, or Candidates. When a Candidate Brief is saved here, the app checks that its quotes are in the CV or a Transcript; a brief kept only in the chat is not checked.",
   },

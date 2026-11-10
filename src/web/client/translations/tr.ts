@@ -146,7 +146,8 @@ const translation: TranslationFile = {
       copy: "Kopyala",
       copied: "Kopyalandı",
       stepAsk: "2. Claude Code'u açıp örneğin şunu sorun: “Deniz Redis hakkında ne dedi? Interview Companion'ı kullan.”",
-      stepBrief: "3. Tam bir özet için adayın çalışma alanında Özet komutunu kopyala düğmesine basıp komutu Claude Code'a yapıştırın ya da /mcp__interview-companion__brief yazıp adayın adını verin.",
+      // {command} is replaced by the brief command.
+      stepBrief: "3. Tam bir özet için adayın çalışma alanında Özet komutunu kopyala düğmesine basıp komutu Claude Code'a yapıştırın ya da {command} yazıp adayın adını verin.",
       desktop: "Claude Desktop için proje klasöründeki docs/mcp.md dosyasına bakın.",
       readOnly: "AI Ayarları'nda izin vermediğiniz sürece istemci yalnızca okuyabilir ve arayabilir. İzin verirseniz uygulamanın kontrol ettiği AI Notları ve önerilen sorular da kaydedebilir; kendi notlarınızı, sorularınızı ve adaylarınızı asla değiştiremez. Aday Özeti buraya kaydedildiğinde uygulama alıntılarının CV'de veya bir transkriptte bulunduğunu kontrol eder; yalnızca sohbette kalan bir özet kontrol edilmez.",
     },
