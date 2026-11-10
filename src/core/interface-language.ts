@@ -5,7 +5,7 @@ import { getSetting, setSetting } from "./settings.ts";
 // The language the interface is shown in. Later, AI output is written in it too.
 // Core stores only a language code; the translation files live in the browser code,
 // so core does not need to change when a language is added.
-export const defaultInterfaceLanguage = "en";
+export const defaultInterfaceLanguage = "tr";
 
 const settingKey = "interface_language";
 

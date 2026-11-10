@@ -304,6 +304,12 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 192 | Order and edit buttons of a Saved Question show on the question under the pointer or with focus, over the end of its line. On a touch screen they always show. | In the narrower Questions panel they otherwise took a second line for every question. | Always visible buttons. |
 | 193 | In the Candidate list, the CV column is a "View CV" button that opens the CV almost full screen over the list, in the same CV panel as the Workspace, instead of showing a page count. A Candidate without a CV, and a count of zero Interviews, Interviewer Notes, or Saved Questions, show a quiet dash. Chosen by the owner. | A page count says little; one click to read the CV before an interview is useful. Dashes let the eye find what is there. | Keeping the page count; opening the Workspace to see the CV. |
 
+## 2026-11-10 — #44 Turkish as the default interface language
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 194 | A new database starts in Turkish (`defaultInterfaceLanguage = "tr"`); the browser's fallback when core cannot be reached is Turkish too. A chosen language is still remembered. English stays the reference translation file whose keys every other file must have. The Turkish label for a Candidate's name is "İsim", and the settings are "AI Ayarları". Chosen by the owner. | The first users interview in Turkish. | English as the default; a choice on first start. |
+
 ## Open questions
 
 - The exact layout of a Google Meet transcript downloaded as `.txt` (decision 126, tracked in #33). It needs one real export with fictional content.

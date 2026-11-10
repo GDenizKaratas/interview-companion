@@ -13,7 +13,7 @@ export interface Language extends TranslationFile {
 
 // Core owns the default language and sends it. This copy is only the fallback when core
 // cannot be reached or names a language that has no translation file.
-export const defaultLanguageCode = "en";
+export const defaultLanguageCode = "tr";
 
 // Every file in translations/ is a language; its file name is the language code.
 // Adding a language means adding one file there and nothing else.
