@@ -901,3 +901,13 @@ button.role-choice.chosen {
   border-radius: 4px;
   box-shadow: 0 0 0 4px #fff4c2;
 }
+
+.ai-note.stale {
+  border-color: #e0b84c;
+}
+
+.stale-warning {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  color: #8a5a00;
+}

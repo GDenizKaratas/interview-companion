@@ -25,6 +25,9 @@ export interface AiNote {
   statement: string;
   reviewState: ReviewState;
   generatedAt: string;
+  // True when the Speaker Mapping was confirmed again after the note was generated: the note
+  // may credit words to the wrong speaker, so it is not trusted until regenerated.
+  stale: boolean;
   evidence: AiNoteEvidence[];
 }
 
@@ -86,7 +89,8 @@ export async function generateAiNotes(
       .map((segment) => [segment.number, segment.text]),
   );
   const backed = proposed.filter((note) => isBacked(note, candidateSegments));
-  saveNotes(db, now, interviewId, backed);
+  // An answer with nothing usable does not cost the Interviewer the notes they already have.
+  if (backed.length > 0) saveNotes(db, now, interviewId, backed);
   return { notes: listAiNotes(db, interviewId), dropped: proposed.length - backed.length };
 }
 
@@ -124,7 +128,10 @@ function saveNotes(db: DatabaseSync, now: Now, interviewId: string, notes: Propo
 export function listAiNotes(db: DatabaseSync, interviewId: string): AiNote[] {
   const notes = db
     .prepare(
-      "SELECT id, interview_id, statement, review_state, generated_at FROM ai_note WHERE interview_id = ? ORDER BY position",
+      `SELECT ai_note.id, ai_note.interview_id, statement, review_state, generated_at,
+              generated_at < speaker_mapping_confirmed_at AS stale
+       FROM ai_note JOIN transcript ON transcript.interview_id = ai_note.interview_id
+       WHERE ai_note.interview_id = ? ORDER BY position`,
     )
     .all(interviewId) as unknown as {
     id: string;
@@ -132,6 +139,7 @@ export function listAiNotes(db: DatabaseSync, interviewId: string): AiNote[] {
     statement: string;
     review_state: ReviewState;
     generated_at: string;
+    stale: number;
   }[];
   const evidenceOf = db.prepare(
     "SELECT segment_number, quote FROM ai_note_evidence WHERE ai_note_id = ? ORDER BY position",
@@ -142,6 +150,7 @@ export function listAiNotes(db: DatabaseSync, interviewId: string): AiNote[] {
     statement: note.statement,
     reviewState: note.review_state,
     generatedAt: note.generated_at,
+    stale: note.stale === 1,
     evidence: (evidenceOf.all(note.id) as unknown as { segment_number: number; quote: string }[]).map((row) => ({
       segmentNumber: row.segment_number,
       quote: row.quote,

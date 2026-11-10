@@ -235,6 +235,30 @@ describe("AI Note generation", () => {
 
     expect(core.listAiNotes(interview.id)).toEqual([]);
   });
+  it("keeps the earlier AI Notes when no proposed note passes the check", async () => {
+    ready();
+    fake.answer = [{ statement: "Önceki not.", evidence: [{ segmentNumber: 2, quote: "Redis" }] }];
+    await core.generateAiNotes(interview.id);
+    const before = core.listAiNotes(interview.id);
+    fake.answer = [{ statement: "Uydurma.", evidence: [{ segmentNumber: 2, quote: "Kafka" }] }];
+
+    const result = await core.generateAiNotes(interview.id);
+
+    expect(result).toEqual({ notes: before, dropped: 1 });
+    expect(core.listAiNotes(interview.id)).toEqual(before);
+  });
+
+  it("marks AI Notes Stale when the Speaker Mapping is confirmed again after they were generated", async () => {
+    ready();
+    fake.answer = [{ statement: "Not.", evidence: [{ segmentNumber: 2, quote: "Redis" }] }];
+    await core.generateAiNotes(interview.id);
+    expect(core.listAiNotes(interview.id).map((note) => note.stale)).toEqual([false]);
+
+    clock = new Date("2026-11-10T10:00:00Z");
+    confirmRoles(core.getTranscript(interview.id)!);
+
+    expect(core.listAiNotes(interview.id).map((note) => note.stale)).toEqual([true]);
+  });
 });
 
 describe("API key", () => {

@@ -187,7 +187,8 @@ const text = {
       generating: "Generating…",
       whatIsSent: "Sends this Interview's Transcript with speaker roles to Claude (Anthropic). Not the CV or your notes.",
       // {count} is replaced by a number.
-      dropped: "{count} proposed notes were dropped because a quote was not found word for word in the Candidate's words.",
+      dropped: "Notes dropped because a quote was not found word for word in the Candidate's words: {count}.",
+      stale: "Speakers changed. Regenerate to trust this note.",
       showInTranscript: "Show in the Transcript",
       // {number} is replaced by the part's number in the Transcript.
       segment: "part {number}",

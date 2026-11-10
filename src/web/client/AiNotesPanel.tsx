@@ -115,13 +115,14 @@ function InterviewAiNotes({
       )}
       {generateError !== undefined && <p className="error">{generationErrorMessage(text, generateError)}</p>}
       {dropped > 0 && <p className="hint">{fill(t.dropped, { count: String(dropped) })}</p>}
-      {notes && notes.length === 0 && apiKeySaved && transcript && confirmed && !generating && (
+      {notes && notes.length === 0 && dropped === 0 && apiKeySaved && transcript && confirmed && !generating && (
         <p className="empty">{t.empty}</p>
       )}
       {notes && notes.length > 0 && (
         <ul className="ai-note-list">
           {notes.map((note) => (
-            <li key={note.id} className="ai-note">
+            <li key={note.id} className={note.stale ? "ai-note stale" : "ai-note"}>
+              {note.stale && <p className="stale-warning">{t.stale}</p>}
               <p className="ai-note-statement">{note.statement}</p>
               {note.evidence.map((evidence, i) => {
                 const startMs = segmentTimes.get(evidence.segmentNumber);

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { api } from "./api.ts";
+import { api, ApiError } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { useText } from "./text.tsx";
 
@@ -35,8 +35,10 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
       setKey("");
       setSaved(true);
       window.dispatchEvent(new Event(apiKeyChanged));
-    } catch {
-      setError(key.trim() === "" ? t.required : t.saveFailed);
+    } catch (caught) {
+      // Core decides what a valid key is; its field and rule pick the message.
+      const refusedAsMissing = caught instanceof ApiError && caught.field === "apiKey" && caught.rule === "required";
+      setError(refusedAsMissing ? t.required : t.saveFailed);
     } finally {
       setBusy(false);
     }

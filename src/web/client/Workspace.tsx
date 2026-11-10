@@ -7,7 +7,7 @@ import { InterviewSelector } from "./InterviewSelector.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, navigate } from "./navigation.ts";
 import { SavedQuestions } from "./SavedQuestions.tsx";
-import { TranscriptPanel } from "./TranscriptPanel.tsx";
+import { TranscriptPanel, type SegmentHighlight } from "./TranscriptPanel.tsx";
 import { useText } from "./text.tsx";
 
 type Load =
@@ -30,7 +30,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [transcriptVersion, setTranscriptVersion] = useState(0);
   // The Transcript segment an AI Note's quote points to. `request` changes on every click, so
   // clicking the same quote again scrolls to it again.
-  const [highlight, setHighlight] = useState<{ interviewId: string; segmentNumber: number; request: number }>();
+  const [highlight, setHighlight] = useState<SegmentHighlight>();
 
   function loadInterviews(id: string): Promise<void> {
     return api.listInterviews(id).then(
@@ -150,7 +150,11 @@ export function Workspace({ candidateId }: { candidateId: string }) {
               interviews={interviews}
               selectedInterviewId={interviewId}
               highlight={highlight}
-              onChanged={() => setTranscriptVersion((version) => version + 1)}
+              onChanged={() => {
+                setTranscriptVersion((version) => version + 1);
+                // A replaced Transcript has different segments, so an old highlight would point to the wrong one.
+                setHighlight(undefined);
+              }}
             />
           </Panel>
           <Panel area="ai" title={text.panels.aiNotes.title} label={text.panels.aiNotes.label}>
