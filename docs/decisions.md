@@ -119,6 +119,17 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 |---|---|---|---|
 | 78 | When a note is saved or re-tagged to an Interview other than the selected one, it leaves the list, and My Notes says where it went ("Saved under Second Interview. Notes of other Interviews are hidden while one is selected.") with a "Show all notes" button that switches the header to All. The browser finds this by checking whether core's new list still contains the note, not by repeating the filter rule. Every note saved or re-tagged since the list was last filled is checked against the newest list, so a quick later change cannot drop the notice. The notice goes away on the next change, when the selection changes, or when the list cannot be loaded. | Without it, the note looks deleted. Asked for by the owner. Checking core's answer keeps the filter rule only in core (decision 70). | No notice; keeping the note on screen until the next reload; repeating the filter in the browser. |
 
+## 2026-11-10 — #6 Saved Questions
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 79 | A new Saved Question goes to the end of the Candidate's list. Core stores each question's place as a number and moves one question at a time to a given place; the interface offers up and down buttons. | Moving one question is one small, checkable operation, and a drag-and-drop interface can call the same operation later. | Sending the whole new order from the browser; drag and drop now. |
+| 80 | Each Saved Question stores its origin: `written` (by the Interviewer) or `suggestion` (copied from a Suggested Question). Only `written` can be created until #17. Each question shows its origin as a quiet label, "written by you" or "from a suggestion", as #6 asks. The wireframe's authorship table is updated to match. | The origin is part of the copy, so it stays when suggestions are regenerated (decision 23). | Working out the origin from a link to the suggestion, which may be deleted; no label on hand-written questions, as the wireframe first said. |
+| 81 | Question text is trimmed, but line breaks inside it are kept. In the question box, Enter saves and Shift+Enter starts a new line. | Questions are usually one line; a pasted question with several parts keeps its shape. | A single-line input. |
+| 82 | Every delete in the app asks for confirmation first, in the app's own dialog (`ConfirmDialog`). The dialog shows what will be deleted, has a red Delete button, and gives Cancel the focus; Escape cancels. Saved Questions and Interviewer Notes use it; the note delete from decision 73 moves from the browser's dialog to this one. Chosen by the owner. | Deleted data cannot be brought back. The app's own dialog matches its look and can show the item, which the browser's dialog cannot. With Cancel focused, pressing Enter by habit deletes nothing. | Deleting at once; the browser's `confirm` dialog; an undo button. |
+| 83 | Saved Questions have no Interview tag yet, although decision 14 allows one. It comes in its own ticket. Chosen by the owner. | It needs a way to pick the Interview for each question, which is a separate piece of interface work, and #6 does not ask for it. | Adding the tag in #6. |
+| 84 | Core also refuses an unknown Saved Question with `NotFoundError` (decision 64) when it is edited, deleted, or moved. | The browser can tell a missing question from refused text. | Doing nothing silently. |
+
 ## Open questions
 
 - The exact format of Google Meet transcripts. To be researched at the start of Milestone 2.

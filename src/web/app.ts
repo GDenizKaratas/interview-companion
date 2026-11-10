@@ -85,6 +85,37 @@ export function createApi(core: Core): Hono {
     });
   });
 
+  api.get("/candidates/:id/saved-questions", (c) =>
+    respondOrRefuse(c, () => c.json(core.listSavedQuestions(c.req.param("id")))),
+  );
+
+  api.post("/candidates/:id/saved-questions", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.addSavedQuestion({ candidateId: c.req.param("id"), text: stringField(fields, "text") }), 201),
+    );
+  });
+
+  api.put("/saved-questions/:id", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => c.json(core.editSavedQuestion(c.req.param("id"), stringField(fields, "text"))));
+  });
+
+  api.delete("/saved-questions/:id", (c) =>
+    respondOrRefuse(c, () => {
+      core.deleteSavedQuestion(c.req.param("id"));
+      return c.body(null, 204);
+    }),
+  );
+
+  api.put("/saved-questions/:id/position", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => {
+      core.moveSavedQuestion(c.req.param("id"), typeof fields.position === "number" ? fields.position : Number.NaN);
+      return c.body(null, 204);
+    });
+  });
+
   return api;
 }
 

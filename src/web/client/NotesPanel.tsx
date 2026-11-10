@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { api, ApiError, type Interview, type InterviewerNote } from "./api.ts";
+import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill, type Text } from "./languages.ts";
 import { useText } from "./text.tsx";
@@ -189,6 +190,7 @@ function NoteItem({
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(note.text);
   const [error, setError] = useState<string>();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // Changing the tag leaves an open edit alone, so unsaved text is not lost.
   async function run(change: () => Promise<InterviewerNote | undefined>, failed: string, { closeEditor = true } = {}) {
@@ -219,7 +221,7 @@ function NoteItem({
   }
 
   function handleDelete() {
-    if (!window.confirm(text.panels.interviewerNotes.confirmDelete)) return;
+    setConfirmingDelete(false);
     void run(
       () => api.deleteInterviewerNote(note.id).then(() => undefined),
       text.panels.interviewerNotes.deleteFailed,
@@ -263,11 +265,22 @@ function NoteItem({
             {text.panels.interviewerNotes.edit}
           </button>
         )}
-        <button type="button" className="link-button" onClick={handleDelete}>
+        <button type="button" className="link-button" onClick={() => setConfirmingDelete(true)}>
           {text.panels.interviewerNotes.delete}
         </button>
       </div>
       {error !== undefined && <p className="error">{error}</p>}
+      {confirmingDelete && (
+        <ConfirmDialog
+          title={text.panels.interviewerNotes.confirmDelete}
+          confirmLabel={text.panels.interviewerNotes.delete}
+          cancelLabel={text.panels.interviewerNotes.cancel}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        >
+          <p className="note-text">{note.text}</p>
+        </ConfirmDialog>
+      )}
     </li>
   );
 }

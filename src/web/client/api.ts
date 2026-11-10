@@ -8,9 +8,10 @@ import type {
   NewCandidate,
   NewInterview,
   NewInterviewerNotes,
+  SavedQuestion,
 } from "../../core/index.ts";
 
-export type { Candidate, Interview, InterviewerNote };
+export type { Candidate, Interview, InterviewerNote, SavedQuestion };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -69,4 +70,13 @@ export const api = {
   tagInterviewerNote: (id: string, interviewId: string | null) =>
     request<InterviewerNote>(`/notes/${encodeURIComponent(id)}/interview`, sendJson("PUT", { interviewId })),
   deleteInterviewerNote: (id: string) => request<void>(`/notes/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  listSavedQuestions: (candidateId: string) =>
+    request<SavedQuestion[]>(`/candidates/${encodeURIComponent(candidateId)}/saved-questions`),
+  addSavedQuestion: (candidateId: string, text: string) =>
+    request<SavedQuestion>(`/candidates/${encodeURIComponent(candidateId)}/saved-questions`, sendJson("POST", { text })),
+  editSavedQuestion: (id: string, text: string) =>
+    request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}`, sendJson("PUT", { text })),
+  deleteSavedQuestion: (id: string) => request<void>(`/saved-questions/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  moveSavedQuestion: (id: string, position: number) =>
+    request<void>(`/saved-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position })),
 };

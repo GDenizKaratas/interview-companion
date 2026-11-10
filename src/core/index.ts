@@ -7,11 +7,13 @@ import { openDatabase } from "./database.ts";
 import * as interfaceLanguage from "./interface-language.ts";
 import * as interviewerNotes from "./interviewer-notes.ts";
 import * as interviews from "./interviews.ts";
+import * as savedQuestions from "./saved-questions.ts";
 
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export { InvalidInputError, NotFoundError, type InputRule } from "./errors.ts";
 export type { InterviewerNote, NewInterviewerNotes, NoteFilter } from "./interviewer-notes.ts";
 export type { Interview, NewInterview } from "./interviews.ts";
+export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
 
 export interface Core {
   createCandidate(input: candidates.NewCandidate): candidates.Candidate;
@@ -27,6 +29,11 @@ export interface Core {
   listInterviewerNotes(candidateId: string, filter?: interviewerNotes.NoteFilter): interviewerNotes.InterviewerNote[];
   getInterfaceLanguage(): string;
   setInterfaceLanguage(language: string): void;
+  addSavedQuestion(input: savedQuestions.NewSavedQuestion): savedQuestions.SavedQuestion;
+  listSavedQuestions(candidateId: string): savedQuestions.SavedQuestion[];
+  editSavedQuestion(id: string, text: string): savedQuestions.SavedQuestion;
+  deleteSavedQuestion(id: string): void;
+  moveSavedQuestion(id: string, position: number): void;
   close(): void;
 }
 
@@ -57,6 +64,11 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listInterviewerNotes: (candidateId, filter) => interviewerNotes.listInterviewerNotes(db, candidateId, filter),
     getInterfaceLanguage: () => interfaceLanguage.getInterfaceLanguage(db),
     setInterfaceLanguage: (language) => interfaceLanguage.setInterfaceLanguage(db, language),
+    addSavedQuestion: (input) => savedQuestions.addSavedQuestion(db, input),
+    listSavedQuestions: (candidateId) => savedQuestions.listSavedQuestions(db, candidateId),
+    editSavedQuestion: (id, text) => savedQuestions.editSavedQuestion(db, id, text),
+    deleteSavedQuestion: (id) => savedQuestions.deleteSavedQuestion(db, id),
+    moveSavedQuestion: (id, position) => savedQuestions.moveSavedQuestion(db, id, position),
     close: () => db.close(),
   };
 }

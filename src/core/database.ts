@@ -33,6 +33,15 @@ const migrations: string[] = [
      position INTEGER NOT NULL
    ) STRICT;
    CREATE INDEX interviewer_note_candidate ON interviewer_note (candidate_id);`,
+  `CREATE TABLE saved_question (
+     id TEXT PRIMARY KEY,
+     candidate_id TEXT NOT NULL REFERENCES candidate (id) ON DELETE CASCADE,
+     text TEXT NOT NULL,
+     origin TEXT NOT NULL CHECK (origin IN ('written', 'suggestion')),
+     position INTEGER NOT NULL,
+     created_at TEXT NOT NULL
+   ) STRICT;
+   CREATE INDEX saved_question_candidate ON saved_question (candidate_id, position);`,
 ];
 
 export function openDatabase(path: string): DatabaseSync {
