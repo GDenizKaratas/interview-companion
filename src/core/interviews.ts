@@ -52,6 +52,8 @@ export function addInterview(db: DatabaseSync, today: Today, input: NewInterview
     db.exec("ROLLBACK");
     throw error;
   }
+  // The new Interview's number depends on the dates of the others, so it is read from the
+  // same list that numbers them, instead of being worked out a second time here.
   return listInterviews(db, today, input.candidateId).find((interview) => interview.id === id)!;
 }
 
