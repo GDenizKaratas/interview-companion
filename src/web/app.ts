@@ -9,12 +9,9 @@ export function createApi(core: Core): Hono {
 
   api.post("/candidates", async (c) => {
     const fields = await jsonFields(c);
-    return refusedInput(c, () =>
+    return respondOrRefuse(c, () =>
       c.json(
-        core.createCandidate({
-          name: typeof fields.name === "string" ? fields.name : "",
-          role: typeof fields.role === "string" ? fields.role : "",
-        }),
+        core.createCandidate({ name: stringField(fields, "name"), role: stringField(fields, "role") }),
         201,
       ),
     );
@@ -31,8 +28,8 @@ export function createApi(core: Core): Hono {
 
   api.put("/interface-language", async (c) => {
     const fields = await jsonFields(c);
-    return refusedInput(c, () => {
-      core.setInterfaceLanguage(typeof fields.language === "string" ? fields.language : "");
+    return respondOrRefuse(c, () => {
+      core.setInterfaceLanguage(stringField(fields, "language"));
       return c.json({ language: core.getInterfaceLanguage() });
     });
   });
@@ -45,8 +42,13 @@ async function jsonFields(c: Context): Promise<Record<string, unknown>> {
   return typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
 }
 
+function stringField(fields: Record<string, unknown>, key: string): string {
+  const value = fields[key];
+  return typeof value === "string" ? value : "";
+}
+
 // Runs a core call and turns a refused input into a 400 response the interface can translate.
-function refusedInput(c: Context, run: () => Response): Response {
+function respondOrRefuse(c: Context, run: () => Response): Response {
   try {
     return run();
   } catch (error) {

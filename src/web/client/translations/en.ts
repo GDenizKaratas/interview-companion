@@ -1,5 +1,7 @@
 // English, the default language. Every other translation file has exactly these keys.
-// To add a language, copy this file to <language code>.ts and translate the text.
+// To add a language, copy this file to <language code>.ts (for example de.ts or pt-BR.ts)
+// and translate the text. Every .ts file in this folder is loaded as a language, so put
+// nothing else here.
 const text = {
   appName: "Interview Companion",
   tagline: "Your interviews, all in one place.",

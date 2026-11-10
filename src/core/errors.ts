@@ -1,8 +1,8 @@
-// The rules core can refuse input for. The interface uses field and rule to show the
-// message in the Interviewer's language; the English message is for logs and the MCP server.
+// The rules core can refuse input for.
 export type InputRule = "required" | "format";
 
-// Thrown when input breaks a rule of core. The message is safe to show to the Interviewer.
+// Thrown when input breaks a rule of core. The English message is safe to show to the
+// Interviewer; the web interface uses field and rule to show it in the chosen language instead.
 export class InvalidInputError extends Error {
   readonly field: string;
   readonly rule: InputRule;
