@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 import { api, ApiError, type SavedQuestion } from "./api.ts";
+import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import type { Text } from "./languages.ts";
 import { useText } from "./text.tsx";
 
@@ -16,6 +17,8 @@ export function SavedQuestions({ candidateId }: { candidateId: string }) {
   const [changeError, setChangeError] = useState<unknown>();
   // While a change is on its way, the list may be out of date, so its buttons wait.
   const [busy, setBusy] = useState(false);
+  // The question waiting for the Interviewer to confirm its deletion.
+  const [toDelete, setToDelete] = useState<SavedQuestion | undefined>();
 
   const reload = useCallback(
     () =>
@@ -66,8 +69,11 @@ export function SavedQuestions({ candidateId }: { candidateId: string }) {
     return ok;
   }
 
-  function remove(question: SavedQuestion) {
-    if (window.confirm(t.confirmDelete)) change(() => api.deleteSavedQuestion(question.id));
+  function confirmDelete() {
+    if (!toDelete) return;
+    const id = toDelete.id;
+    setToDelete(undefined);
+    change(() => api.deleteSavedQuestion(id));
   }
 
   return (
@@ -97,12 +103,23 @@ export function SavedQuestions({ candidateId }: { candidateId: string }) {
               isLast={index === questions.length - 1}
               onMove={(position) => change(() => api.moveSavedQuestion(question.id, position)).then(() => {})}
               onEdit={(newText) => change(() => api.editSavedQuestion(question.id, newText))}
-              onDelete={() => remove(question)}
+              onDelete={() => setToDelete(question)}
               position={index}
               busy={busy}
             />
           ))}
         </ol>
+      )}
+      {toDelete && (
+        <ConfirmDialog
+          title={t.confirmDelete}
+          confirmLabel={t.delete}
+          cancelLabel={t.cancel}
+          onConfirm={confirmDelete}
+          onCancel={() => setToDelete(undefined)}
+        >
+          <p className="question-text">{toDelete.text}</p>
+        </ConfirmDialog>
       )}
     </>
   );

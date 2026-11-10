@@ -328,3 +328,55 @@ button.secondary {
   display: inline-flex;
   gap: 0.25rem;
 }
+
+/* The dialog that asks before anything is deleted. */
+.confirm-dialog {
+  width: min(26rem, calc(100vw - 2rem));
+  box-sizing: border-box;
+  padding: 1.25rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
+}
+
+.confirm-dialog::backdrop {
+  background: rgb(29 29 31 / 0.35);
+}
+
+.confirm-dialog h2 {
+  font-size: 1.05rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.confirm-dialog-subject {
+  max-height: 12rem;
+  overflow: auto;
+  padding: 0.6rem 0.75rem;
+  background: var(--page);
+  border-radius: 6px;
+}
+
+.confirm-dialog-subject p {
+  margin: 0;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.confirm-dialog-actions button {
+  font-size: 0.95rem;
+  padding: 0.45rem 0.9rem;
+}
+
+button.danger {
+  background: var(--error);
+  border-color: var(--error);
+  color: var(--surface);
+}
