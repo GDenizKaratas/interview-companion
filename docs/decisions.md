@@ -77,6 +77,17 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 57 | When core refuses input, it reports the field and the broken rule (`required`, `format`) next to its English message. The browser shows the message for that field and rule from the translation file, and falls back to a general message. | Core still decides what is valid (decision 50), and the Interviewer reads the reason in their language. The English message stays for logs and the MCP server. | Translating core's English message text; moving the check into the browser. |
 | 58 | The page shows nothing until the saved language has loaded; if it cannot load, English is used. Switching changes the text at once and then saves the choice; if saving fails, the interface goes back to the language core has. | The local server answers in milliseconds, and an English flash before Turkish would look broken. | Showing English first and switching after the load. |
 
+## 2026-11-10 — #6 Saved Questions
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 59 | A new Saved Question goes to the end of the Candidate's list. Core stores each question's place as a number and moves one question at a time to a given place; the interface offers up and down buttons. | Moving one question is one small, checkable operation, and a drag-and-drop interface can call the same operation later. | Sending the whole new order from the browser; drag and drop now. |
+| 60 | Each Saved Question stores its origin: `written` (by the Interviewer) or `suggestion` (copied from a Suggested Question). Only `written` can be created until #17. The interface shows "written by you" or "from a suggestion". | The origin is part of the copy, so it stays when suggestions are regenerated (decision 23). | Working out the origin from a link to the suggestion, which may be deleted. |
+| 61 | Question text is trimmed, but line breaks inside it are kept. In the question box, Enter saves and Shift+Enter starts a new line. | Questions are usually one line; a pasted question with several parts keeps its shape. | A single-line input. |
+| 62 | Deleting a question asks for confirmation with the browser's own dialog. To be confirmed by the owner. | A deleted question cannot be brought back, and the dialog costs one click. | Deleting at once; an undo button. |
+| 63 | Saved Questions have no Interview tag yet, although decision 14 allows one. It is added once Interviews (#4) are on `main`. | The tag needs the Interview table, which #4 creates. #6 does not require it. | Waiting for #4 before starting #6. |
+| 64 | When an operation names a Candidate or question that does not exist, core throws `NotFoundError`. The local server answers it with 404, next to 400 for `InvalidInputError`, in one place. | The check stays in core, and the browser can tell a missing question from refused text. | Relying on the database's foreign key error. |
+
 ## Open questions
 
 - The exact format of Google Meet transcripts. To be researched at the start of Milestone 2.

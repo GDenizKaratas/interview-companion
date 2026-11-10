@@ -1,5 +1,5 @@
 import { Hono, type Context } from "hono";
-import { InvalidInputError, type Core } from "../core/index.ts";
+import { InvalidInputError, NotFoundError, type Core } from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
 export function createApi(core: Core): Hono {
@@ -34,6 +34,39 @@ export function createApi(core: Core): Hono {
     });
   });
 
+  api.get("/candidates/:id/saved-questions", (c) => {
+    const candidateId = c.req.param("id");
+    if (!core.getCandidate(candidateId)) return c.json({ error: "Candidate not found." }, 404);
+    return c.json(core.listSavedQuestions(candidateId));
+  });
+
+  api.post("/candidates/:id/saved-questions", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.addSavedQuestion({ candidateId: c.req.param("id"), text: stringField(fields, "text") }), 201),
+    );
+  });
+
+  api.put("/saved-questions/:id", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => c.json(core.editSavedQuestion(c.req.param("id"), stringField(fields, "text"))));
+  });
+
+  api.delete("/saved-questions/:id", (c) =>
+    respondOrRefuse(c, () => {
+      core.deleteSavedQuestion(c.req.param("id"));
+      return c.body(null, 204);
+    }),
+  );
+
+  api.put("/saved-questions/:id/position", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => {
+      core.moveSavedQuestion(c.req.param("id"), typeof fields.position === "number" ? fields.position : Number.NaN);
+      return c.body(null, 204);
+    });
+  });
+
   return api;
 }
 
@@ -47,13 +80,17 @@ function stringField(fields: Record<string, unknown>, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
-// Runs a core call and turns a refused input into a 400 response the interface can translate.
+// Runs a core call and turns a refused input into a 400 response the interface can translate,
+// and a reference to something that does not exist into a 404 response.
 function respondOrRefuse(c: Context, run: () => Response): Response {
   try {
     return run();
   } catch (error) {
     if (error instanceof InvalidInputError) {
       return c.json({ error: error.message, field: error.field, rule: error.rule }, 400);
+    }
+    if (error instanceof NotFoundError) {
+      return c.json({ error: error.message }, 404);
     }
     throw error;
   }

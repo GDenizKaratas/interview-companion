@@ -1,8 +1,8 @@
 // The browser's only way to reach core: the local server's /api routes.
 // Only types come from core; they are erased before the code reaches the browser.
-import type { Candidate, InputRule, NewCandidate } from "../../core/index.ts";
+import type { Candidate, InputRule, NewCandidate, SavedQuestion } from "../../core/index.ts";
 
-export type { Candidate };
+export type { Candidate, SavedQuestion };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -20,6 +20,7 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, init);
+  // A 204 answer has no body; that is not an error.
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new ApiError(
@@ -44,4 +45,13 @@ export const api = {
   getInterfaceLanguage: () => request<{ language: string }>("/interface-language"),
   setInterfaceLanguage: (language: string) =>
     request<{ language: string }>("/interface-language", sendJson("PUT", { language })),
+  listSavedQuestions: (candidateId: string) =>
+    request<SavedQuestion[]>(`/candidates/${encodeURIComponent(candidateId)}/saved-questions`),
+  addSavedQuestion: (candidateId: string, text: string) =>
+    request<SavedQuestion>(`/candidates/${encodeURIComponent(candidateId)}/saved-questions`, sendJson("POST", { text })),
+  editSavedQuestion: (id: string, text: string) =>
+    request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}`, sendJson("PUT", { text })),
+  deleteSavedQuestion: (id: string) => request<unknown>(`/saved-questions/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  moveSavedQuestion: (id: string, position: number) =>
+    request<unknown>(`/saved-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position })),
 };

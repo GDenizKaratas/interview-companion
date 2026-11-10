@@ -217,3 +217,69 @@ button:disabled {
     grid-template-areas: "notes" "cv" "transcript" "ai" "questions";
   }
 }
+
+/* Saved Questions */
+textarea {
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.question-input {
+  width: 100%;
+  resize: vertical;
+}
+
+.question-list {
+  margin: 0.75rem 0 0;
+  padding-left: 1.5rem;
+}
+
+.question {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  padding: 0.4rem 0;
+}
+
+.question + .question {
+  border-top: 1px solid var(--line);
+}
+
+.question-text {
+  flex: 1 1 16rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.question-edit {
+  flex: 1 1 16rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.question-origin {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.question-actions {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+button.quiet {
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 0.15rem 0.5rem;
+}
+
+button.quiet:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

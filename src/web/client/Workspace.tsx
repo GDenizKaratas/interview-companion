@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, type Candidate } from "./api.ts";
 import { linkTo } from "./navigation.ts";
+import { SavedQuestions } from "./SavedQuestions.tsx";
 import { useText } from "./text.tsx";
 
 type Load =
@@ -50,7 +51,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             <p className="empty">{text.panels.aiNotes.empty}</p>
           </Panel>
           <Panel area="questions" title={text.panels.questions.title}>
-            <p className="empty">{text.panels.questions.empty}</p>
+            <SavedQuestions candidateId={load.candidate.id} />
           </Panel>
         </div>
       )}
