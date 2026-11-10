@@ -652,3 +652,105 @@ button.danger {
   margin: 0.15rem 0 0;
   white-space: pre-wrap;
 }
+
+.speaker-role {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 0.35rem;
+  font-size: 0.75rem;
+}
+
+.speaker-mapping {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.speaker-mapping.folded {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+}
+
+.speaker-mapping-confirmed {
+  font-weight: 600;
+}
+
+.speaker-mapping-gate {
+  margin: 0 0 0.5rem;
+}
+
+.speaker-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.6rem;
+}
+
+.speaker-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+}
+
+.speaker-row + .speaker-row {
+  margin-top: 0.4rem;
+}
+
+.speaker-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 10rem;
+}
+
+.speaker-sample {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-choices {
+  display: flex;
+}
+
+button.role-choice {
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0;
+}
+
+button.role-choice + button.role-choice {
+  border-left: none;
+}
+
+button.role-choice:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+button.role-choice:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+button.role-choice.chosen {
+  background: var(--text);
+  color: var(--surface);
+}
+
+.speaker-mapping-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.speaker-mapping-actions .hint {
+  color: var(--muted);
+}

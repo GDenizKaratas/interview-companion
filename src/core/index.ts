@@ -19,7 +19,7 @@ export { InvalidInputError, NotFoundError, type InputRule } from "./errors.ts";
 export type { InterviewerNote, NewInterviewerNotes, NoteFilter } from "./interviewer-notes.ts";
 export type { Interview, NewInterview } from "./interviews.ts";
 export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
-export type { Segment, Speaker, Transcript, TranscriptFile, TranscriptFormat } from "./transcripts.ts";
+export type { Segment, Speaker, SpeakerRole, Transcript, TranscriptFile, TranscriptFormat } from "./transcripts.ts";
 
 export interface Core {
   createCandidate(input: candidates.NewCandidate): candidates.Candidate;
@@ -51,6 +51,7 @@ export interface Core {
   importTranscript(interviewId: string, file: transcripts.TranscriptFile): transcripts.Transcript;
   getTranscript(interviewId: string): transcripts.Transcript | undefined;
   listTranscriptFormats(): transcripts.TranscriptFormat[];
+  confirmSpeakerMapping(interviewId: string, roles: Record<string, transcripts.SpeakerRole>): transcripts.Transcript;
   close(): void;
 }
 
@@ -100,6 +101,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     importTranscript: (interviewId, file) => transcripts.importTranscript(db, now, interviewId, file),
     getTranscript: (interviewId) => transcripts.getTranscript(db, interviewId),
     listTranscriptFormats: () => transcripts.listTranscriptFormats(),
+    confirmSpeakerMapping: (interviewId, roles) => transcripts.confirmSpeakerMapping(db, now, interviewId, roles),
     close: () => db.close(),
   };
 }

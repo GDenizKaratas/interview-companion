@@ -1,5 +1,5 @@
 import { Hono, type Context } from "hono";
-import { InvalidInputError, NotFoundError, type Core, type CvFile } from "../core/index.ts";
+import { InvalidInputError, NotFoundError, type Core, type CvFile, type SpeakerRole } from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
 export function createApi(core: Core): Hono {
@@ -59,6 +59,15 @@ export function createApi(core: Core): Hono {
   api.post("/interviews/:id/transcript", async (c) => {
     const file = (await fileField(await c.req.parseBody(), "transcript")) ?? { fileName: "", bytes: new Uint8Array() };
     return respondOrRefuse(c, () => c.json(core.importTranscript(c.req.param("id"), file), 201));
+  });
+
+  // Confirms the Speaker Mapping. The body is { roles: { <speaker id>: "candidate" | "interviewer" | "other" } }.
+  api.put("/interviews/:id/speaker-mapping", async (c) => {
+    const fields = await jsonFields(c);
+    const roles = typeof fields.roles === "object" && fields.roles !== null ? fields.roles : {};
+    return respondOrRefuse(c, () =>
+      c.json(core.confirmSpeakerMapping(c.req.param("id"), roles as Record<string, SpeakerRole>)),
+    );
   });
 
   api.get("/candidate-roles", (c) => c.json(core.listCandidateRoles()));
