@@ -911,3 +911,46 @@ button.role-choice.chosen {
   font-size: 0.8rem;
   color: #8a5a00;
 }
+
+/* AI Note review: the actions sit on one line with the Review State. */
+.ai-note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.ai-note-original {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.ai-note-original span {
+  font-weight: 600;
+}
+
+.ai-note-edit textarea {
+  width: 100%;
+  margin-bottom: 0.3rem;
+  font: inherit;
+}
+
+.ai-note.dismissed {
+  opacity: 0.6;
+}
+
+.stale-banner {
+  margin: 0 0 0.75rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  color: #8a5a00;
+  background: #fff8e1;
+  border: 1px solid #e0b84c;
+  border-radius: 6px;
+}
+
+.ai-notes-dismissed-toggle {
+  margin-top: 0.5rem;
+}

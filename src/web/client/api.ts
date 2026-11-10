@@ -96,6 +96,11 @@ export const api = {
   listAiNotes: (interviewId: string) => request<AiNote[]>(`/interviews/${encodeURIComponent(interviewId)}/ai-notes`),
   generateAiNotes: (interviewId: string) =>
     request<AiNoteGeneration>(`/interviews/${encodeURIComponent(interviewId)}/ai-notes`, { method: "POST" }),
+  confirmAiNote: (id: string) => request<AiNote>(`/ai-notes/${encodeURIComponent(id)}/confirm`, { method: "POST" }),
+  dismissAiNote: (id: string) => request<AiNote>(`/ai-notes/${encodeURIComponent(id)}/dismiss`, { method: "POST" }),
+  restoreAiNote: (id: string) => request<AiNote>(`/ai-notes/${encodeURIComponent(id)}/restore`, { method: "POST" }),
+  correctAiNote: (id: string, correction: string) =>
+    request<AiNote>(`/ai-notes/${encodeURIComponent(id)}/correction`, sendJson("PUT", { correction })),
   getInterfaceLanguage: () => request<{ language: string }>("/interface-language"),
   setInterfaceLanguage: (language: string) =>
     request<{ language: string }>("/interface-language", sendJson("PUT", { language })),
