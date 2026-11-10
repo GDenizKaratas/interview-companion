@@ -25,6 +25,9 @@ export function SavedQuestions({ candidateId, interviews, selectedInterviewId, o
   const { text } = useText();
   const t = text.panels.questions;
   const [questions, setQuestions] = useState<SavedQuestion[] | undefined>();
+  // The Interview filter the shown list was loaded with. A move sends this one, not the header's
+  // newest selection, so a click before a new list arrives counts places in the list on screen.
+  const [shownFilter, setShownFilter] = useState<string | null>(selectedInterviewId);
   const [loadFailed, setLoadFailed] = useState(false);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
@@ -57,6 +60,7 @@ export function SavedQuestions({ candidateId, interviews, selectedInterviewId, o
         (list) => {
           if (thisLoad !== latestLoad.current) return;
           setQuestions(list);
+          setShownFilter(selectedInterviewId);
           setLoadFailed(false);
           setHiddenInterviewId(changed && !list.some((q) => q.id === changed.id) ? changed.interviewId : null);
         },
@@ -130,6 +134,7 @@ export function SavedQuestions({ candidateId, interviews, selectedInterviewId, o
         value={draft}
         disabled={saving}
         onChange={(e) => setDraft(e.target.value)}
+        // Wrapped so the React lint does not take add, which reads a ref, as called during render.
         onKeyDown={(event) => onEnter(add)(event)}
       />
       <div className="question-entry-meta">
@@ -156,7 +161,7 @@ export function SavedQuestions({ candidateId, interviews, selectedInterviewId, o
               isFirst={index === 0}
               isLast={index === questions.length - 1}
               interviews={interviews}
-              onMove={(position) => change(() => api.moveSavedQuestion(question.id, position, selectedInterviewId)).then(() => {})}
+              onMove={(position) => change(() => api.moveSavedQuestion(question.id, position, shownFilter)).then(() => {})}
               onEdit={(newText) => change(() => api.editSavedQuestion(question.id, newText))}
               onTag={(interviewId) => change(() => api.tagSavedQuestion(question.id, interviewId)).then(() => {})}
               onDelete={() => setToDelete(question)}

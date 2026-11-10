@@ -267,13 +267,14 @@ async function twoSuggestions() {
 }
 
 describe("Accepting, editing, and dismissing a Suggested Question", () => {
-  it("accepting copies the question to the end of Saved Questions as from a suggestion", async () => {
+  it("accepting copies the question, untagged, to the end of Saved Questions as from a suggestion", async () => {
     const [first] = await twoSuggestions();
 
     const saved = core.acceptSuggestedQuestion(first.id);
 
     expect(saved).toMatchObject({
       candidateId: candidate.id,
+      interviewId: null,
       text: "About BullMQ?",
       origin: "suggestion",
       createdAt: "2026-11-10T09:30:00.000Z",
