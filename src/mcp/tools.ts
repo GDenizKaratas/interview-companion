@@ -62,6 +62,24 @@ export function createMcpServer(core: ReadOnlyCore): McpServer {
     },
     ({ candidateId }) => toolResult(() => core.listSavedQuestions(candidateId)),
   );
+  server.registerTool(
+    "get_ai_notes",
+    {
+      description:
+        "Get the AI Notes of one Interview, newest generation first. Each note is one statement the AI made " +
+        "about what the Candidate said, with its Evidence: exact quotes from the Interview's Transcript, by " +
+        "segment number. reviewState says where the Interviewer stands: unreviewed, confirmed (the note " +
+        "reflects its Evidence, not that the Candidate was right), corrected (the Interviewer rewrote it; " +
+        "trust correction over statement, which is the AI's original text), or dismissed (the Interviewer hid " +
+        "it; do not use it). stale is true when the Speaker Mapping changed after the note was generated, so " +
+        "the note may credit words to the wrong speaker: do not rely on a stale note.",
+      inputSchema: {
+        interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate."),
+      },
+      annotations: readOnly,
+    },
+    ({ interviewId }) => toolResult(() => core.listAiNotes(interviewId)),
+  );
   return server;
 }
 

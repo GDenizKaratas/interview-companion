@@ -4,17 +4,23 @@ import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { openCore, readOnlyCore, type Candidate, type Core } from "../core/index.ts";
+import { openCore, readOnlyCore, type Candidate, type Core, type ProposedAiNote } from "../core/index.ts";
 import { createMcpServer } from "./tools.ts";
 
 let dir: string;
 let core: Core;
 let client: Client;
 let candidate: Candidate;
+// What the stand-in model proposes when AI Notes are generated. mcp may use core only through its
+// public interface, so this test has its own small fake instead of core's testing helper.
+let proposed: ProposedAiNote[];
+let clock: Date;
 
 beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), "interview-companion-"));
-  core = openCore(join(dir, "test.sqlite"), { today: () => "2026-11-10" });
+  proposed = [];
+  clock = new Date("2026-11-10T09:30:00Z");
+  core = openCore(join(dir, "test.sqlite"), { today: () => "2026-11-10", now: () => clock, aiProvider: () => ({ proposeAiNotes: async () => proposed }) });
   candidate = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await createMcpServer(readOnlyCore(core)).connect(serverSide);
@@ -44,10 +50,11 @@ async function refusal(name: string, args: Record<string, unknown>): Promise<str
 }
 
 describe("MCP server", () => {
-  it("offers the four read-only tools and nothing else", async () => {
+  it("offers the read-only tools and nothing else", async () => {
     const { tools } = await client.listTools();
 
     expect(tools.map((tool) => tool.name).sort()).toEqual([
+      "get_ai_notes",
       "get_candidate",
       "get_interviewer_notes",
       "get_saved_questions",
@@ -153,5 +160,59 @@ describe("MCP server", () => {
     expect(await refusal("get_saved_questions", { candidateId: "no-such-candidate" })).toContain(
       "This Candidate does not exist.",
     );
+  });
+
+  it("get_ai_notes gives an Interview's AI Notes with Review State, Stale flag, and Evidence, Dismissed ones too", async () => {
+    const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    const transcript = core.importTranscript(interview.id, {
+      fileName: "t.txt",
+      bytes: new TextEncoder().encode("Ayşe: Which queue did you use?\nAda: We used Redis with BullMQ."),
+    });
+    const roles = (interviewer: "interviewer" | "other") =>
+      Object.fromEntries(
+        transcript.speakers.map((speaker) => [speaker.id, speaker.label === "Ada" ? "candidate" : interviewer] as const),
+      );
+    core.confirmSpeakerMapping(interview.id, roles("interviewer"));
+    core.saveApiKey("sk-ant-test-key");
+    proposed = [
+      { statement: "Used Redis.", evidence: [{ segmentNumber: 2, quote: "Redis" }] },
+      { statement: "Used BullMQ.", evidence: [{ segmentNumber: 2, quote: "BullMQ" }] },
+    ];
+    const [first, second] = (await core.generateAiNotes(interview.id)).notes;
+    core.correctAiNote(first!.id, "Used Redis with BullMQ.");
+    core.dismissAiNote(second!.id);
+    clock = new Date("2026-11-10T10:00:00Z");
+    core.confirmSpeakerMapping(interview.id, roles("other"));
+
+    expect(await call("get_ai_notes", { interviewId: interview.id })).toEqual([
+      {
+        id: first!.id,
+        interviewId: interview.id,
+        statement: "Used Redis.",
+        correction: "Used Redis with BullMQ.",
+        reviewState: "corrected",
+        generatedAt: "2026-11-10T09:30:00.000Z",
+        stale: true,
+        evidence: [{ segmentNumber: 2, quote: "Redis" }],
+      },
+      {
+        id: second!.id,
+        interviewId: interview.id,
+        statement: "Used BullMQ.",
+        correction: null,
+        reviewState: "dismissed",
+        generatedAt: "2026-11-10T09:30:00.000Z",
+        stale: true,
+        evidence: [{ segmentNumber: 2, quote: "BullMQ" }],
+      },
+    ]);
+  });
+
+  it("get_ai_notes gives nothing for an Interview without AI Notes, and refuses an unknown Interview", async () => {
+    const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+
+    expect(await call("get_ai_notes", { interviewId: interview.id })).toEqual([]);
+    expect(await refusal("get_ai_notes", { interviewId: "no-such-interview" })).toContain("get_candidate");
+    expect(await refusal("get_ai_notes", { interviewId: "" })).toBeTruthy();
   });
 });

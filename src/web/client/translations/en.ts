@@ -160,7 +160,7 @@ const text = {
       confirmReplace: "Replace the Transcript?",
       // {interview}, {current}, and {new} are replaced by the Interview's name and file names.
       confirmReplaceDetail:
-        "For the {interview}, {current} and its text will be removed and replaced by {new}. Its AI Notes are removed too.",
+        "For the {interview}, {current} and its text will be removed and replaced by {new}. Its AI Notes are removed too, including the ones you reviewed.",
       replaceConfirm: "Replace",
       cancel: "Cancel",
       refused: {
@@ -189,13 +189,30 @@ const text = {
       // {count} is replaced by a number.
       dropped: "Notes dropped because a quote was not found word for word in the Candidate's words: {count}.",
       stale: "Speakers changed. Regenerate to trust this note.",
+      staleBanner:
+        "Speakers changed after some of these notes were generated. Generate again for notes you can trust. Notes you reviewed are kept.",
+      confirm: "Confirm",
+      confirmHint: "The note matches its quotes. This does not say the Candidate was right.",
+      correct: "Correct",
+      editCorrection: "Edit correction",
+      dismiss: "Dismiss",
+      restore: "Show again",
+      save: "Save",
+      correctionLabel: "Corrected note",
+      aiWrote: "AI wrote:",
+      // {count} is replaced by a number.
+      showDismissed: "Show dismissed notes ({count})",
+      hideDismissed: "Hide dismissed notes",
+      correctionRequired: "A corrected note needs text.",
+      reviewFailed: "The note could not be saved.",
       showInTranscript: "Show in the Transcript",
       // {number} is replaced by the part's number in the Transcript.
       segment: "part {number}",
       reviewStates: { unreviewed: "Unreviewed", confirmed: "Confirmed", corrected: "Corrected", dismissed: "Dismissed" },
       confirmRegenerate: "Generate AI Notes again?",
       // {count} is replaced by a number.
-      confirmRegenerateDetail: "The {count} current AI Notes of this Interview will be deleted and replaced by new ones.",
+      confirmRegenerateDetail:
+        "The {count} unreviewed AI Notes of this Interview will be replaced by new ones. Notes you confirmed, corrected, or dismissed are kept.",
       regenerateConfirm: "Generate again",
       cancel: "Cancel",
       loadFailed: "AI Notes could not be loaded.",
@@ -213,6 +230,7 @@ const text = {
           noTranscript: "Import this Interview's Transcript first.",
           speakerMappingNotConfirmed: "Confirm who is speaking before generating AI Notes.",
           transcriptChanged: "The Transcript or its speakers changed during generation. Nothing was saved; generate again.",
+          noteCorrected: "This note was corrected. Edit the correction instead.",
         },
       },
     },

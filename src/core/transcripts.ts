@@ -195,9 +195,10 @@ export function confirmSpeakerMapping(
   if (!db.prepare("SELECT 1 FROM transcript WHERE interview_id = ?").get(interviewId)) {
     throw new NotFoundError("This Interview has no Transcript.");
   }
-  const speakerIds = (
-    db.prepare("SELECT id FROM transcript_speaker WHERE interview_id = ?").all(interviewId) as unknown as { id: string }[]
-  ).map((speaker) => speaker.id);
+  const stored = db
+    .prepare("SELECT id, role FROM transcript_speaker WHERE interview_id = ?")
+    .all(interviewId) as unknown as { id: string; role: SpeakerRole | null }[];
+  const speakerIds = stored.map((speaker) => speaker.id);
   // A speaker the browser knows but the Transcript does not: most likely it was replaced meanwhile.
   if (Object.keys(roles).some((id) => !speakerIds.includes(id))) {
     throw new NotFoundError("A speaker is not in this Transcript. Reload the Transcript and try again.");
@@ -207,6 +208,12 @@ export function confirmSpeakerMapping(
   }
   if (speakerIds.some((id) => !(speakerRoles as readonly string[]).includes(roles[id]!))) {
     throw new InvalidInputError("speakerMapping", "format", "A speaker's role must be Candidate, Interviewer, or Other.");
+  }
+  // Confirming the same roles again changes nothing, so the time stays and AI Notes do not turn
+  // Stale. A first confirmation always counts.
+  const current = getTranscript(db, interviewId)!;
+  if (current.speakerMappingConfirmedAt !== null && stored.every((speaker) => speaker.role === roles[speaker.id])) {
+    return current;
   }
   inTransaction(db, () => {
     const setRole = db.prepare("UPDATE transcript_speaker SET role = ? WHERE id = ?");

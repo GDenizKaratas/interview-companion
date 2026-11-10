@@ -94,7 +94,18 @@ export function createApi(core: Core): Hono {
     return c.body(null, 204);
   });
 
-  api.get("/interviews/:id/ai-notes", (c) => c.json(core.listAiNotes(c.req.param("id"))));
+  api.get("/interviews/:id/ai-notes", (c) => respondOrRefuse(c, () => c.json(core.listAiNotes(c.req.param("id")))));
+
+  // Review of one AI Note. Each answers with the note as it now is.
+  api.post("/ai-notes/:id/confirm", (c) => respondOrRefuse(c, () => c.json(core.confirmAiNote(c.req.param("id")))));
+  api.post("/ai-notes/:id/dismiss", (c) => respondOrRefuse(c, () => c.json(core.dismissAiNote(c.req.param("id")))));
+  api.post("/ai-notes/:id/restore", (c) => respondOrRefuse(c, () => c.json(core.restoreAiNote(c.req.param("id")))));
+  api.put("/ai-notes/:id/correction", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.correctAiNote(c.req.param("id"), stringField(fields, "correction"))),
+    );
+  });
 
   // Generates the Interview's AI Notes with the model. Only this route ever calls it.
   api.post("/interviews/:id/ai-notes", (c) =>

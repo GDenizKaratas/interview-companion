@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
+import { AiNoteItem } from "./AiNoteItem.tsx";
 import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
 import { api, ApiError, type AiNote, type Interview, type Transcript } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { fill, type Text } from "./languages.ts";
 import { useText } from "./text.tsx";
-import { formatTime } from "./transcript-text.ts";
 
 interface AiNotesPanelProps {
   interviews: Interview[];
@@ -53,6 +53,7 @@ function InterviewAiNotes({
   const [dropped, setDropped] = useState(0);
   const [confirmingReplace, setConfirmingReplace] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showDismissed, setShowDismissed] = useState(false);
 
   useEffect(() => {
     const loadKey = () => api.getApiKeyStatus().then((status) => setApiKeySaved(status.saved), () => setLoadFailed(true));
@@ -84,7 +85,14 @@ function InterviewAiNotes({
     }
   }
 
-  const startGenerate = () => (notes && notes.length > 0 ? setConfirmingReplace(true) : void generate());
+  // Regenerating replaces only Unreviewed notes, so it asks first only when there are some.
+  const unreviewedCount = notes?.filter((note) => note.reviewState === "unreviewed").length ?? 0;
+  const startGenerate = () => (unreviewedCount > 0 ? setConfirmingReplace(true) : void generate());
+  const dismissedCount = notes?.filter((note) => note.reviewState === "dismissed").length ?? 0;
+  // Dismissed notes are hidden unless the Interviewer asks to see them.
+  const visibleNotes = notes?.filter((note) => showDismissed || note.reviewState !== "dismissed") ?? [];
+  const replaceNote = (changed: AiNote) =>
+    setNotes((current) => current?.map((note) => (note.id === changed.id ? changed : note)));
   const confirmed = transcript ? transcript.speakerMappingConfirmedAt !== null : false;
   const segmentTimes = new Map(transcript?.segments.map((segment) => [segment.number, segment.startMs]));
 
@@ -118,36 +126,24 @@ function InterviewAiNotes({
       {notes && notes.length === 0 && dropped === 0 && apiKeySaved && transcript && confirmed && !generating && (
         <p className="empty">{t.empty}</p>
       )}
-      {notes && notes.length > 0 && (
+      {visibleNotes.some((note) => note.stale) && <p className="stale-banner">{t.staleBanner}</p>}
+      {visibleNotes.length > 0 && (
         <ul className="ai-note-list">
-          {notes.map((note) => (
-            <li key={note.id} className={note.stale ? "ai-note stale" : "ai-note"}>
-              {note.stale && <p className="stale-warning">{t.stale}</p>}
-              <p className="ai-note-statement">{note.statement}</p>
-              {note.evidence.map((evidence, i) => {
-                const startMs = segmentTimes.get(evidence.segmentNumber);
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    className="ai-note-quote"
-                    title={t.showInTranscript}
-                    onClick={() => onShowEvidence(evidence.segmentNumber)}
-                  >
-                    <span className="ai-note-quote-mark">❝</span>
-                    <span className="ai-note-quote-text">{evidence.quote}</span>
-                    <span className="ai-note-quote-where">
-                      {startMs === null || startMs === undefined
-                        ? fill(t.segment, { number: String(evidence.segmentNumber) })
-                        : formatTime(startMs)}
-                    </span>
-                  </button>
-                );
-              })}
-              <span className="review-state">{t.reviewStates[note.reviewState]}</span>
-            </li>
+          {visibleNotes.map((note) => (
+            <AiNoteItem
+              key={note.id}
+              note={note}
+              segmentTimes={segmentTimes}
+              onShowEvidence={onShowEvidence}
+              onChanged={replaceNote}
+            />
           ))}
         </ul>
+      )}
+      {dismissedCount > 0 && (
+        <button type="button" className="link-button ai-notes-dismissed-toggle" onClick={() => setShowDismissed(!showDismissed)}>
+          {showDismissed ? t.hideDismissed : fill(t.showDismissed, { count: String(dismissedCount) })}
+        </button>
       )}
       {confirmingReplace && (
         <ConfirmDialog
@@ -157,7 +153,7 @@ function InterviewAiNotes({
           onConfirm={() => void generate()}
           onCancel={() => setConfirmingReplace(false)}
         >
-          <p>{fill(t.confirmRegenerateDetail, { count: String(notes?.length ?? 0) })}</p>
+          <p>{fill(t.confirmRegenerateDetail, { count: String(unreviewedCount) })}</p>
         </ConfirmDialog>
       )}
       {settingsOpen && <ApiKeyDialog onClose={() => setSettingsOpen(false)} />}
