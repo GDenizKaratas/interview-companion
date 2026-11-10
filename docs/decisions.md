@@ -330,6 +330,7 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 203 | `getCandidateBrief` is a read operation, so it is in `readOnlyCore` and `aiClientCore`, with a `get_candidate_brief` tool. | The client can see what it saved and which quotes the app could not find. | Returning the brief only from the save. |
 | 204 | The Workspace bar has a **Brief** button that opens the brief in a large dialog, read fresh on every open. The text is shown through a small Markdown reader in the browser (headings, lists, paragraphs, bold); any HTML stays plain text, and React escapes it. Below the text, each Evidence quote is shown with its source and a Found or Not found mark, and a warning counts the ones not found. With no brief, the dialog says how to get one. | Large and readable, out of the way of the panels; a fixed, tiny Markdown subset cannot run code. | A Workspace panel; a Markdown library with HTML support. |
 | 205 | The `candidate_brief` prompt now ends with saving the brief, and its closing line says the quotes are checked by the app only when the brief is saved there. | The prompt and the app tell the same story about what is checked. | Leaving saving to the Interviewer to ask for. |
+| 206 | The word-for-word quote check is one core function, `containsQuote`, used by AI Notes, Suggested Questions, and the Candidate Brief. An empty quote never counts. | The rule was written three times; one place keeps the guarantee the same everywhere. Found in code review. | A copy of the check in each module. |
 
 ## Open questions
 

@@ -31,6 +31,15 @@ describe("The Markdown of a Candidate Brief", () => {
     ]);
   });
 
+  it("keeps a list whole across blank lines and wrapped items", () => {
+    const brief = ["- First item", "  goes on here.", "", "- Second item", "", "Then a paragraph."].join("\n");
+
+    expect(parseMarkdown(brief)).toEqual([
+      { kind: "list", ordered: false, items: ["First item goes on here.", "Second item"] },
+      { kind: "paragraph", lines: ["Then a paragraph."] },
+    ]);
+  });
+
   it("keeps HTML as plain text", () => {
     expect(parseMarkdown('<img src=x onerror="alert(1)">')).toEqual([
       { kind: "paragraph", lines: ['<img src=x onerror="alert(1)">'] },

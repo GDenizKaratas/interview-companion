@@ -8,6 +8,7 @@ import { AiProviderError, InvalidInputError, NotFoundError, PreconditionError } 
 import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { requireInterview } from "./interviews.ts";
+import { containsQuote } from "./quotes.ts";
 
 export type ReviewState = "unreviewed" | "confirmed" | "corrected" | "dismissed";
 
@@ -132,8 +133,7 @@ function acceptNotes(
 function isBacked(note: ProposedAiNote, candidateSegments: Map<number, string>): boolean {
   if (note.statement.trim() === "" || note.evidence.length === 0) return false;
   return note.evidence.every((evidence) => {
-    const text = candidateSegments.get(evidence.segmentNumber);
-    return text !== undefined && evidence.quote.trim() !== "" && text.includes(evidence.quote);
+    return containsQuote(candidateSegments.get(evidence.segmentNumber), evidence.quote);
   });
 }
 

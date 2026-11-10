@@ -1,9 +1,11 @@
 import type { DatabaseSync } from "node:sqlite";
+import type { ProposedQuestionEvidence } from "./ai-provider.ts";
 import { requireAiClientWrites } from "./ai-settings.ts";
 import { requireCandidate } from "./candidates.ts";
 import { inTransaction } from "./database.ts";
 import { InvalidInputError } from "./errors.ts";
 import type { Now } from "./interviewer-notes.ts";
+import { containsQuote } from "./quotes.ts";
 
 // The Candidate Brief an AI client wrote and saved through MCP. The app does not write it and
 // cannot check its statements; it can only check that each quote the brief cites is still in the
@@ -16,10 +18,8 @@ export interface NewCandidateBrief {
 }
 
 // One numbered Evidence reference of the brief: the [n] in its text, and the exact quote with
-// where it is from.
-export type NewBriefEvidence =
-  | { number: number; source: "cv"; page: number; quote: string }
-  | { number: number; source: "transcript"; interviewId: string; segmentNumber: number; quote: string };
+// where it is from, in the same shape as a Suggested Question's Evidence.
+export type NewBriefEvidence = ProposedQuestionEvidence & { number: number };
 
 // found is true when the quote is, word for word, in that CV page or Transcript segment of this
 // Candidate as they are now.
@@ -96,7 +96,7 @@ export function getCandidateBrief(db: DatabaseSync, candidateId: string): Candid
   const evidence = rows.map((e): BriefEvidence => {
     if (e.interview_id === null) {
       const page = cvPage.get(candidateId, e.cv_page) as { text: string } | undefined;
-      return { number: e.number, source: "cv", page: e.cv_page!, quote: e.quote, found: contains(page?.text, e.quote) };
+      return { number: e.number, source: "cv", page: e.cv_page!, quote: e.quote, found: containsQuote(page?.text, e.quote) };
     }
     const segmentRow = segment.get(candidateId, e.interview_id, e.segment_number) as { text: string } | undefined;
     return {
@@ -105,15 +105,10 @@ export function getCandidateBrief(db: DatabaseSync, candidateId: string): Candid
       interviewId: e.interview_id,
       segmentNumber: e.segment_number!,
       quote: e.quote,
-      found: contains(segmentRow?.text, e.quote),
+      found: containsQuote(segmentRow?.text, e.quote),
     };
   });
   return { candidateId, text: row.text, savedAt: row.saved_at, evidence };
-}
-
-// The same word-for-word check as for AI Notes and Suggested Questions. An empty quote is never found.
-function contains(source: string | undefined, quote: string): boolean {
-  return source !== undefined && quote.trim() !== "" && source.includes(quote);
 }
 
 interface EvidenceRow {

@@ -13,14 +13,17 @@ const numbered = /^\d+[.)]\s+(.*)$/;
 
 export function parseMarkdown(source: string): MarkdownBlock[] {
   const blocks: MarkdownBlock[] = [];
+  // A blank line ends a paragraph. A list goes on after one, so a loosely written list stays whole.
+  let afterBlank = false;
   for (const raw of source.split(/\r?\n/)) {
     const line = raw.trim();
-    const last = blocks.at(-1);
     if (line === "") {
-      // A blank line ends a paragraph or a list; the next line starts a new block.
-      if (last) blocks.push({ kind: "paragraph", lines: [] });
+      afterBlank = true;
       continue;
     }
+    const last = blocks.at(-1);
+    const continues = !afterBlank;
+    afterBlank = false;
     const h = heading.exec(line);
     if (h) {
       // Headings deeper than four levels are rare in a brief; they are shown as level four.
@@ -36,10 +39,15 @@ export function parseMarkdown(source: string): MarkdownBlock[] {
       else blocks.push({ kind: "list", ordered, items: [item[1]!] });
       continue;
     }
-    if (last?.kind === "paragraph") last.lines.push(line);
+    // An indented line right after a list item is that item, wrapped.
+    if (last?.kind === "list" && continues && /^\s/.test(raw)) {
+      last.items[last.items.length - 1] += ` ${line}`;
+      continue;
+    }
+    if (last?.kind === "paragraph" && continues) last.lines.push(line);
     else blocks.push({ kind: "paragraph", lines: [line] });
   }
-  return blocks.filter((block) => block.kind !== "paragraph" || block.lines.length > 0);
+  return blocks;
 }
 
 export interface InlinePart {

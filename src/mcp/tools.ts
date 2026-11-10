@@ -6,7 +6,7 @@ import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, t
 // Bounds on what the AI client can save in one call, so a runaway client cannot flood the
 // Workspace. They are generous for a real Interview.
 const limits = { notes: 40, suggestions: 25, evidence: 8, briefEvidence: 100 };
-const text = { long: 2000, brief: 50_000 };
+const textLimits = { long: 2000, brief: 50_000 };
 
 const briefNumber = z.number().int().positive().describe("The number in square brackets in the text, such as 1 for [1].");
 
@@ -18,13 +18,13 @@ const candidateId = z.string().min(1).describe("The Candidate's id, as given by 
 const cvQuote = {
   source: z.literal("cv"),
   page: z.number().int().positive().describe("The CV page number, from get_cv."),
-  quote: z.string().max(text.long).describe("Words copied exactly from that page."),
+  quote: z.string().max(textLimits.long).describe("Words copied exactly from that page."),
 };
 const transcriptQuote = {
   source: z.literal("transcript"),
   interviewId: z.string().min(1),
   segmentNumber: z.number().int().positive().describe("The segment's number, from get_transcript."),
-  quote: z.string().max(text.long).describe("Words copied exactly from that segment."),
+  quote: z.string().max(textLimits.long).describe("Words copied exactly from that segment."),
 };
 
 // Builds the MCP server and its tools. It gets core's read operations and only the writes
@@ -170,12 +170,12 @@ export function createMcpServer(core: AiClientCore): McpServer {
         notes: z
           .array(
             z.object({
-              statement: z.string().max(text.long).describe("One short, neutral statement, in the Interviewer's language."),
+              statement: z.string().max(textLimits.long).describe("One short, neutral statement, in the Interviewer's language."),
               evidence: z
                 .array(
                   z.object({
                     segmentNumber: z.number().int().positive().describe("The segment's number, from get_transcript."),
-                    quote: z.string().max(text.long).describe("Words copied exactly from that segment."),
+                    quote: z.string().max(textLimits.long).describe("Words copied exactly from that segment."),
                   }),
                 )
                 .min(1)
@@ -205,8 +205,8 @@ export function createMcpServer(core: AiClientCore): McpServer {
         suggestions: z
           .array(
             z.object({
-              question: z.string().max(text.long).describe("The question, in the Interviewer's language."),
-              reason: z.string().max(text.long).describe("One short line on why it is worth asking."),
+              question: z.string().max(textLimits.long).describe("The question, in the Interviewer's language."),
+              reason: z.string().max(textLimits.long).describe("One short line on why it is worth asking."),
               evidence: z
                 .array(z.discriminatedUnion("source", [z.object(cvQuote), z.object(transcriptQuote)]))
                 .max(limits.evidence),
@@ -232,7 +232,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "saving from the AI client is off in the app's AI Settings.",
       inputSchema: {
         candidateId,
-        text: z.string().max(text.brief).describe("The whole brief, as Markdown, in the Interviewer's language."),
+        text: z.string().max(textLimits.brief).describe("The whole brief, as Markdown, in the Interviewer's language."),
         evidence: z
           .array(
             z.discriminatedUnion("source", [
