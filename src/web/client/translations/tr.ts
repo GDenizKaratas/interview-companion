@@ -28,9 +28,9 @@ const translation: TranslationFile = {
       loadFailed: "AI Ayarları yüklenemedi.",
       clientWrites: {
         title: "AI istemcinizden kaydetme",
-        label: "Claude Code veya Claude Desktop buraya AI Notları ve önerilen sorular kaydedebilsin",
+        label: "Claude Code veya Claude Desktop buraya AI Notları, sorulan sorular ve önerilen sorular kaydedebilsin",
         detail:
-          "Kapalı: AI istemciniz yalnızca okuyabilir. Açık: AI Notları ve önerilen sorular da kaydedebilir; uygulama bunları kendi ürettikleri gibi kontrol eder: her alıntı kaynakta kelimesi kelimesine bulunmalıdır ve İncelenmedi olarak gelir. Notlarınızı, sorularınızı ve adaylarınızı hiçbir zaman değiştiremez.",
+          "Kapalı: AI istemciniz yalnızca okuyabilir. Açık: AI Notları, sorulan sorular ve önerilen sorular da kaydedebilir; uygulama bunları kendi ürettikleri gibi kontrol eder: her alıntı kaynakta kelimesi kelimesine bulunmalıdır ve AI Notları İncelenmedi olarak gelir. Notlarınızı, sorularınızı ve adaylarınızı hiçbir zaman değiştiremez.",
         saveFailed: "Ayar kaydedilemedi.",
       },
     },

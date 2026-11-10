@@ -93,6 +93,24 @@ describe("Asked Questions", () => {
     expect(core.listAskedQuestions(interview.id)).toEqual({ foundAt: "2026-11-10T09:30:00.000Z", stale: false, askedQuestions: result.askedQuestions });
   });
 
+  it("shows the exchange to the end of the Candidate's answer, up to the Interviewer's next segment", async () => {
+    core.saveApiKey("sk-ant-test-key");
+    confirmRoles(
+      importTranscript([
+        "Ayşe: Arka plan işlerini nasıl çalıştırdınız?",
+        "Ece: Redis ile BullMQ kullandık.",
+        "Ece: İşler üç kez yeniden denenirdi.",
+        "Ece: Hatalar Sentry'ye giderdi.",
+        "Ayşe: Ödeme servisini kim yazdı?",
+      ]),
+    );
+    fake.askedQuestions = [backgroundJobs];
+
+    const [asked] = (await core.findAskedQuestions(interview.id)).askedQuestions;
+
+    expect(asked).toMatchObject({ firstSegment: 1, lastSegment: 4 });
+  });
+
   it("drops a question whose quotes are not where they must be, counts it, and keeps the others", async () => {
     ready();
     fake.askedQuestions = [
@@ -175,7 +193,7 @@ describe("Asked Questions", () => {
     });
   });
 
-  it("records that no question was found, and keeps the earlier ones when none of the proposed passes", async () => {
+  it("records that no question was found, and never wipes earlier questions with an answer that has none usable", async () => {
     ready();
     fake.askedQuestions = [];
     expect(await core.findAskedQuestions(interview.id)).toEqual({ askedQuestions: [], dropped: 0 });
@@ -185,9 +203,32 @@ describe("Asked Questions", () => {
     await core.findAskedQuestions(interview.id);
     fake.askedQuestions = [{ ...payments, answerEvidence: [{ segmentNumber: 4, quote: "never said" }] }];
     const result = await core.findAskedQuestions(interview.id);
-
     expect(result.dropped).toBe(1);
     expect(result.askedQuestions.map((q) => q.question)).toEqual([payments.question]);
+
+    fake.askedQuestions = [];
+    expect((await core.findAskedQuestions(interview.id)).askedQuestions.map((q) => q.question)).toEqual([payments.question]);
+  });
+
+  it("saves nothing when the Transcript changes while the model is answering", async () => {
+    ready();
+    const slowCore = openCore(join(dir, "test.sqlite"), {
+      now: () => clock,
+      aiProvider: () => ({
+        proposeAiNotes: async () => [],
+        proposeQuestions: async () => [],
+        proposeAskedQuestions: async () => {
+          // The Interviewer imports the Transcript again a minute later.
+          clock = new Date("2026-11-10T09:31:00Z");
+          confirmRoles(importTranscript());
+          return [payments];
+        },
+      }),
+    });
+
+    await expect(slowCore.findAskedQuestions(interview.id)).rejects.toMatchObject({ reason: "transcriptChanged" });
+    expect(core.listAskedQuestions(interview.id)).toBeNull();
+    slowCore.close();
   });
 
   it("is null for an Interview whose questions were never looked for, and refuses an unknown Interview", () => {

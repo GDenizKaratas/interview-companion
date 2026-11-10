@@ -239,7 +239,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
                 segmentNumber: z.number().int().positive().describe("The Interviewer's segment, from get_transcript."),
                 quote: z.string().max(textLimits.long).describe("Words copied exactly from that segment."),
               }),
-              savedQuestionId: z.string().nullable().describe("The matching Saved Question's id, or null."),
+              savedQuestionId: z.string().max(100).nullable().describe("The matching Saved Question's id, or null."),
               answerSummary: z.string().max(textLimits.long).describe("One or two neutral sentences, in the Interviewer's language."),
               answerEvidence: z
                 .array(

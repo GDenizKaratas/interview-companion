@@ -7,7 +7,7 @@ import { inTransaction } from "./database.ts";
 import { PreconditionError } from "./errors.ts";
 import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
-import { listInterviews, requireInterview, type Today } from "./interviews.ts";
+import { candidateOfInterview, listInterviews, requireInterview, type Today } from "./interviews.ts";
 import { containsQuote } from "./quotes.ts";
 import { listSavedQuestions } from "./saved-questions.ts";
 import {
@@ -17,7 +17,7 @@ import {
   segmentsOf,
   segmentsWithRoles,
 } from "./transcript-ai.ts";
-import type { Transcript } from "./transcripts.ts";
+import { getTranscript, type Transcript } from "./transcripts.ts";
 
 // A quote from one Transcript segment, by its number.
 export interface SegmentQuote {
@@ -39,7 +39,8 @@ export interface AskedQuestion {
   answerEvidence: SegmentQuote[];
   // The Saved Question this one matches, or null.
   savedQuestionId: string | null;
-  // The exchange in the Transcript: from the question to the last quoted part of the answer.
+  // The exchange in the Transcript: from the question to the end of the answer, which is the
+  // last segment before the Interviewer speaks again after the last quote.
   firstSegment: number;
   lastSegment: number;
   source: AiSource;
@@ -97,14 +98,11 @@ export function saveAskedQuestionsFromClient(
 
 // The Candidate's Saved Questions, which the model may match.
 function savedQuestionsOf(db: DatabaseSync, transcript: Transcript) {
-  const candidateId = (db.prepare("SELECT candidate_id FROM interview WHERE id = ?").get(transcript.interviewId) as {
-    candidate_id: string;
-  }).candidate_id;
-  return listSavedQuestions(db, candidateId);
+  return listSavedQuestions(db, candidateOfInterview(db, transcript.interviewId));
 }
 
 // Keeps the proposed questions whose quotes are all found and saves them in place of the
-// Interview's earlier ones, with the Saved Questions that were checked. When some were proposed and none passed, the earlier ones stay.
+// Interview's earlier ones, with the Saved Questions that were checked.
 function accept(
   db: DatabaseSync,
   now: Now,
@@ -117,7 +115,8 @@ function accept(
   const interviewerSegments = segmentsOf(transcript, "interviewer");
   const candidateSegments = segmentsOf(transcript, "candidate");
   const backed = proposed.filter((asked) => isBacked(asked, interviewerSegments, candidateSegments));
-  if (proposed.length === 0 || backed.length > 0) {
+  // An answer with nothing usable, empty or all dropped, never wipes questions found earlier.
+  if (backed.length > 0 || listAskedQuestions(db, transcript.interviewId) === null) {
     // A Saved Question deleted while the model was answering is no longer there to link or check.
     const current = new Set(savedQuestionsOf(db, transcript).map((question) => question.id));
     const savedIds = new Set(checkedIds.filter((id) => current.has(id)));
@@ -225,6 +224,13 @@ export function listAskedQuestions(db: DatabaseSync, interviewId: string): Asked
     "SELECT segment_number, quote FROM asked_question_evidence WHERE asked_question_id = ? ORDER BY position",
   );
   const stale = run.stale === 1;
+  const roles = new Map(segmentsWithRoles(getTranscript(db, interviewId)!).map((s) => [s.number, s.role]));
+  // The answer goes on past its last quote until the Interviewer speaks again.
+  const endOfAnswer = (lastQuoted: number) => {
+    let end = lastQuoted;
+    while (roles.has(end + 1) && roles.get(end + 1) !== "interviewer") end += 1;
+    return end;
+  };
   return {
     foundAt: run.found_at,
     stale,
@@ -241,7 +247,7 @@ export function listAskedQuestions(db: DatabaseSync, interviewId: string): Asked
         answerEvidence,
         savedQuestionId: row.saved_question_id,
         firstSegment: row.question_segment,
-        lastSegment: Math.max(row.question_segment, ...answerEvidence.map((e) => e.segmentNumber)),
+        lastSegment: endOfAnswer(Math.max(row.question_segment, ...answerEvidence.map((e) => e.segmentNumber))),
         source: run.source,
         stale,
       };

@@ -2192,6 +2192,7 @@ button.cv-shortcut svg {
   font-style: italic;
 }
 
-.question-not-found.stale {
-  text-decoration: line-through;
+/* Found before the speakers changed: shown, but quieter, with the reason on hover. */
+.question-checks .stale {
+  opacity: 0.55;
 }

@@ -29,9 +29,9 @@ const text = {
     loadFailed: "The AI settings could not be loaded.",
     clientWrites: {
       title: "Saving from your AI client",
-      label: "Let Claude Code or Claude Desktop save AI Notes and Suggested Questions here",
+      label: "Let Claude Code or Claude Desktop save AI Notes, asked questions, and Suggested Questions here",
       detail:
-        "Off: your AI client can only read. On: it can also save AI Notes and Suggested Questions, which the app checks like its own: every quote must be found word for word, and they arrive Unreviewed. It can never change your notes, your questions, or your Candidates.",
+        "Off: your AI client can only read. On: it can also save AI Notes, asked questions, and Suggested Questions, which the app checks like its own: every quote must be found word for word, and AI Notes arrive Unreviewed. It can never change your notes, your questions, or your Candidates.",
       saveFailed: "The setting could not be saved.",
     },
   },

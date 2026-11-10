@@ -98,7 +98,14 @@ export function SavedQuestions({
   // Read again when questions are found and after every change here, since a deleted question loses its checks.
   const [changeCount, setChangeCount] = useState(0);
   useEffect(() => {
-    api.listSavedQuestionChecks(candidateId).then(setChecks, () => setChecks([]));
+    let current = true;
+    api.listSavedQuestionChecks(candidateId).then(
+      (loaded) => current && setChecks(loaded),
+      () => current && setChecks([]),
+    );
+    return () => {
+      current = false;
+    };
   }, [candidateId, askedVersion, changeCount]);
 
   async function add() {
@@ -295,7 +302,8 @@ function QuestionItem({ question, interviews, checks, onOpenExchange, position, 
               <button
                 key={check.interviewId}
                 type="button"
-                className="link-button question-asked"
+                className={check.stale ? "link-button question-asked stale" : "link-button question-asked"}
+                title={check.stale ? text.panels.askedQuestions.stale : undefined}
                 onClick={() => onOpenExchange(check.askedQuestion!)}
               >
                 {fill(t.askedIn, { interview: name })}

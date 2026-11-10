@@ -67,9 +67,21 @@ function InterviewAskedQuestions({
     return () => window.removeEventListener(apiKeyChanged, loadKey);
   }, []);
 
+  // A Transcript imported and then confirmed starts two loads quickly; only the newer one may fill the panel.
   useEffect(() => {
-    api.getTranscript(interview.id).then(setTranscript, () => setLoadFailed(true));
-    api.listAskedQuestions(interview.id).then(setAsked, () => setLoadFailed(true));
+    let current = true;
+    Promise.all([api.getTranscript(interview.id), api.listAskedQuestions(interview.id)]).then(
+      ([loadedTranscript, loadedAsked]) => {
+        if (!current) return;
+        setTranscript(loadedTranscript);
+        setAsked(loadedAsked);
+        setLoadFailed(false);
+      },
+      () => current && setLoadFailed(true),
+    );
+    return () => {
+      current = false;
+    };
   }, [interview.id, transcriptVersion]);
 
   // Finding again replaces the Interview's Asked Questions. There is no review work to lose, so it does not ask first.
