@@ -15,5 +15,5 @@ Ayşe: Şemada bir değişiklik olduğunda ne yapıyorsunuz?
 Mert: Şemaları bir şema kayıt servisinde tutuyoruz. Geriye uyumsuz bir değişiklik gelirse üretici tarafında yayına alınamıyor.
 Ayşe: Ekipte kaç kişisiniz?
 Mert: Beş veri mühendisiyiz. Analistlerle haftada bir ortak toplantı yapıyoruz.
-Ayşe: Teşekkürler Mert, yarınki görüşmede bir tasarım sorusu üzerinde çalışacağız.
+Ayşe: Teşekkürler Mert, bir sonraki görüşmede bir tasarım sorusu üzerinde çalışacağız.
 Mert: Teşekkürler, görüşmek üzere.

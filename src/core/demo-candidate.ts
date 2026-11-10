@@ -190,7 +190,7 @@ const demoSet: DemoSetCandidate[] = [
       {
         days: -12,
         transcript: { file: "transcript-elif-kaya.vtt", roles: { Ayşe: "interviewer", Elif: "candidate" } },
-        notes: ["Profiler ile performans sorununu bulma adımlarını iyi sıraladı", "Erişilebilirlik testini kimin yaptığını sor"],
+        notes: ["Profiler ile performans sorununu bulma adımlarını iyi sıraladı", "Mobil görünümü nasıl test ettiklerini sormayı unuttum"],
         ai: elifKaya,
       },
       { days: 6, notes: ["Canlı kodlama: küçük bir form bileşeni"] },

@@ -276,4 +276,3 @@ describe("Demo set", () => {
     expect(checks.filter((check) => check.askedQuestion === null).length).toBeGreaterThanOrEqual(3);
   });
 });
-

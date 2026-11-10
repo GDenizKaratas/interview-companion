@@ -70,7 +70,8 @@ export function saveAiNotesFromClient(db: DatabaseSync, now: Now, interviewId: s
   return saveCheckedAiNotes(db, now, interviewId, proposed, "aiClient");
 }
 
-// Saves AI Notes written elsewhere, such as the demo's, through the gate and the quote check.
+// Saves AI Notes written elsewhere, such as the demo's, through the confirmed-Transcript gate and the quote
+// check. It does not check the AI client switch; callers that need it check it first.
 export function saveCheckedAiNotes(
   db: DatabaseSync,
   now: Now,

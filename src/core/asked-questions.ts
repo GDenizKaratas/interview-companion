@@ -95,8 +95,9 @@ export function saveAskedQuestionsFromClient(
   return saveCheckedAskedQuestions(db, now, interviewId, proposed, "aiClient");
 }
 
-// Saves Asked Questions written elsewhere, such as the demo's, through the gate and the quote
-// check, with every current Saved Question counted as checked.
+// Saves Asked Questions written elsewhere, such as the demo's, through the confirmed-Transcript gate
+// and the quote check, with every current Saved Question counted as checked. It does not check
+// the AI client switch.
 export function saveCheckedAskedQuestions(
   db: DatabaseSync,
   now: Now,
