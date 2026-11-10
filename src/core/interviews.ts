@@ -67,6 +67,13 @@ export function listInterviews(db: DatabaseSync, today: Today, candidateId: stri
   return rows.map((row, index) => toInterview(row, index + 1, day));
 }
 
+// Refuses with NotFoundError unless the Interview exists.
+export function requireInterview(db: DatabaseSync, interviewId: string): void {
+  if (!db.prepare("SELECT 1 FROM interview WHERE id = ?").get(interviewId)) {
+    throw new NotFoundError("This Interview does not exist.");
+  }
+}
+
 // Refuses with NotFoundError unless the Interview exists and belongs to this Candidate.
 export function requireInterviewOf(db: DatabaseSync, candidateId: string, interviewId: string): void {
   const row = db.prepare("SELECT 1 FROM interview WHERE id = ? AND candidate_id = ?").get(interviewId, candidateId);

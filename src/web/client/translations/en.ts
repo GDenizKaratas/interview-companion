@@ -129,7 +129,8 @@ const text = {
       refused: {
         format: "This file format is not supported. Supported formats: {formats}.",
         encoding: "This file is not UTF-8 text. Save it as UTF-8 and try again.",
-        required: "This file is empty.",
+        content: "The text of this file is not in the expected form. Supported formats: {formats}.",
+        required: "The file is empty. Choose a Transcript file.",
       },
       importFailed: "The Transcript could not be imported.",
       loadFailed: "The Transcript could not be loaded.",

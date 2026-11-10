@@ -22,6 +22,7 @@ export function transcriptRefusalMessage(text: Text, formats: TranscriptFormat[]
   const t = text.panels.transcript;
   if (error instanceof ApiError && error.field === "transcript") {
     if (error.rule === "format") return fill(t.refused.format, { formats: formatNames(text, formats) });
+    if (error.rule === "content") return fill(t.refused.content, { formats: formatNames(text, formats) });
     if (error.rule === "encoding") return t.refused.encoding;
     if (error.rule === "required") return t.refused.required;
   }

@@ -98,6 +98,12 @@ describe("Plain-text Transcript import", () => {
     ]);
   });
 
+  it("reads a file saved with a byte-order mark, as some Windows editors do", () => {
+    const transcript = core.importTranscript(interview.id, textFile("t.txt", "\uFEFFAyşe: Merhaba"));
+
+    expect(transcript.speakers.map((speaker) => speaker.label)).toEqual(["Ayşe"]);
+  });
+
   it("drops a turn that has no text", () => {
     const transcript = core.importTranscript(interview.id, textFile("t.txt", "Ayşe:\nGözlemci:\nEce: Hazırım."));
 
@@ -166,18 +172,22 @@ describe("Refused Transcript files", () => {
     expect(core.getTranscript(interview.id)).toBeUndefined();
   });
 
-  it("refuses a .txt file whose text does not start with a speaker", () => {
+  it("refuses a .txt file whose text does not start with a speaker, saying what the format expects", () => {
     for (const text of ["Toplantı notları, 3 Kasım", "Bugün iki konu konuştuk.\nAyşe: Merhaba"]) {
       expect(() => core.importTranscript(interview.id, textFile("t.txt", text))).toThrow(
-        expect.objectContaining({ field: "transcript", rule: "format" }),
+        expect.objectContaining({
+          field: "transcript",
+          rule: "content",
+          message: expect.stringContaining("Supported formats: plain text (.txt)"),
+        }),
       );
     }
     expect(core.getTranscript(interview.id)).toBeUndefined();
   });
 
-  it("refuses an empty file as a missing Transcript", () => {
-    for (const text of ["", " \n\n "]) {
-      expect(() => core.importTranscript(interview.id, textFile("t.txt", text))).toThrow(
+  it("refuses an empty file, or no file at all, as a missing Transcript", () => {
+    for (const file of [textFile("t.txt", ""), textFile("t.txt", " \n\n "), textFile("", "")]) {
+      expect(() => core.importTranscript(interview.id, file)).toThrow(
         expect.objectContaining({ field: "transcript", rule: "required" }),
       );
     }

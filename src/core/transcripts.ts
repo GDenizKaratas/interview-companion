@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { inTransaction } from "./database.ts";
-import { InvalidInputError, NotFoundError } from "./errors.ts";
+import { InvalidInputError } from "./errors.ts";
 import type { Now } from "./interviewer-notes.ts";
+import { requireInterview } from "./interviews.ts";
 import { adapterFor, transcriptAdapters, type ParsedSegment } from "./transcript-formats/index.ts";
 
 export interface TranscriptFile {
@@ -96,28 +97,36 @@ export function listTranscriptFormats(): TranscriptFormat[] {
   return transcriptAdapters.map((adapter) => ({ format: adapter.format, extensions: [...adapter.extensions] }));
 }
 
-// Reads the file with the adapter for its format. Refuses a file no adapter reads, with the
-// list of supported formats; then a file that is not UTF-8 text; then an empty file.
+// Reads the file with the adapter for its format. Refuses, in this order: no file or an empty
+// one; a file no adapter reads; a file that is not UTF-8 text; and text that is not in the
+// format its file ending names. The last two of these list the supported formats.
 function readTranscript(file: TranscriptFile): { format: string; segments: ParsedSegment[] } {
+  if (file.bytes.length === 0) throw missingFile();
   const adapter = adapterFor(file.fileName);
-  if (!adapter) throw unsupportedFormat();
-  const text = decodeUtf8(file.bytes);
-  if (text.trim() === "") {
-    throw new InvalidInputError("transcript", "required", "Choose a Transcript file.");
+  if (!adapter) {
+    throw new InvalidInputError("transcript", "format", `This file format is not supported. ${supportedFormats()}`);
   }
+  const text = decodeUtf8(file.bytes);
+  if (text.trim() === "") throw missingFile();
   // A turn with no words says nothing, whatever format it came from.
   const segments = adapter.parse(text)?.filter((segment) => segment.text.trim() !== "");
-  if (!segments || segments.length === 0) throw unsupportedFormat();
+  if (!segments || segments.length === 0) {
+    throw new InvalidInputError(
+      "transcript",
+      "content",
+      `The text of this file is not in the expected form. ${supportedFormats()}`,
+    );
+  }
   return { format: adapter.format, segments };
 }
 
-function unsupportedFormat(): InvalidInputError {
+function missingFile(): InvalidInputError {
+  return new InvalidInputError("transcript", "required", "The file is empty. Choose a Transcript file.");
+}
+
+function supportedFormats(): string {
   const formats = transcriptAdapters.map((adapter) => `${adapter.name} (${adapter.extensions.join(", ")})`);
-  return new InvalidInputError(
-    "transcript",
-    "format",
-    `This file format is not supported. Supported formats: ${formats.join("; ")}.`,
-  );
+  return `Supported formats: ${formats.join("; ")}.`;
 }
 
 // Every supported format is text, so the bytes are decoded once here, for all adapters.
@@ -129,7 +138,6 @@ function decodeUtf8(bytes: Uint8Array): string {
     throw new InvalidInputError("transcript", "encoding", "This file is not UTF-8 text. Save it as UTF-8 and try again.");
   }
 }
-
 
 export function getTranscript(db: DatabaseSync, interviewId: string): Transcript | undefined {
   const row = db
@@ -158,10 +166,4 @@ export function getTranscript(db: DatabaseSync, interviewId: string): Transcript
     endMs: segment.end_ms,
   }));
   return { interviewId: row.interview_id, fileName: row.file_name, format: row.format, importedAt: row.imported_at, speakers, segments };
-}
-
-function requireInterview(db: DatabaseSync, interviewId: string): void {
-  if (!db.prepare("SELECT 1 FROM interview WHERE id = ?").get(interviewId)) {
-    throw new NotFoundError("This Interview does not exist.");
-  }
 }

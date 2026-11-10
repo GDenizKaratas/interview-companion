@@ -1,5 +1,5 @@
 import { Hono, type Context } from "hono";
-import { InvalidInputError, NotFoundError, type Core, type CvFile, type TranscriptFile } from "../core/index.ts";
+import { InvalidInputError, NotFoundError, type Core, type CvFile } from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
 export function createApi(core: Core): Hono {
@@ -185,7 +185,7 @@ function isForm(c: Context): boolean {
 }
 
 // The file sent in a form field, or undefined when the field holds no file.
-async function fileField(form: Record<string, unknown>, key: string): Promise<(CvFile & TranscriptFile) | undefined> {
+async function fileField(form: Record<string, unknown>, key: string): Promise<CvFile | undefined> {
   const value = form[key];
   if (!(value instanceof File)) return undefined;
   return { fileName: value.name, bytes: new Uint8Array(await value.arrayBuffer()) };

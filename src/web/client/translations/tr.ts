@@ -122,7 +122,8 @@ const translation: TranslationFile = {
         refused: {
           format: "Bu dosya biçimi desteklenmiyor. Desteklenen biçimler: {formats}.",
           encoding: "Bu dosya UTF-8 metin değil. UTF-8 olarak kaydedip yeniden deneyin.",
-          required: "Bu dosya boş.",
+          content: "Bu dosyanın metni beklenen biçimde değil. Desteklenen biçimler: {formats}.",
+          required: "Dosya boş. Bir transkript dosyası seçin.",
         },
         importFailed: "Transkript içe aktarılamadı.",
         loadFailed: "Transkript yüklenemedi.",
