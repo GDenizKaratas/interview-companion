@@ -148,6 +148,15 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   });
 
   // Generates the Interview's AI Notes with the model. Only this route ever calls it.
+  api.get("/interviews/:id/asked-questions", (c) =>
+    respondOrRefuse(c, () => c.json(core.listAskedQuestions(c.req.param("id")))),
+  );
+  api.post("/interviews/:id/asked-questions", (c) =>
+    respondOrRefuse(c, async () => c.json(await core.findAskedQuestions(c.req.param("id")), 201)),
+  );
+  api.get("/candidates/:id/saved-question-checks", (c) =>
+    respondOrRefuse(c, () => c.json(core.listSavedQuestionChecks(c.req.param("id")))),
+  );
   api.post("/interviews/:id/ai-notes", (c) =>
     respondOrRefuse(c, async () => c.json(await core.generateAiNotes(c.req.param("id")), 201)),
   );

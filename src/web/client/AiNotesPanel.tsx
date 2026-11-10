@@ -167,7 +167,7 @@ function InterviewAiNotes({
 
 // What went wrong, in the Interviewer's language. Every failure says the data is unchanged,
 // because core saves nothing unless generation succeeds.
-function generationErrorMessage(text: Text, error: unknown): string {
+export function generationErrorMessage(text: Text, error: unknown): string {
   const t = text.panels.aiNotes.errors;
   if (error instanceof ApiError) {
     // Only the reasons generation can give; the others belong to review and to suggestions.

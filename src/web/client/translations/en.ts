@@ -275,6 +275,39 @@ const text = {
       importFailed: "The Transcript could not be imported.",
       loadFailed: "The Transcript could not be loaded.",
     },
+    // The AI panel holds AI Notes and Asked Questions, one tab each.
+    ai: {
+      title: "AI",
+      notesTab: "AI Notes",
+      askedTab: "Asked questions",
+    },
+    askedQuestions: {
+      noInterview: "Add an Interview first. Asked questions are found in its Transcript.",
+      selectInterview: "Select an Interview above to see the questions asked in it.",
+      noApiKey: "Add an API key to find the questions asked here, or use the brief command from your AI client.",
+      addApiKey: "Add API key",
+      noTranscript: "Import this Interview's Transcript to find the questions asked.",
+      confirmSpeakersFirst: "Confirm who is speaking first.",
+      notYet: "Every question you asked in this Interview, each with a short summary of the answer.",
+      find: "Find questions asked",
+      findAgain: "Find again",
+      finding: "Reading the Transcript…",
+      whatIsSent: "Sends this Interview's Transcript with speaker roles, and your saved questions, to Claude (Anthropic).",
+      empty: "No questions were found in this Transcript.",
+      // {count} is replaced by a number.
+      dropped: "Questions left out because a quote was not found word for word: {count}.",
+      stale: "Speakers changed after these questions were found. Find them again to trust them.",
+      savedQuestion: "saved question",
+      fromAiClient: "From your AI client",
+      loadFailed: "The questions asked could not be loaded.",
+    },
+    // The exchange of one Asked Question, cut out of the Transcript.
+    exchange: {
+      answer: "What the Candidate said",
+      openInTranscript: "Open in the Transcript",
+      close: "Close",
+      loadFailed: "The Transcript could not be loaded.",
+    },
     aiNotes: {
       title: "AI Notes",
       label: "AI-generated",
@@ -362,6 +395,10 @@ const text = {
       // {interview} is replaced by the Interview's name.
       hiddenByFilter: "Saved under {interview}. Questions of other Interviews are hidden while one is selected.",
       showAll: "Show all questions",
+      // {interview} is replaced by the Interview's name.
+      askedIn: "Asked in {interview}",
+      notFoundIn: "Not found in {interview}",
+      notFoundHint: "Not found in this Transcript. It may have been asked in other words.",
       suggestions: {
         open: "Suggest questions",
         label: "AI-generated",
