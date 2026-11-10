@@ -26,6 +26,13 @@ const translation: TranslationFile = {
       required: "Bir API anahtarı girin.",
       saveFailed: "API anahtarı kaydedilemedi.",
       loadFailed: "AI Ayarları yüklenemedi.",
+      clientWrites: {
+        title: "AI istemcinizden kaydetme",
+        label: "Claude Code veya Claude Desktop buraya AI Notları ve önerilen sorular kaydedebilsin",
+        detail:
+          "Kapalı: AI istemciniz yalnızca okuyabilir. Açık: AI Notları ve önerilen sorular da kaydedebilir; uygulama bunları kendi ürettikleri gibi kontrol eder: her alıntı kaynakta kelimesi kelimesine bulunmalıdır ve İncelenmedi olarak gelir. Notlarınızı, sorularınızı ve adaylarınızı hiçbir zaman değiştiremez.",
+        saveFailed: "Ayar kaydedilemedi.",
+      },
     },
     candidates: {
       title: "Adaylar",
@@ -114,7 +121,7 @@ const translation: TranslationFile = {
       stepAsk: "2. Claude Code'u açıp örneğin şunu sorun: “Deniz Redis hakkında ne dedi? Interview Companion'ı kullan.”",
       stepBrief: "3. Tam bir özet için /mcp__interview-companion__candidate_brief yazıp adayın adını verin.",
       desktop: "Claude Desktop için proje klasöründeki docs/mcp.md dosyasına bakın.",
-      readOnly: "İstemci okuyabilir ve arayabilir, hiçbir şeyi değiştiremez. Aday Özeti'ndeki alıntıları uygulama kontrol etmez; buradaki aramayla kontrol edin.",
+      readOnly: "AI Ayarları'nda izin vermediğiniz sürece istemci yalnızca okuyabilir ve arayabilir. İzin verirseniz uygulamanın kontrol ettiği AI Notları ve önerilen sorular da kaydedebilir; kendi notlarınızı, sorularınızı ve adaylarınızı asla değiştiremez. Aday Özeti'ndeki alıntıları uygulama kontrol etmez; buradaki aramayla kontrol edin.",
     },
     search: {
       label: "CV ve transkriptlerde ara",
@@ -256,6 +263,8 @@ const translation: TranslationFile = {
         reviewFailed: "Not kaydedilemedi.",
         showInTranscript: "Transkriptte göster",
         segment: "{number}. bölüm",
+        fromAiClient: "AI istemcinizden",
+        fromAiClientHint: "Claude Code veya Claude Desktop tarafından MCP ile yazıldı ve uygulama tarafından diğer AI Notları gibi kontrol edildi.",
         reviewStates: { unreviewed: "İncelenmedi", confirmed: "Onaylandı", corrected: "Düzeltildi", dismissed: "Gizlendi" },
         confirmRegenerate: "AI Notları yeniden oluşturulsun mu?",
         confirmRegenerateDetail:
@@ -304,6 +313,7 @@ const translation: TranslationFile = {
         suggestions: {
           open: "Soru öner",
           label: "AI tarafından üretildi",
+          fromAiClient: "AI istemcinizden",
           whatIsSent:
             "CV'yi, konuşmacıları onaylanmış transkriptleri, notlarınızı (Notlarım) ve kayıtlı sorularınızı Claude'a (Anthropic) gönderir.",
           focusLabel: "Odak (isteğe bağlı)",

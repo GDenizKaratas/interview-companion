@@ -1,6 +1,6 @@
 # Interview Companion
 
-A local workspace for technical interviewers, with a read-only MCP server. The full spec is GitHub issue #1; the work is split into issues #2–#19.
+A local workspace for technical interviewers, with an MCP server that reads, and saves checked AI work only when the Interviewer allows it (ADR 0005). The full spec is GitHub issue #1; the work is split into issues #2–#19.
 
 ## Read before changing anything
 

@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import type { AiProviderFactory, ProposedQuestion, ProposedQuestionEvidence, QuestionRequest } from "./ai-provider.ts";
-import { readApiKey } from "./ai-settings.ts";
+import type { AiSource } from "./ai-notes.ts";
+import { readApiKey, requireAiClientWrites } from "./ai-settings.ts";
 import { requireCandidate } from "./candidates.ts";
 import { getCv } from "./cv.ts";
 import { inTransaction } from "./database.ts";
@@ -25,6 +26,8 @@ export interface SuggestedQuestion {
   // One short line on why the question is worth asking.
   reason: string;
   generatedAt: string;
+  // Who wrote it: the app with its API key, or the AI client through MCP.
+  source: AiSource;
   // True when the suggestion cites no Evidence: a general question, not based on the CV or a Transcript.
   general: boolean;
   // True once it was copied into Saved Questions. Regenerating keeps accepted suggestions.
@@ -78,10 +81,38 @@ export async function generateSuggestedQuestions(
       ? error
       : new AiProviderError("unavailable", "Generation failed. Your data was not changed.", { cause: error });
   }
-  const current = currentStamps(db, candidateId);
+  return acceptSuggestions(db, now, candidateId, proposed, sent, currentStamps(db, candidateId), leftOut, "app");
+}
+
+// Saves the Suggested Questions the AI client wrote itself, through MCP, with no API key in the
+// app. Quotes are checked against the sources as they are now, with the same rules as in-app
+// generation: only a confirmed Transcript can be quoted.
+export function saveSuggestedQuestionsFromClient(
+  db: DatabaseSync,
+  today: Today,
+  now: Now,
+  candidateId: string,
+  proposed: ProposedQuestion[],
+): SuggestedQuestionGeneration {
+  requireAiClientWrites(db);
+  requireCandidate(db, candidateId);
+  const { sent, leftOut } = buildRequest(db, today, candidateId, null);
+  return acceptSuggestions(db, now, candidateId, proposed, sent, currentStamps(db, candidateId), leftOut, "aiClient");
+}
+
+function acceptSuggestions(
+  db: DatabaseSync,
+  now: Now,
+  candidateId: string,
+  proposed: ProposedQuestion[],
+  sent: SentSources,
+  current: SourceStamps,
+  leftOut: string[],
+  source: AiSource,
+): SuggestedQuestionGeneration {
   const backed = proposed.filter((suggestion) => isBacked(suggestion, sent, current));
   // An answer with nothing usable does not cost the Interviewer the suggestions they already have.
-  if (backed.length > 0) saveSuggestions(db, now, candidateId, backed);
+  if (backed.length > 0) saveSuggestions(db, now, candidateId, backed, source);
   return { suggestions: listSuggestedQuestions(db, candidateId), dropped: proposed.length - backed.length, leftOut };
 }
 
@@ -180,13 +211,19 @@ function isBacked(
   });
 }
 
-function saveSuggestions(db: DatabaseSync, now: Now, candidateId: string, suggestions: ProposedQuestion[]): void {
+function saveSuggestions(
+  db: DatabaseSync,
+  now: Now,
+  candidateId: string,
+  suggestions: ProposedQuestion[],
+  source: AiSource,
+): void {
   const generatedAt = now().toISOString();
   inTransaction(db, () => {
     // Accepted suggestions stay; every other one, dismissed or edited, is replaced.
     db.prepare("DELETE FROM suggested_question WHERE candidate_id = ? AND accepted_at IS NULL").run(candidateId);
     const insertSuggestion = db.prepare(
-      "INSERT INTO suggested_question (id, candidate_id, text, reason, generated_at, position) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO suggested_question (id, candidate_id, text, reason, generated_at, position, source) VALUES (?, ?, ?, ?, ?, ?, ?)",
     );
     const insertEvidence = db.prepare(
       `INSERT INTO suggested_question_evidence
@@ -195,7 +232,7 @@ function saveSuggestions(db: DatabaseSync, now: Now, candidateId: string, sugges
     );
     for (const [i, suggestion] of suggestions.entries()) {
       const id = randomUUID();
-      insertSuggestion.run(id, candidateId, suggestion.question.trim(), suggestion.reason.trim(), generatedAt, i + 1);
+      insertSuggestion.run(id, candidateId, suggestion.question.trim(), suggestion.reason.trim(), generatedAt, i + 1, source);
       for (const [j, evidence] of suggestion.evidence.entries()) {
         if (evidence.source === "cv") {
           insertEvidence.run(id, j + 1, candidateId, evidence.page, null, null, evidence.quote);
@@ -268,7 +305,7 @@ export function restoreSuggestedQuestion(db: DatabaseSync, id: string): Suggeste
   return getSuggestedQuestion(db, id);
 }
 
-const selectSuggestions = "SELECT id, candidate_id, text, reason, generated_at, accepted_at, dismissed FROM suggested_question";
+const selectSuggestions = "SELECT id, candidate_id, text, reason, generated_at, source, accepted_at, dismissed FROM suggested_question";
 
 interface SuggestionRow {
   id: string;
@@ -276,6 +313,7 @@ interface SuggestionRow {
   text: string;
   reason: string;
   generated_at: string;
+  source: AiSource;
   accepted_at: string | null;
   dismissed: number;
 }
@@ -305,6 +343,7 @@ function toSuggestedQuestions(db: DatabaseSync, rows: SuggestionRow[]): Suggeste
       text: row.text,
       reason: row.reason,
       generatedAt: row.generated_at,
+      source: row.source,
       general: evidence.length === 0,
       accepted: row.accepted_at !== null,
       dismissed: row.dismissed === 1,

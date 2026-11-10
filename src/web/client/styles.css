@@ -1921,3 +1921,38 @@ button.cv-shortcut svg {
   letter-spacing: -0.01em;
   text-transform: none;
 }
+
+/* Where an AI Note or a Suggested Question came from, when it was the AI client through MCP. */
+.source-tag {
+  font-size: 0.72rem;
+  color: var(--navy);
+  background: #e8edf6;
+  border-radius: 3px;
+  padding: 0 0.35rem;
+}
+
+/* A setting with a checkbox in AI Settings. */
+.settings-section {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+}
+
+.settings-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  font-weight: 500;
+}
+
+.settings-check input {
+  margin-top: 0.2rem;
+  accent-color: var(--accent-strong);
+}
+
+.settings-detail {
+  margin: 0.35rem 0 0 1.5rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}

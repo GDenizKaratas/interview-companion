@@ -1,6 +1,8 @@
 ---
-status: accepted
+status: accepted, partly superseded by ADR 0005
 ---
+
+> ADR 0005 lets the AI client save AI Notes and Suggested Questions through core's checks, when the Interviewer allows it. The read-only MCP server described here is the default, not the only mode.
 
 # Two AI modes with different guarantees
 

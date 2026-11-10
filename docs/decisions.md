@@ -310,6 +310,16 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 |---|---|---|---|
 | 194 | A new database starts in Turkish (`defaultInterfaceLanguage = "tr"`); the browser's fallback when core cannot be reached is Turkish too. A chosen language is still remembered. English stays the reference translation file whose keys every other file must have. The Turkish label for a Candidate's name is "İsim", and the settings are "AI Ayarları". Chosen by the owner. | The first users interview in Turkish. | English as the default; a choice on first start. |
 
+## 2026-11-10 — #45 The AI client saves checked AI Notes and Suggested Questions
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 195 | The AI client may save AI Notes and Suggested Questions through MCP, through new core operations `saveAiNotesFromClient` and `saveSuggestedQuestionsFromClient`. They share the gate, the quote check, and the replace rules with in-app generation; only the source differs. See [ADR 0005](adr/0005-ai-client-saves-through-core.md). Approved by the owner. | The AI client's work lands where the Interviewer reviews it, and its quotes are checked like the app's own. | Keeping MCP read-only; separate, looser checks for the client. |
+| 196 | Saving from the AI client is a setting, off by default, turned on in AI Settings. While off, both operations refuse with the new precondition `aiClientWritesOff`, whose message says where to turn it on. Only core's full interface has the switch; the MCP server gets `aiClientCore`, which holds every read and only the two saves. | The Interviewer chooses when an external client may add to the app, and the client cannot grant itself the right. | Always on; a switch reachable through MCP. |
+| 197 | AI Notes and Suggested Questions get a `source` column, `app` or `aiClient` (default `app` for existing rows). The interface tags the AI client's items "From your AI client". | The Interviewer sees which assistant wrote what; review works the same for both. | No source; a separate table for the client's items. |
+| 198 | MCP gains `get_transcript` (segments with number, label, role, times, text) and `get_cv` (page texts), both read-only. | To quote word for word, the client needs the exact text, not only search excerpts. Decision 129 kept full texts out of `get_candidate`, not out of MCP. | Making the client rebuild texts from many searches. |
+| 199 | Saving suggestions from the client checks quotes against the sources as they are at that moment, with the same rule that only confirmed Transcripts can be quoted; there is no waiting time to guard, unlike in-app generation. | The client has already read the data; core checks what it sends against the current text. | Asking the client for the version it read. |
+
 ## Open questions
 
 - The exact layout of a Google Meet transcript downloaded as `.txt` (decision 126, tracked in #33). It needs one real export with fictional content.
