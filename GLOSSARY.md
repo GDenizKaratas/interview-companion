@@ -17,8 +17,12 @@ _Avoid_: Applicant, interviewee
 ### Sources
 
 **Interview**:
-One conversation with a Candidate, at a known stage. It may have a Transcript.
+One conversation with a Candidate. Interviews are numbered in the order they are added (First Interview, Second Interview) and may have a date. It may have a Transcript.
 _Avoid_: Meeting, session, round
+
+**Planned**:
+An Interview whose date is after today. An Interview dated today or earlier has taken place; one without a date is neither.
+_Avoid_: Upcoming, scheduled
 
 **CV**:
 The document a Candidate submitted. It belongs to the Candidate, not to an Interview.

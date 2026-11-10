@@ -1,8 +1,8 @@
 // The browser's only way to reach core: the local server's /api routes.
 // Only types come from core; they are erased before the code reaches the browser.
-import type { Candidate, InputRule, NewCandidate } from "../../core/index.ts";
+import type { Candidate, InputRule, Interview, NewCandidate, NewInterview } from "../../core/index.ts";
 
-export type { Candidate };
+export type { Candidate, Interview };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -44,4 +44,8 @@ export const api = {
   getInterfaceLanguage: () => request<{ language: string }>("/interface-language"),
   setInterfaceLanguage: (language: string) =>
     request<{ language: string }>("/interface-language", sendJson("PUT", { language })),
+  listInterviews: (candidateId: string) =>
+    request<Interview[]>(`/candidates/${encodeURIComponent(candidateId)}/interviews`),
+  addInterview: ({ candidateId, ...fields }: NewInterview) =>
+    request<Interview>(`/candidates/${encodeURIComponent(candidateId)}/interviews`, sendJson("POST", fields)),
 };

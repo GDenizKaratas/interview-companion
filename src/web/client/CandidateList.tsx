@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { AddButton } from "./AddButton.tsx";
 import { api, ApiError, type Candidate } from "./api.ts";
 import { candidatePath, linkTo } from "./navigation.ts";
 import type { Text } from "./languages.ts";
@@ -58,9 +59,9 @@ export function CandidateList() {
             ))}
           </datalist>
         </label>
-        <button type="submit" disabled={saving}>
+        <AddButton type="submit" disabled={saving}>
           {text.candidates.add}
-        </button>
+        </AddButton>
       </form>
       {saveError !== undefined && <p className="error">{refusalMessage(text, saveError)}</p>}
       {loadError && <p className="error">{text.candidates.loadFailed}</p>}

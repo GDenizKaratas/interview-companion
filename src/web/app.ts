@@ -1,5 +1,5 @@
 import { Hono, type Context } from "hono";
-import { InvalidInputError, type Core } from "../core/index.ts";
+import { InvalidInputError, NotFoundError, type Core } from "../core/index.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
 export function createApi(core: Core): Hono {
@@ -22,6 +22,17 @@ export function createApi(core: Core): Hono {
   api.get("/candidates/:id", (c) => {
     const candidate = core.getCandidate(c.req.param("id"));
     return candidate ? c.json(candidate) : c.json({ error: "Candidate not found." }, 404);
+  });
+
+  api.get("/candidates/:id/interviews", (c) =>
+    respondOrRefuse(c, () => c.json(core.listInterviews(c.req.param("id")))),
+  );
+
+  api.post("/candidates/:id/interviews", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.addInterview({ candidateId: c.req.param("id"), date: stringField(fields, "date") }), 201),
+    );
   });
 
   api.get("/interface-language", (c) => c.json({ language: core.getInterfaceLanguage() }));
@@ -47,13 +58,17 @@ function stringField(fields: Record<string, unknown>, key: string): string {
   return typeof value === "string" ? value : "";
 }
 
-// Runs a core call and turns a refused input into a 400 response the interface can translate.
+// Runs a core call and turns a refused input into a 400 response the interface can translate,
+// and a request for something that does not exist into a 404 response.
 function respondOrRefuse(c: Context, run: () => Response): Response {
   try {
     return run();
   } catch (error) {
     if (error instanceof InvalidInputError) {
       return c.json({ error: error.message, field: error.field, rule: error.rule }, 400);
+    }
+    if (error instanceof NotFoundError) {
+      return c.json({ error: error.message }, 404);
     }
     throw error;
   }
