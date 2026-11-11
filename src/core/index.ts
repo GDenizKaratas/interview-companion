@@ -1,6 +1,7 @@
 // The public interface of core. web and mcp import only from this file.
-import { mkdirSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { existsSync, mkdirSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as aiNotes from "./ai-notes.ts";
 import * as askedQuestions from "./asked-questions.ts";
@@ -13,6 +14,7 @@ import * as candidateOverview from "./candidate-overview.ts";
 import * as candidates from "./candidates.ts";
 import { claudeProvider } from "./claude-provider.ts";
 import * as cv from "./cv.ts";
+import * as dataFolder from "./data-folder.ts";
 import { openDatabase } from "./database.ts";
 import * as evidenceSearch from "./evidence-search.ts";
 import * as demoCandidate from "./demo-candidate.ts";
@@ -354,11 +356,20 @@ function localDayAndTime(): { day: string; time: string } {
   };
 }
 
-// The database the app uses: data/interview-companion.sqlite in the project folder,
-// or inside DATA_DIR when it is set. It does not depend on the current directory,
-// because an MCP client may start the server from anywhere.
+// The database the app uses, in the folder data-folder.ts chooses: DATA_DIR, an existing
+// data folder in the project, or the user's application-data folder. The folder is created here,
+// readable only by its owner. It does not depend on the current directory, because an MCP client
+// may start the server from anywhere; the web server, the MCP server, and `npm run demo` all
+// call this, so they find the same file.
 export function defaultDatabasePath(): string {
   const projectRoot = fileURLToPath(new URL("../..", import.meta.url));
-  const dataDir = process.env.DATA_DIR ? resolve(process.env.DATA_DIR) : resolve(projectRoot, "data");
-  return resolve(dataDir, "interview-companion.sqlite");
+  const folder = dataFolder.chooseDataFolder({
+    platform: process.platform,
+    env: process.env,
+    home: homedir(),
+    projectRoot,
+    exists: existsSync,
+  });
+  dataFolder.ensureDataFolder(folder);
+  return join(folder, dataFolder.databaseFileName);
 }

@@ -8,7 +8,7 @@ const timeParts = /^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?:[.,](\d{1,3}))?$/;
 
 // Plain text with one turn per line, written as "Speaker: text", optionally with a time in
 // front. A line without a label continues the turn before it, as pasted text often wraps.
-// Blank lines are skipped. Text before the first label is refused, because no speaker can be
+// Blank lines are skipped. A line may end as on Windows (CR LF), Unix (LF), or older tools (CR). Text before the first label is refused, because no speaker can be
 // given to it without guessing. A turn has at most a start time; its end is not written.
 export const plainTextAdapter: TranscriptAdapter = {
   format: "plain-text",
@@ -16,7 +16,7 @@ export const plainTextAdapter: TranscriptAdapter = {
   extensions: [".txt"],
   parse(text) {
     const segments: ParsedSegment[] = [];
-    for (const rawLine of text.split(/\r?\n/)) {
+    for (const rawLine of text.split(/\r\n|\r|\n/)) {
       const line = rawLine.trim();
       if (line === "") continue;
       const timed = timedTurn(line);

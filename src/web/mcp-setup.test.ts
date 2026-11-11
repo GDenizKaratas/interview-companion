@@ -29,4 +29,42 @@ describe("The setup that connects an AI application to the MCP server", () => {
       env: { DATA_DIR: "/data dir" },
     });
   });
+
+  it("quotes paths for the Windows command line with double quotes, as cmd.exe and PowerShell read them", () => {
+    const setup = mcpSetup({
+      serverPath: "C:\\Users\\Ayşe Yılmaz\\interview-companion\\src\\mcp\\server.ts",
+      nodePath: "C:\\Program Files\\nodejs\\node.exe",
+      dataDir: "D:\\Görüşme verisi",
+      platform: "win32",
+    });
+    expect(setup.command).toBe(
+      'claude mcp add --scope local interview-companion -e DATA_DIR="D:\\Görüşme verisi" -- node "C:\\Users\\Ayşe Yılmaz\\interview-companion\\src\\mcp\\server.ts"',
+    );
+    expect(setup.commandEveryFolder).toContain('-- node "C:\\Users\\Ayşe Yılmaz\\interview-companion\\src\\mcp\\server.ts"');
+  });
+
+  it("leaves a plain Windows path unquoted, and escapes a double quote and the backslashes before it", () => {
+    expect(mcpSetup({ serverPath: "C:\\ic\\server.ts", nodePath: "node", platform: "win32" }).command).toBe(
+      "claude mcp add --scope local interview-companion -- node C:\\ic\\server.ts",
+    );
+    expect(mcpSetup({ serverPath: 'C:\\a "b"\\', nodePath: "node", platform: "win32" }).command).toBe(
+      'claude mcp add --scope local interview-companion -- node "C:\\a \\"b\\"\\\\"',
+    );
+  });
+
+  it("keeps POSIX single quotes on macOS and Linux", () => {
+    expect(mcpSetup({ serverPath: "/Users/Ayşe/it's/server.ts", nodePath: "/usr/bin/node", platform: "linux" }).command).toBe(
+      "claude mcp add --scope local interview-companion -- node '/Users/Ayşe/it'\\''s/server.ts'",
+    );
+  });
+
+  it("writes Windows paths into Claude Desktop's configuration as valid JSON that reads back the same", () => {
+    const serverPath = "C:\\Users\\Ayşe Yılmaz\\interview-companion\\src\\mcp\\server.ts";
+    const desktopConfig = mcpSetup({ serverPath, nodePath: "C:\\Program Files\\nodejs\\node.exe", platform: "win32" }).desktopConfig;
+    expect(desktopConfig).toContain('"C:\\\\Users\\\\Ayşe Yılmaz');
+    expect(JSON.parse(desktopConfig).mcpServers["interview-companion"]).toEqual({
+      command: "C:\\Program Files\\nodejs\\node.exe",
+      args: [serverPath],
+    });
+  });
 });

@@ -146,6 +146,22 @@ describe("Plain-text Transcript import", () => {
     expect(transcript.speakers.map((speaker) => speaker.label)).toEqual(["Ayşe"]);
   });
 
+  it("reads a file saved by Windows Notepad: a byte-order mark, Windows line endings, and a name with Turkish letters and spaces", () => {
+    const transcript = core.importTranscript(
+      interview.id,
+      textFile("Görüşme Ayşe Yılmaz.TXT", "\uFEFFAyşe: Kuyruğu nasıl kurdunuz?\r\nEce: Redis ile.\r\n"),
+    );
+
+    expect(transcript.fileName).toBe("Görüşme Ayşe Yılmaz.TXT");
+    expect(linesOf(transcript)).toEqual(["Ayşe: Kuyruğu nasıl kurdunuz?", "Ece: Redis ile."]);
+  });
+
+  it("reads a file whose lines end with a carriage return alone, as some older tools write", () => {
+    const transcript = core.importTranscript(interview.id, textFile("t.txt", "Ayşe: Merhaba\rEce: Merhaba, hazırım."));
+
+    expect(linesOf(transcript)).toEqual(["Ayşe: Merhaba", "Ece: Merhaba, hazırım."]);
+  });
+
   it("drops a turn that has no text", () => {
     const transcript = core.importTranscript(interview.id, textFile("t.txt", "Ayşe:\nGözlemci:\nEce: Hazırım."));
 
@@ -270,6 +286,18 @@ describe("WebVTT Transcript import", () => {
       ["Ece Yalın", "Evet, hazırım.", 4_000, 6_000],
       ["Ayşe Demir", "Peki.", 3_600_000, 3_602_000],
       ["Ece Yalın", "Teşekkürler.", 3_600_000, 3_602_000],
+    ]);
+  });
+
+  it("reads a WebVTT file saved on Windows, with a byte-order mark and Windows line endings", () => {
+    const transcript = core.importTranscript(
+      interview.id,
+      textFile("Görüşme 1.vtt", "\uFEFFWEBVTT\r\n\r\n00:00:01.000 --> 00:00:02.500\r\n<v Ayşe Demir>Hazır mısın?\r\n\r\n00:00:03.000 --> 00:00:04.000\r\n<v Ece Yalın>Evet.\r\n"),
+    );
+
+    expect(timedSegmentsOf(transcript)).toEqual([
+      ["Ayşe Demir", "Hazır mısın?", 1000, 2500],
+      ["Ece Yalın", "Evet.", 3000, 4000],
     ]);
   });
 });
