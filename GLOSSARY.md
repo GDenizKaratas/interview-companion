@@ -20,6 +20,10 @@ _Avoid_: Applicant, interviewee
 One conversation with a Candidate. Interviews may have a date, and with it a time of day, and are numbered by them (First Interview, Second Interview); those without a date come after the dated ones, in the order they were added. It may have a Transcript.
 _Avoid_: Meeting, session, round
 
+**Default Interview**:
+The Interview a Candidate's Workspace opens on: the latest one that has taken place; when none has, the earliest Planned one; when none has a date, the first one.
+_Avoid_: Current interview, active interview
+
 **Planned**:
 An Interview that has not happened yet: its date is after today, or it is today and its time is still ahead. An Interview dated earlier, or today with no time or a time already passed, has taken place; one without a date is neither.
 _Avoid_: Upcoming, scheduled

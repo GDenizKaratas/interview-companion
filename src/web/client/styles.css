@@ -339,7 +339,7 @@ button.link-button:hover:not(:disabled) {
 /* Home: the Candidates on the left, the calendar and the no-key guide on the right. */
 .home {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 22.5rem;
+  grid-template-columns: minmax(0, 1fr) 24rem;
   gap: 1.25rem;
   align-items: start;
   max-width: 88rem;
@@ -376,11 +376,6 @@ button.link-button:hover:not(:disabled) {
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--muted);
-}
-
-.section-head .filter {
-  margin-left: auto;
-  width: min(18rem, 100%);
 }
 
 .candidate-form {
@@ -464,11 +459,6 @@ button.link-button:hover:not(:disabled) {
   background: var(--accent-tint);
 }
 
-.candidate-table .number {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
 .candidate-name {
   display: block;
   font-weight: 600;
@@ -483,6 +473,193 @@ button.link-button:hover:not(:disabled) {
   display: block;
   font-size: 0.82rem;
   color: var(--muted);
+}
+
+/* The head of the Candidate list: the title, and on the right what the Interviewer can add. */
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+button.with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+button.with-icon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+/* Directly above the table: the search, and the choice between who comes next and everyone. */
+.candidate-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.search-field {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.search-field svg {
+  position: absolute;
+  left: 0.6rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.search-field input {
+  width: 100%;
+  padding-left: 2rem;
+}
+
+.view-choice {
+  flex: none;
+  display: flex;
+}
+
+.view-choice button.role-choice {
+  font-size: 0.86rem;
+  padding: 0.32rem 0.75rem;
+}
+
+.view-count,
+.range-count {
+  margin-left: 0.4rem;
+  font-size: 0.78em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* The Interview cell: one line for the next Planned Interview, one for the latest that took place. */
+.interview-cell {
+  line-height: 1.6;
+}
+
+.interview-when {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.interview-when .pill {
+  flex: none;
+  min-width: 4.6rem;
+  margin-left: 0;
+  text-align: center;
+  color: var(--muted);
+  background: #e9edf3;
+}
+
+.interview-when .pill.planned {
+  color: var(--accent-strong);
+  background: var(--accent-tint);
+}
+
+.interview-when .pill.today {
+  color: #ffffff;
+  background: var(--accent-strong);
+}
+
+.interview-day {
+  font-weight: 500;
+}
+
+.interview-when:not(.planned) .interview-day,
+.interview-when:not(.planned) .interview-time {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.interview-time {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.interview-which,
+.interview-count {
+  font-size: 0.8rem;
+}
+
+.interview-count {
+  color: var(--faint);
+}
+
+.candidate-table .shortcuts {
+  white-space: nowrap;
+}
+
+.shortcut-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  text-decoration: none;
+  color: var(--accent-strong);
+  border-radius: var(--radius);
+}
+
+.shortcut-link:hover {
+  background: var(--surface);
+}
+
+.shortcut-link svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.shortcut-none {
+  display: inline-block;
+  min-width: 5.2rem;
+  padding: 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* The form that adds a Candidate, in its dialog. */
+.confirm-dialog.wide {
+  width: min(34rem, calc(100vw - 2rem));
+}
+
+.confirm-dialog.wide > .confirm-dialog-subject {
+  max-height: min(28rem, 70vh);
+  padding: 0;
+  background: none;
+}
+
+.confirm-dialog .candidate-form {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+}
+
+.confirm-dialog .candidate-form label,
+.confirm-dialog .candidate-form .cv-choice {
+  flex: none;
+}
+
+.confirm-dialog .candidate-form .form-hint,
+.confirm-dialog .candidate-form .error {
+  margin: 0;
+}
+
+.confirm-dialog-subject p.import-instead {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  font-size: 0.88rem;
+  border-top: 1px solid var(--line);
 }
 
 /* The Interview calendar. */
@@ -577,11 +754,6 @@ button.link-button:hover:not(:disabled) {
   outline: 1px solid var(--navy);
 }
 
-.calendar-more {
-  font-size: 0.66rem;
-  color: var(--muted);
-}
-
 /* Outside full screen a day shows two Interviews and a "+n" count; full screen shows them all. */
 .calendar:not(.expanded) .calendar-event:nth-of-type(n + 3),
 .calendar.expanded .calendar-more {
@@ -628,45 +800,151 @@ button.link-button:hover:not(:disabled) {
   background: var(--accent-strong);
 }
 
-.calendar-subtitle {
-  margin-top: 0.9rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--line);
+/* A day with Interviews opens the list of all of them. Its number is a button that looks like the others. */
+button.calendar-date {
+  align-self: flex-start;
+  padding: 0;
+  font-weight: 600;
+  line-height: inherit;
+  text-decoration: underline dotted;
+  color: var(--text);
+  background: none;
+  border: none;
 }
 
-.planned-list {
+button.calendar-date:hover:not(:disabled) {
+  color: var(--accent-strong);
+  background: none;
+}
+
+
+.calendar-day.busy {
+  cursor: pointer;
+}
+
+.calendar-day.busy:hover {
+  background: var(--accent-tint);
+}
+
+/* The small calendar has room for a first name; the time shows in full screen and in the lists. */
+.calendar-event-time {
+  margin-right: 0.3em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar:not(.expanded) .calendar-event-time {
+  display: none;
+}
+
+button.calendar-more {
+  align-self: flex-start;
+  padding: 0 3px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--accent-strong);
+  background: none;
+  border: none;
+}
+
+button.calendar-more:hover:not(:disabled) {
+  text-decoration: underline;
+  background: none;
+}
+
+/* Under the calendar: today, this week, or everything Planned, one Interview per line. */
+.calendar-ranges {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
+button.range-tab {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+}
+
+button.range-tab:hover:not(:disabled) {
+  color: var(--text);
+  background: none;
+}
+
+button.range-tab.chosen {
+  color: var(--accent-strong);
+  border-bottom-color: var(--accent-strong);
+}
+
+.interview-list {
   list-style: none;
   margin: 0.4rem 0 0;
   padding: 0;
 }
 
-.planned-list a {
+.calendar:not(.expanded) .interview-list {
+  max-height: 17rem;
+  overflow: auto;
+}
+
+.interview-list-day {
+  margin: 0.55rem 0 0.15rem;
+  padding: 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.interview-list-day.today {
+  color: var(--accent-strong);
+}
+
+.interview-list-row {
   display: grid;
-  grid-template-columns: 6.2rem minmax(0, 1fr);
+  grid-template-columns: 3.4rem minmax(0, 1fr);
   column-gap: 0.5rem;
   padding: 0.3rem 0.35rem;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   text-decoration: none;
   border-radius: var(--radius);
 }
 
-.planned-list a:hover {
+.interview-list-row:hover {
   background: var(--accent-tint);
 }
 
-.planned-date {
+.interview-list-time {
   grid-row: span 2;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  color: var(--muted);
+}
+
+.interview-list-row.planned .interview-list-time {
   color: var(--accent-strong);
 }
 
-.planned-who {
+.interview-list-who {
   font-weight: 500;
 }
 
-.planned-which {
+.interview-list-row:not(.planned) .interview-list-who {
+  color: var(--muted);
+}
+
+.interview-list-which {
+  overflow: hidden;
   font-size: 0.78rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--muted);
 }
 
