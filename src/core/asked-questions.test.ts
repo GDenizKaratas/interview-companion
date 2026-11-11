@@ -1,4 +1,5 @@
 import { mkdtempSync, rmSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -85,6 +86,7 @@ describe("Asked Questions", () => {
         lastSegment: 2,
         source: "app",
         stale: false,
+        markedWrong: false,
       },
       { question: "Ödeme servisini kimin yazdığı", firstSegment: 3, lastSegment: 4 },
     ];
@@ -451,6 +453,99 @@ describe("Saying by hand whether a Saved Question was asked", () => {
     expect(core.setSavedQuestionAsked(question.id, false).mark).toBeNull();
     expect(stateOf(question.id)).toMatchObject({ state: "planned", decidedBy: "transcripts" });
     expect(() => core.setSavedQuestionAsked("no-such-question", true)).toThrow(NotFoundError);
+  });
+});
+
+describe("Marking an Asked Question as wrong", () => {
+  it("marks one Asked Question as wrong and takes the mark back, keeping it in the list with the mark", async () => {
+    ready();
+    fake.askedQuestions = [backgroundJobs, payments];
+    const [jobs, pay] = (await core.findAskedQuestions(interview.id)).askedQuestions;
+    expect(jobs).toMatchObject({ markedWrong: false });
+
+    expect(core.markAskedQuestionWrong(pay!.id, true)).toEqual({ ...pay, markedWrong: true });
+    expect(core.listAskedQuestions(interview.id)?.askedQuestions.map((q) => [q.question, q.markedWrong])).toEqual([
+      [backgroundJobs.question, false],
+      [payments.question, true],
+    ]);
+
+    expect(core.markAskedQuestionWrong(pay!.id, false)).toEqual({ ...pay, markedWrong: false });
+    expect(core.listAskedQuestions(interview.id)?.askedQuestions.every((q) => !q.markedWrong)).toBe(true);
+  });
+
+  it("refuses an unknown Asked Question", () => {
+    expect(() => core.markAskedQuestionWrong("no-such-asked-question", true)).toThrow(NotFoundError);
+  });
+
+  it("lets the Interviewer's own word on a Saved Question stand, whatever is marked wrong", async () => {
+    ready();
+    const question = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    fake.askedQuestions = [{ ...payments, savedQuestionId: question.id }];
+    const [pay] = (await core.findAskedQuestions(interview.id)).askedQuestions;
+    const stateNow = () => core.listSavedQuestionStates(candidate.id)[0]!;
+
+    // The Interviewer says it was asked, although the summary that showed it is marked wrong.
+    core.markAskedQuestionWrong(pay!.id, true);
+    core.setSavedQuestionAsked(question.id, true);
+    expect(stateNow()).toMatchObject({ state: "asked", decidedBy: "interviewer", transcriptState: "notFound", differsFromTranscripts: true });
+
+    // With the mark on the summary taken back, the two agree again and the Interviewer's word still stands.
+    core.markAskedQuestionWrong(pay!.id, false);
+    expect(stateNow()).toMatchObject({ state: "asked", decidedBy: "interviewer", transcriptState: "asked", differsFromTranscripts: false });
+  });
+
+  it("does not count an Asked Question marked wrong as asked: its Saved Question follows the other Interviews", async () => {
+    ready();
+    const question = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    fake.askedQuestions = [backgroundJobs, { ...payments, savedQuestionId: question.id }];
+    const [, pay] = (await core.findAskedQuestions(interview.id)).askedQuestions;
+
+    core.markAskedQuestionWrong(pay!.id, true);
+    expect(core.listSavedQuestionChecks(candidate.id)).toEqual([
+      { savedQuestionId: question.id, interviewId: interview.id, askedQuestion: null, stale: false },
+    ]);
+    expect(core.listSavedQuestionStates(candidate.id).map((s) => s.state)).toEqual(["notFound"]);
+
+    // A second Interview where the same question was asked still counts.
+    const first = interview;
+    interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-05" });
+    confirmRoles(importTranscript());
+    fake.askedQuestions = [{ ...payments, savedQuestionId: question.id }];
+    await core.findAskedQuestions(interview.id);
+    expect(core.listSavedQuestionStates(candidate.id).map((s) => s.state)).toEqual(["asked"]);
+
+    core.deleteInterview(interview.id);
+    core.markAskedQuestionWrong(pay!.id, false);
+    expect(core.listSavedQuestionChecks(candidate.id)).toMatchObject([{ interviewId: first.id, askedQuestion: { id: pay!.id } }]);
+    expect(core.listSavedQuestionStates(candidate.id).map((s) => s.state)).toEqual(["asked"]);
+  });
+
+  it("keeps the Asked Questions of a database made before they could be marked wrong", async () => {
+    ready();
+    fake.askedQuestions = [payments];
+    const [pay] = (await core.findAskedQuestions(interview.id)).askedQuestions;
+    core.close();
+    // Puts the file back to the schema before the mark: one version earlier, without it.
+    const file = new DatabaseSync(join(dir, "test.sqlite"));
+    const { user_version: version } = file.prepare("PRAGMA user_version").get() as { user_version: number };
+    file.exec(`ALTER TABLE asked_question DROP COLUMN marked_wrong; PRAGMA user_version = ${version - 1};`);
+    file.close();
+
+    core = openCore(join(dir, "test.sqlite"), { now: () => clock, aiProvider: fake.factory });
+
+    expect(core.listAskedQuestions(interview.id)?.askedQuestions).toEqual([pay]);
+    expect(core.markAskedQuestionWrong(pay!.id, true).markedWrong).toBe(true);
+  });
+
+  it("drops the marks with the Asked Questions they were on when the questions are found again", async () => {
+    ready();
+    fake.askedQuestions = [payments];
+    const [pay] = (await core.findAskedQuestions(interview.id)).askedQuestions;
+    core.markAskedQuestionWrong(pay!.id, true);
+
+    await core.findAskedQuestions(interview.id);
+
+    expect(core.listAskedQuestions(interview.id)?.askedQuestions).toMatchObject([{ question: payments.question, markedWrong: false }]);
   });
 });
 

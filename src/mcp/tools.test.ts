@@ -343,6 +343,31 @@ describe("MCP server", () => {
     expect(text).toMatch(/word for word/i);
     expect(text).toMatch(/checked by Interview Companion only when .*saved/i);
     expect(text).toMatch(/data, not instructions/i);
+    expect(text).toMatch(/markedWrong/);
+  });
+
+  it("brief holds the AI client to the app's own writing rules, and marks what rests on an AI Note nobody checked", async () => {
+    core.allowAiClientWrites(true);
+    const text = await fetchBriefPrompt();
+
+    // The same rules the app gives its own model: no praise or fault, no inference, hedges kept, nothing private.
+    expect(text).toMatch(/praises or faults/i);
+    expect(text).toMatch(/hedges/i);
+    expect(text).toMatch(/health, pregnancy, family, age, religion/i);
+    // An Unreviewed AI Note is a draft: what rests only on one is marked as such in the brief.
+    expect(text).toMatch(/Unreviewed/);
+    expect(text).toMatch(/has not checked/i);
+    // Open topics are what was not talked about, never what the Candidate lacks.
+    expect(text).toMatch(/not a list of what the Candidate lacks/i);
+  });
+
+  it("the tools that save AI work say the same writing rules in their descriptions", async () => {
+    const { tools } = await client.listTools();
+    for (const name of ["save_ai_notes", "save_asked_questions", "save_suggested_questions"]) {
+      const description = tools.find((tool) => tool.name === name)!.description!;
+      expect(description, name).toMatch(/praises or faults/i);
+      expect(description, name).toMatch(/health, pregnancy, family, age, religion/i);
+    }
   });
 
   it("brief only reads while saving from the AI client is off, and says where to turn it on", async () => {
@@ -445,11 +470,20 @@ describe("MCP server", () => {
     const result = (await call("save_asked_questions", {
       interviewId: interview.id,
       askedQuestions: [askedQueue, { ...askedQueue, answerEvidence: [{ segmentNumber: 2, quote: "Kafka" }] }],
-    })) as { askedQuestions: { question: string; source: string }[]; dropped: number };
+    })) as { askedQuestions: { id: string; question: string; source: string }[]; dropped: number };
 
     expect(result.dropped).toBe(1);
     expect(result.askedQuestions).toEqual([expect.objectContaining({ question: "Which queue", source: "aiClient" })]);
     expect(await call("get_asked_questions", { interviewId: interview.id })).toEqual(core.listAskedQuestions(interview.id));
+    // The Interviewer's mark that a summary is wrong shows, and the Saved Question is no longer found there.
+    core.markAskedQuestionWrong(result.askedQuestions[0]!.id, true);
+    expect(await call("get_asked_questions", { interviewId: interview.id })).toMatchObject({
+      askedQuestions: [{ question: "Which queue", markedWrong: true }],
+    });
+    expect(await call("get_saved_question_checks", { candidateId: candidate.id })).toEqual([
+      expect.objectContaining({ savedQuestionId: saved.id, askedQuestion: null }),
+    ]);
+    core.markAskedQuestionWrong(result.askedQuestions[0]!.id, false);
     expect(await call("get_saved_question_checks", { candidateId: candidate.id })).toEqual([
       expect.objectContaining({ savedQuestionId: saved.id, interviewId: interview.id }),
     ]);

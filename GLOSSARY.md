@@ -55,7 +55,7 @@ One AI-generated statement about an Interview, backed by at least one piece of E
 _Avoid_: Summary, insight, AI summary
 
 **Asked Question**:
-A question the Interviewer asked in one Interview, found by AI in its Transcript, quoted from the Interviewer's own segment, and linked to the Saved Question it matches, if any. Finding them again replaces the Interview's Asked Questions.
+A question the Interviewer asked in one Interview, found by AI in its Transcript, quoted from the Interviewer's own segment, and linked to the Saved Question it matches, if any. The Interviewer can mark one as wrong: it is then hidden and does not count as asked, until the mark is taken back. Finding them again replaces the Interview's Asked Questions, and their marks with them.
 _Avoid_: Interview question, detected question
 
 **Answer Summary**:

@@ -57,6 +57,8 @@ export type {
 export { evidenceSources } from "./evidence-search.ts";
 // The real model, for the hand-run evaluation (#18). The app gets it through openCore.
 export { claudeModel, claudeProvider } from "./claude-provider.ts";
+// What no AI text about a Candidate may do: the same text for the app's model and the AI client.
+export { neutralityRules, privateMatters, writingRulesInOneSentence } from "./ai-writing-rules.ts";
 export {
   AiProviderError,
   InvalidInputError,
@@ -149,6 +151,7 @@ export interface Core {
   listAiNotes(interviewId: string): aiNotes.AiNote[];
   findAskedQuestions(interviewId: string): Promise<askedQuestions.AskedQuestionGeneration>;
   listAskedQuestions(interviewId: string): askedQuestions.AskedQuestions | null;
+  markAskedQuestionWrong(id: string, wrong: boolean): askedQuestions.AskedQuestion;
   getInterviewAiStep(interviewId: string): interviewAi.InterviewAiStep;
   listSavedQuestionChecks(candidateId: string): askedQuestions.SavedQuestionCheck[];
   listSavedQuestionStates(candidateId: string): askedQuestions.SavedQuestionState[];
@@ -309,6 +312,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listAiNotes: (interviewId) => aiNotes.listAiNotes(db, interviewId),
     findAskedQuestions: (interviewId) => askedQuestions.findAskedQuestions(db, now, aiProvider, interviewId),
     listAskedQuestions: (interviewId) => askedQuestions.listAskedQuestions(db, interviewId),
+    markAskedQuestionWrong: (id, wrong) => askedQuestions.markAskedQuestionWrong(db, id, wrong),
     getInterviewAiStep: (interviewId) => interviewAi.getInterviewAiStep(db, interviewId),
     saveAskedQuestionsFromClient: (interviewId, proposed) =>
       askedQuestions.saveAskedQuestionsFromClient(db, now, interviewId, proposed),

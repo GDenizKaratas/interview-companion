@@ -219,6 +219,8 @@ export const api = {
     request<AskedQuestions | null>(`/interviews/${encodeURIComponent(interviewId)}/asked-questions`),
   findAskedQuestions: (interviewId: string) =>
     request<AskedQuestionGeneration>(`/interviews/${encodeURIComponent(interviewId)}/asked-questions`, { method: "POST" }),
+  markAskedQuestionWrong: (id: string, wrong: boolean) =>
+    request<AskedQuestion>(`/asked-questions/${encodeURIComponent(id)}/wrong`, sendJson("PUT", { wrong })),
   listSavedQuestionChecks: (candidateId: string) =>
     request<SavedQuestionCheck[]>(`/candidates/${encodeURIComponent(candidateId)}/saved-question-checks`),
   listSavedQuestionStates: (candidateId: string) =>

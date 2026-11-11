@@ -43,6 +43,8 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [transcriptVersion, setTranscriptVersion] = useState(0);
   // Changes whenever Asked Questions are found, so the Saved Questions show where they were asked.
   const [askedVersion, setAskedVersion] = useState(0);
+  // Changes when an Asked Question is marked wrong from the Questions card, so the AI card reads its list again.
+  const [askedMarkVersion, setAskedMarkVersion] = useState(0);
   // Counts CV uploads, so the Suggested Questions load again.
   const [cvVersion, setCvVersion] = useState(0);
   // Counts deleted Interviews, so search results that may point into one are dropped.
@@ -293,6 +295,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
               sourceVersion={transcriptVersion + cvVersion}
               askedVersion={askedVersion + transcriptVersion}
               onShowInTranscript={showInTranscript}
+              onAskedQuestionMarked={() => setAskedMarkVersion((version) => version + 1)}
             />
           </Panel>
           <Panel area="notes" title={text.panels.interviewerNotes.title}>
@@ -307,7 +310,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
             <AiCard
               interviews={interviews}
               selectedInterviewId={interviewId}
-              transcriptVersion={transcriptVersion}
+              transcriptVersion={transcriptVersion + askedMarkVersion}
               onShowEvidence={showInTranscript}
               onFound={() => setAskedVersion((version) => version + 1)}
               onGoToTranscript={() => showSource("transcript")}
