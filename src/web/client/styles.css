@@ -1033,6 +1033,128 @@ button.icon-button.add-many-remove {
   }
 }
 
+/* Plan Interviews: the day, first time, length, and break in one row, then the Candidates of the
+   list, each with a tick and, once ticked, the time core gave it. */
+.plan-interviews {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+fieldset.plan-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem 0.75rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.plan-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.plan-interviews .form-hint,
+.plan-interviews .error,
+.plan-interviews .empty {
+  margin: 0;
+}
+
+.plan-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 12rem);
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.4rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.88rem;
+  background: var(--surface);
+}
+
+.plan-row + .plan-row {
+  border-top: 1px solid var(--line);
+}
+
+.plan-row.chosen {
+  background: var(--accent-tint);
+}
+
+.plan-who {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.plan-who input {
+  flex: none;
+}
+
+.plan-name {
+  flex: none;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.plan-role,
+.plan-already {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.plan-already {
+  color: var(--faint);
+}
+
+.plan-time {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+}
+
+.plan-time input {
+  width: 6.5rem;
+  padding: 0.2rem 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-time input.typed {
+  border-color: var(--accent);
+}
+
+.plan-time input.refused {
+  border-color: var(--error);
+}
+
+@media (max-width: 40rem) {
+  fieldset.plan-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .plan-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .plan-time {
+    justify-content: flex-start;
+  }
+}
+
 .confirm-dialog-subject p.import-instead {
   margin-top: 0.9rem;
   padding-top: 0.75rem;

@@ -258,6 +258,27 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
     respondOrRefuse(c, () => c.json(core.getDefaultInterview(c.req.param("id")))),
   );
 
+  // What a plan of Interviews for several Candidates starts from: the day, first time, length, and break.
+  api.get("/interview-plan-defaults", (c) => c.json(core.suggestInterviewPlan()));
+
+  // The times of a plan of Interviews for several Candidates. Nothing is stored: each Interview
+  // is then added on its own. The body is { date, firstTime, minutes, breakMinutes, times }.
+  api.post("/interview-plans", async (c) => {
+    const fields = await jsonFields(c);
+    const times = Array.isArray(fields.times) ? fields.times.map((time) => (typeof time === "string" ? time : null)) : [];
+    return respondOrRefuse(c, () =>
+      c.json(
+        core.planInterviewTimes({
+          date: stringField(fields, "date"),
+          firstTime: stringField(fields, "firstTime"),
+          minutes: numberField(fields, "minutes"),
+          breakMinutes: numberField(fields, "breakMinutes"),
+          times,
+        }),
+      ),
+    );
+  });
+
   // Changes when the Interview is. The body is { date, time }; a missing or empty one is removed.
   api.put("/interviews/:id", async (c) => {
     const fields = await jsonFields(c);
@@ -476,6 +497,12 @@ async function jsonFields(c: Context): Promise<Record<string, unknown>> {
 function stringField(fields: Record<string, unknown>, key: string): string {
   const value = fields[key];
   return typeof value === "string" ? value : "";
+}
+
+// A number sent as JSON; anything else is NaN, which core refuses.
+function numberField(fields: Record<string, unknown>, key: string): number {
+  const value = fields[key];
+  return typeof value === "number" ? value : Number.NaN;
 }
 
 function isForm(c: Context): boolean {

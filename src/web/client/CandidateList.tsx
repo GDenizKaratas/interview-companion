@@ -10,6 +10,7 @@ import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
 import { candidatePath, linkTo, navigate, readListQuery, showListQuery } from "./navigation.ts";
 import { isPdfFile, readDrop, type PickedFiles } from "./picked-files.ts";
+import { PlanInterviewsDialog } from "./PlanInterviewsDialog.tsx";
 import { RoleQuestionsDialog } from "./RoleQuestionsDialog.tsx";
 import { useText } from "./text.tsx";
 
@@ -46,6 +47,8 @@ export function CandidateList() {
   const [cvOf, setCvOf] = useState<CandidateOverview["candidate"] | undefined>();
   const [roles, setRoles] = useState<string[]>([]);
   const [roleQuestionsOpen, setRoleQuestionsOpen] = useState(false);
+  // The Candidates the Plan Interviews dialog was opened with: the list as filtered, every page.
+  const [planningFor, setPlanningFor] = useState<CandidateOverview[] | undefined>();
   const [adding, setAdding] = useState(false);
   // CVs dropped on the page, which the Add Candidate dialog opens with.
   const [droppedFiles, setDroppedFiles] = useState<PickedFiles | undefined>();
@@ -102,7 +105,7 @@ export function CandidateList() {
   // PDFs dropped anywhere on the page open the Add Candidate dialog with them listed. Only while
   // no dialog is open: a dialog handles what is dropped on it. Dragging text is left alone.
   useEffect(() => {
-    if (adding || cvOf || roleQuestionsOpen) return;
+    if (adding || cvOf || roleQuestionsOpen || planningFor) return;
     const takesDrop = (event: DragEvent) =>
       (event.dataTransfer?.types.includes("Files") ?? false) && document.querySelector("dialog[open]") === null;
     const onDragOver = (event: DragEvent) => {
@@ -123,7 +126,7 @@ export function CandidateList() {
       window.removeEventListener("dragover", onDragOver);
       window.removeEventListener("drop", onDrop);
     };
-  }, [adding, cvOf, roleQuestionsOpen]);
+  }, [adding, cvOf, roleQuestionsOpen, planningFor]);
 
   // Earlier roles are only suggestions; if they cannot be loaded the form still works.
   function loadRoles() {
@@ -199,6 +202,12 @@ export function CandidateList() {
               <ListIcon />
               {text.roleQuestions.open}
             </button>
+            {candidates && candidates.length > 0 && (
+              <button type="button" className="secondary with-icon" title={text.planInterviews.hint} onClick={() => setPlanningFor(shown)}>
+                <CalendarIcon />
+                {text.planInterviews.open}
+              </button>
+            )}
             <AddButton
               onClick={() => {
                 setDroppedFiles(undefined);
@@ -339,6 +348,18 @@ export function CandidateList() {
             }}
           />
         )}
+        {planningFor && (
+          <PlanInterviewsDialog
+            candidates={planningFor}
+            showRole={!(roleFilterShown && role)}
+            onClose={(planned) => {
+              setPlanningFor(undefined);
+              // The calendar and the views follow the new Interviews; the planned Candidates
+              // leave "No Interview yet".
+              if (planned) loadCandidates();
+            }}
+          />
+        )}
         {cvOf && <CvPreviewDialog candidate={cvOf} onClose={() => setCvOf(undefined)} onChanged={loadCandidates} />}
       </section>
       <aside className="home-side">
@@ -451,6 +472,14 @@ function SearchIcon() {
     <svg viewBox="0 0 16 16" aria-hidden="true">
       <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
       <path d="M10.2 10.2 14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 2v3M10.5 2v3" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
