@@ -449,7 +449,8 @@ function QuestionItem({ question, interviews, checks, state: questionState, onOp
       </span>
       {(state === "planned" || questionState.differsFromTranscripts || checks.length > 0) && (
         <span className="question-checks">
-          {state === "planned" && <span className="pill planned">{t.states.planned}</span>}
+          {/* A question the Interviewer marked as not asked says so, in their words, not "planned". */}
+          {state === "planned" && <span className="pill planned">{question.mark === "notAsked" ? t.markedNotAsked : t.states.planned}</span>}
           {questionState.differsFromTranscripts && (
             <span className="question-own-mark" title={t.markedByYouHint}>
               {t.markedByYou}

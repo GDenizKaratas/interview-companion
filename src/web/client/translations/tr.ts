@@ -485,6 +485,7 @@ const translation: TranslationFile = {
         savedTab: "Sorularım",
         askedCount: "{total} sorudan {asked} tanesi soruldu",
         states: { asked: "Soruldu", notFound: "Transkriptte arandı, bulunamadı", planned: "Planlı" },
+        markedNotAsked: "Sorulmadı",
         empty: "Kayıtlı soru yok.",
         placeholder: "Bir soru yazın, kaydetmek için Enter…",
         newLabel: "Yeni soru",

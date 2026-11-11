@@ -514,6 +514,7 @@ const text = {
       // {asked} and {total} are replaced by numbers.
       askedCount: "{asked} of {total} asked",
       states: { asked: "Asked", notFound: "Looked for in a Transcript and not found", planned: "Planned" },
+      markedNotAsked: "Not asked",
       empty: "No questions saved.",
       placeholder: "Write a question, Enter to save…",
       newLabel: "New question",
