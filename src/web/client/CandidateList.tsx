@@ -203,7 +203,13 @@ export function CandidateList() {
               {text.roleQuestions.open}
             </button>
             {candidates && candidates.length > 0 && (
-              <button type="button" className="secondary with-icon" title={text.planInterviews.hint} onClick={() => setPlanningFor(shown)}>
+              <button
+                type="button"
+                className="secondary with-icon"
+                title={text.planInterviews.hint}
+                disabled={shown.length === 0}
+                onClick={() => setPlanningFor(shown)}
+              >
                 <CalendarIcon />
                 {text.planInterviews.open}
               </button>

@@ -7,6 +7,7 @@ import {
   type Core,
   type CvFile,
   type EvidenceSources,
+  type InterviewPlanRequest,
   type SpeakerRole,
 } from "../core/index.ts";
 
@@ -265,7 +266,9 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   // is then added on its own. The body is { date, firstTime, minutes, breakMinutes, times }.
   api.post("/interview-plans", async (c) => {
     const fields = await jsonFields(c);
-    const times = Array.isArray(fields.times) ? fields.times.map((time) => (typeof time === "string" ? time : null)) : [];
+    // Passed on as sent: core refuses a missing list, an entry that is not a time or null, and
+    // more than 500 entries.
+    const times = fields.times as InterviewPlanRequest["times"];
     return respondOrRefuse(c, () =>
       c.json(
         core.planInterviewTimes({

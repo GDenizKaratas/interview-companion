@@ -1068,7 +1068,7 @@ fieldset.plan-fields {
 
 .plan-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 12rem);
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 16rem);
   align-items: center;
   gap: 0.6rem;
   min-height: 2.4rem;
@@ -1095,6 +1095,14 @@ fieldset.plan-fields {
 
 .plan-who input {
   flex: none;
+}
+
+/* The place in the order of ticking, before the name. */
+.plan-place {
+  flex: none;
+  min-width: 1.6rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 
 .plan-name {
@@ -1139,6 +1147,18 @@ fieldset.plan-fields {
 
 .plan-time input.refused {
   border-color: var(--error);
+}
+
+.plan-end {
+  min-width: 3rem;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A time from an earlier answer, shown until core answers for the current choices. */
+.plan-time.stale input,
+.plan-time.stale .plan-end {
+  opacity: 0.5;
 }
 
 @media (max-width: 40rem) {

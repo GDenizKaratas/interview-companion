@@ -17,16 +17,23 @@ export interface InterviewPlanSettings {
 
 export interface InterviewPlanRequest extends InterviewPlanSettings {
   // One entry per Interview, in the order the Candidates were chosen: a time typed by hand, or
-  // null (or blank) for the time of its place in the order.
+  // null (or blank) for the time of its place in the order. At most maxPlannedInterviews entries.
   times: (string | null)[];
 }
 
-// Why an Interview of the plan cannot be added on its day.
-export type SlotRefusal = "afterMidnight";
+// The most Interviews one plan can hold. Far more than a day can fit; it only keeps a request small.
+export const maxPlannedInterviews = 500;
+
+// Why an Interview of the plan cannot be added on its day: it would not end by midnight, or it
+// would start at or before the time now. An Interview that is over is recorded on the
+// Candidate's own page, not planned.
+export type SlotRefusal = "afterMidnight" | "past";
 
 export interface PlannedSlot {
   // The start, HH:MM, or null when the time of its place would fall on the next day.
   time: string | null;
+  // The end, HH:MM, which may be "24:00"; null when the Interview would not end on its day.
+  end: string | null;
   // The time was typed by hand.
   typed: boolean;
   // Another Interview of the plan starts at the same time. Allowed, only pointed out.
@@ -54,27 +61,38 @@ export function suggestInterviewPlan(today: Today): InterviewPlanSettings {
   const date = new Date(`${today().day}T00:00:00Z`);
   do date.setUTCDate(date.getUTCDate() + 1);
   while (date.getUTCDay() === 0 || date.getUTCDay() === 6);
-  return { date: date.toISOString().slice(0, 10), firstTime: "10:00", minutes: 45, breakMinutes: 15 };
+  return {
+    date: date.toISOString().slice(0, 10),
+    firstTime: "10:00",
+    minutes: 45,
+    breakMinutes: 15,
+  };
 }
 
 // The time of each Interview: the one at place i starts at the first time plus i times the
 // length and the break, unless a time was typed for it. A typed time does not move the others.
-// An Interview that would not end by midnight is refused; the plan is for one day.
-export function planInterviewTimes(input: InterviewPlanRequest): InterviewPlan {
+// An Interview that would not end by midnight is refused, since the plan is for one day; so is one
+// that would start at or before the time now on the Interviewer's computer.
+export function planInterviewTimes(today: Today, input: InterviewPlanRequest): InterviewPlan {
   const date = required("date", () => optionalDate(input.date), "The plan needs a day, written as YYYY-MM-DD.");
   const firstTime = required("firstTime", () => optionalTime(input.firstTime), "The plan needs a first time, written as HH:MM.");
   const minutes = wholeMinutes("minutes", input.minutes, 1, "Each Interview must last from 1 minute to 24 hours, in whole minutes.");
   const breakMinutes = wholeMinutes("breakMinutes", input.breakMinutes, 0, "The break must be 0 or more whole minutes, up to 24 hours.");
+  const times = typedTimes(input.times);
   const first = toMinutes(firstTime);
-  const starts = input.times.map((typed, place) => {
+  const now = today();
+  // Every start at or before this minute of the day is past: all of them on a day before today.
+  const pastUntil = date < now.day ? dayMinutes : date === now.day ? toMinutes(now.time) : -1;
+  const starts = times.map((typed, place) => {
     const time = optionalTime(typed);
     return time === null ? { start: first + place * (minutes + breakMinutes), typed: false } : { start: toMinutes(time), typed: true };
   });
   const slots = starts.map(({ start, typed }) => ({
     time: start < dayMinutes ? toTime(start) : null,
+    end: start + minutes <= dayMinutes ? toTime(start + minutes) : null,
     typed,
     sharesTime: starts.filter((other) => other.start === start).length > 1,
-    refusal: start + minutes > dayMinutes ? ("afterMidnight" as const) : null,
+    refusal: start <= pastUntil ? ("past" as const) : start + minutes > dayMinutes ? ("afterMidnight" as const) : null,
   }));
   const fitting = starts.filter((_, i) => slots[i]!.refusal === null).map(({ start }) => start);
   return {
@@ -84,6 +102,14 @@ export function planInterviewTimes(input: InterviewPlanRequest): InterviewPlan {
     to: fitting.length > 0 ? toTime(Math.max(...fitting) + minutes) : null,
     refused: slots.length - fitting.length,
   };
+}
+
+// The typed times as sent: a list of at most maxPlannedInterviews entries, each a time or null.
+function typedTimes(times: unknown): (string | null)[] {
+  const message = `The plan needs a list of up to ${maxPlannedInterviews} times, each a time written as HH:MM or left empty.`;
+  if (!Array.isArray(times) || times.length > maxPlannedInterviews) throw new InvalidInputError("times", "format", message);
+  if (!times.every((time) => time === null || typeof time === "string")) throw new InvalidInputError("times", "format", message);
+  return times as (string | null)[];
 }
 
 // A value that must be given: blank is refused, and a refusal names this field.

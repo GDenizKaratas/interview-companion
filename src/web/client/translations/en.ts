@@ -140,7 +140,7 @@ const text = {
       confirmClose: {
         title: "Stop adding Candidates?",
         detail: "The Candidates added so far stay. The rest are not added.",
-        stop: "Stop and close",
+        stop: "Stop planning",
         keepGoing: "Keep adding",
       },
       confirmDiscard: {
@@ -308,9 +308,9 @@ const text = {
     title: "Plan Interviews",
     dayLabel: "Day",
     firstTimeLabel: "First time",
-    minutesLabel: "Each Interview (min)",
-    breakLabel: "Break (min)",
-    intro: "Tick the Candidates in the order you will meet them. The app only records the plan; it sends nothing to the Candidates.",
+    minutesLabel: "Length of each (min)",
+    breakLabel: "Break between (min)",
+    intro: "Times follow the order you tick the Candidates. The app only records the plan; it sends nothing to the Candidates.",
     // {count} is replaced by a number; {from} and {to} by times.
     chosen: "{count} chosen · {from} – {to}",
     chosenOne: "1 chosen · {from} – {to}",
@@ -318,6 +318,9 @@ const text = {
     noneChosen: "No Candidate chosen yet",
     // {count} is replaced by a number.
     doNotFit: "{count} do not fit on the day",
+    untickDoNotFit: "Untick the ones that do not fit",
+    // {count} is replaced by a number.
+    passedCount: "{count} at a time that has passed",
     chooseAll: "Choose all shown",
     chooseNone: "Choose none",
     // {name} is replaced by the Candidate's name.
@@ -326,6 +329,7 @@ const text = {
     // {when} is replaced by a day and a time.
     plannedAlready: "planned: {when}",
     afterMidnight: "Would end after midnight",
+    past: "This time has passed.",
     empty: "No Candidate is shown in the list right now.",
     planNone: "Plan Interviews",
     // {count} is replaced by a number.
@@ -337,6 +341,7 @@ const text = {
     plannedNone: "No Interview was planned.",
     notPlanned: "Not planned ({count}):",
     candidateGone: "This Candidate no longer exists.",
+    stopped: "Planning was stopped before this one.",
     close: "Close",
     cancel: "Cancel",
     refused: {

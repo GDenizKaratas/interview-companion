@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { api, ApiError, type CandidateOverview, type InterviewPlan, type InterviewPlanRequest } from "./api.ts";
+import {
+  api,
+  ApiError,
+  type CandidateOverview,
+  type InterviewPlan,
+  type InterviewPlanRequest,
+  type PlannedSlot,
+  type SlotRefusal,
+} from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { localDay, shortDay } from "./dates.ts";
 import { fill, type Text } from "./languages.ts";
@@ -17,8 +25,9 @@ interface Settings {
   breakMinutes: string;
 }
 
-// The outcome of adding one Interview: added, or the refusal from the server.
-type Outcome = { planned: true } | { planned: false; error: unknown };
+// The outcome of adding one Interview: added, the refusal from the server, or not tried
+// because the Interviewer stopped the planning first.
+type Outcome = { planned: true } | { planned: false; error: unknown } | { planned: false; stopped: true };
 
 type Phase =
   | { kind: "choosing" }
@@ -48,8 +57,9 @@ export function PlanInterviewsDialog({
   const [chosen, setChosen] = useState<string[]>([]);
   // Times typed by hand, by Candidate id.
   const [typed, setTyped] = useState<Record<string, string>>({});
-  // Core's answer, with the request it answers, so an answer to an older request is never used.
-  const [plan, setPlan] = useState<{ key: string; plan: InterviewPlan } | undefined>();
+  // Core's answer, with the request it answers, so an answer to an older request is never used
+  // as current, and the ids it was for, so a row only ever shows a time given to it.
+  const [plan, setPlan] = useState<{ key: string; ids: string[]; plan: InterviewPlan } | undefined>();
   // Set when core's last answer was a refusal; cleared by its next plan.
   const [planError, setPlanError] = useState<{ error: unknown } | undefined>();
   const [phase, setPhase] = useState<Phase>({ kind: "choosing" });
@@ -79,16 +89,18 @@ export function PlanInterviewsDialog({
     times: chosen.map((id) => typed[id] ?? null),
   };
   const requestKey = request ? JSON.stringify(request) : undefined;
+  // The ids the request is for, in its order, kept with core's answer.
+  const idsKey = JSON.stringify(chosen);
 
   // Core works out the times again after each change, once changes pause. The request is read
-  // back from its key, so the effect runs once for each different request.
+  // back from its key, so the effect runs once for each different request and order of ticks.
   useEffect(() => {
     if (requestKey === undefined) return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       api.planInterviewTimes(JSON.parse(requestKey) as InterviewPlanRequest, controller.signal).then(
         (answer) => {
-          setPlan({ key: requestKey, plan: answer });
+          setPlan({ key: requestKey, ids: JSON.parse(idsKey) as string[], plan: answer });
           setPlanError(undefined);
         },
         (error: unknown) => {
@@ -100,13 +112,19 @@ export function PlanInterviewsDialog({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [requestKey]);
+  }, [requestKey, idsKey]);
 
-  const current = plan !== undefined && plan.key === requestKey ? plan.plan : undefined;
+  const current = plan !== undefined && plan.key === requestKey && plan.ids.join() === chosen.join() ? plan.plan : undefined;
   // The last refusal stays shown until core answers again, so it does not flicker while typing.
   const refusal = planError?.error;
-  // Until the new answer arrives, the rows keep showing the last times core gave.
-  const shownPlan = plan?.plan;
+
+  // Until the new answer arrives, each row keeps the time core last gave that same Candidate,
+  // dimmed; a row core has not answered for yet shows none.
+  function slotOf(id: string): { slot: PlannedSlot | undefined; stale: boolean } {
+    if (current) return { slot: current.slots[chosen.indexOf(id)], stale: false };
+    const place = plan?.ids.indexOf(id) ?? -1;
+    return { slot: place === -1 ? undefined : plan?.plan.slots[place], stale: true };
+  }
 
   function toggle(id: string, ticked: boolean) {
     setChosen((list) => (ticked ? [...list, id] : list.filter((other) => other !== id)));
@@ -125,13 +143,17 @@ export function PlanInterviewsDialog({
   // Adds the Interviews one at a time, so one refusal does not stop the others and the progress
   // is real. Core checks each date and time again when it is saved.
   async function planAll() {
-    if (!current) return;
+    // The button keeps its last state while core answers; a stale plan is never added.
+    if (!current || current.refused > 0 || chosen.length === 0) return;
     const toPlan = chosen.map((id, i) => ({ id, time: current.slots[i]!.time }));
     const outcomes = new Map<string, Outcome>();
     stopRequested.current = false;
     setPhase({ kind: "planning", done: 0, total: toPlan.length });
     for (const [i, { id, time }] of toPlan.entries()) {
-      if (stopRequested.current) break;
+      if (stopRequested.current) {
+        outcomes.set(id, { planned: false, stopped: true });
+        continue;
+      }
       try {
         await api.addInterview({ candidateId: id, date: current.date, time });
         outcomes.set(id, { planned: true });
@@ -140,10 +162,6 @@ export function PlanInterviewsDialog({
         outcomes.set(id, { planned: false, error });
       }
       setPhase({ kind: "planning", done: i + 1, total: toPlan.length });
-    }
-    if (stopRequested.current) {
-      onClose(plannedAny.current);
-      return;
     }
     setPhase({ kind: "finished", outcomes });
   }
@@ -155,21 +173,34 @@ export function PlanInterviewsDialog({
     else onClose(plannedAny.current);
   }
 
-  // Stop and close: the Interview being added is finished first. If planning ended while the
-  // question was open, there is nothing left to stop.
+  // Stop: the Interview being added is finished first, then the report shows what was planned
+  // and what was not. If planning ended while the question was open, the report is already shown.
   function confirmStop() {
     setConfirming(undefined);
-    if (phase.kind !== "planning") onClose(plannedAny.current);
-    else stopRequested.current = true;
+    stopRequested.current = true;
+  }
+
+  // Unticks the Candidates whose Interviews would not end by midnight, as core answered for the
+  // current choices.
+  function untickDoNotFit() {
+    if (!current) return;
+    const out = new Set(chosen.filter((_, i) => current.slots[i]!.refusal === "afterMidnight"));
+    setChosen((list) => list.filter((id) => !out.has(id)));
+    setTyped((all) => Object.fromEntries(Object.entries(all).filter(([id]) => !out.has(id))));
   }
 
   const today = localDay(new Date());
   const position = new Map(chosen.map((id, i) => [id, i]));
   const choosing = phase.kind === "choosing";
-  const ready = current !== undefined && chosen.length > 0 && current.refused === 0;
+  // The plan button keeps the state of core's last answer while the next one is on its way, so it
+  // does not flicker; planAll adds nothing until the answer matches the current choices.
+  const ready = plan !== undefined && refusal === undefined && chosen.length > 0 && plan.plan.refused === 0;
 
-  // The range and the count that do not fit also stay as last answered, so the line does not flicker.
-  const lastRange = current ?? shownPlan;
+  // The range and the counts refused also stay as last answered, so the line does not flicker.
+  const lastRange = current ?? plan?.plan;
+  const countOf = (reason: SlotRefusal) => lastRange?.slots.filter((slot) => slot.refusal === reason).length ?? 0;
+  const doNotFit = countOf("afterMidnight");
+  const passed = countOf("past");
   const summary =
     chosen.length === 0
       ? t.noneChosen
@@ -187,6 +218,8 @@ export function PlanInterviewsDialog({
             {t.dayLabel}
             <input
               type="date"
+              // Only a convenience for the picker: core refuses a time that has passed.
+              min={today}
               value={settings?.date ?? ""}
               onChange={(event) => setSettings((s) => s && { ...s, date: event.target.value })}
             />
@@ -230,8 +263,16 @@ export function PlanInterviewsDialog({
           <>
             <p className="add-many-summary" aria-live="polite">
               <span>{summary}</span>
-              {chosen.length > 0 && lastRange && lastRange.refused > 0 && (
-                <span className="add-many-bad">{fill(t.doNotFit, { count: String(lastRange.refused) })}</span>
+              {chosen.length > 0 && passed > 0 && <span className="add-many-bad">{fill(t.passedCount, { count: String(passed) })}</span>}
+              {chosen.length > 0 && doNotFit > 0 && (
+                <>
+                  <span className="add-many-bad">{fill(t.doNotFit, { count: String(doNotFit) })}</span>
+                  {choosing && (
+                    <button type="button" className="link-button" disabled={!current} onClick={untickDoNotFit}>
+                      {t.untickDoNotFit}
+                    </button>
+                  )}
+                </>
               )}
               {choosing && chosen.length < rows.length && (
                 <button type="button" className="link-button" onClick={chooseAll}>
@@ -247,7 +288,7 @@ export function PlanInterviewsDialog({
             <ul className="add-many-rows plan-rows">
               {rows.map(({ candidate, nextPlanned }) => {
                 const place = position.get(candidate.id);
-                const slot = place === undefined ? undefined : shownPlan?.slots[place];
+                const { slot, stale } = place === undefined ? { slot: undefined, stale: false } : slotOf(candidate.id);
                 return (
                   <li key={candidate.id} className={place === undefined ? "plan-row" : "plan-row chosen"}>
                     <label className="plan-who">
@@ -257,6 +298,7 @@ export function PlanInterviewsDialog({
                         disabled={!choosing}
                         onChange={(event) => toggle(candidate.id, event.target.checked)}
                       />
+                      <span className="plan-place">{place !== undefined && `${place + 1}.`}</span>
                       <span className="plan-name">{candidate.name}</span>
                       {showRole && <span className="plan-role">{candidate.role}</span>}
                     </label>
@@ -266,10 +308,11 @@ export function PlanInterviewsDialog({
                           when: [shortDay(languageCode, nextPlanned.date!, today), nextPlanned.time].filter(Boolean).join(" "),
                         })}
                     </span>
-                    <span className="plan-time">
+                    <span className={stale ? "plan-time stale" : "plan-time"}>
                       {place !== undefined && (
                         <>
                           {slot?.refusal === "afterMidnight" && <span className="add-many-bad">{t.afterMidnight}</span>}
+                          {slot?.refusal === "past" && <span className="add-many-bad">{t.past}</span>}
                           {slot?.refusal == null && slot?.sharesTime && <span className="add-many-warn">{t.sameTime}</span>}
                           <input
                             type="time"
@@ -286,6 +329,7 @@ export function PlanInterviewsDialog({
                               if (event.target.value === "") setTyped((all) => without(all, candidate.id));
                             }}
                           />
+                          <span className="plan-end">{slot?.refusal == null && slot?.end && `– ${slot.end}`}</span>
                         </>
                       )}
                     </span>
@@ -358,7 +402,8 @@ function FinishedReport({ text, rows, outcomes }: { text: Text; rows: CandidateO
   const planned = [...outcomes.values()].filter((outcome) => outcome.planned).length;
   const failed = rows.flatMap(({ candidate }) => {
     const outcome = outcomes.get(candidate.id);
-    return outcome && !outcome.planned ? [{ candidate, reason: saveRefusal(text, outcome.error) }] : [];
+    if (!outcome || outcome.planned) return [];
+    return [{ candidate, reason: "stopped" in outcome ? t.stopped : saveRefusal(text, outcome.error) }];
   });
   return (
     <div className="add-many-report">
