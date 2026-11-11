@@ -26,8 +26,10 @@ const cannotConnect: ClaudeDesktopState[] = ["unsupported", "notInstalled", "unr
 type Desktop = { state: ClaudeDesktopState; configPath: string | null };
 
 // How to use AI without an API key: connect the Interviewer's own AI application to the MCP server
-// once, then ask it about a Candidate by name in plain words; it reads the Candidate from the app
-// and, when saving is allowed, saves what it writes here. Claude Desktop is connected with one
+// once, then start Interview Companion in a chat, with the candidate command or by asking to start it,
+// and allow the start when the application asks; only that chat gets the app's data (the start key,
+// src/mcp/start-key.ts). It reads the Candidate from the app and, when saving is allowed, saves what
+// it writes here. Claude Desktop is connected with one
 // click, which writes this copy's entry into its configuration file; the text to add by hand stays
 // below it, folded. Claude Code gets a command for a folder kept for interviews, so the tools are
 // not there in its other chats, and, folded, one for every folder. Both come from the server, so they hold the real

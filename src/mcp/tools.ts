@@ -1,8 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { briefPrompt } from "./brief-prompt.ts";
 import { candidatePrompt } from "./candidate-prompt.ts";
 import { serverInstructions } from "./server-instructions.ts";
+import { createStartKeys, notStartedMessage, startKeySentence } from "./start-key.ts";
 import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, writingRulesInOneSentence, type AiClientCore } from "../core/index.ts";
 
 // Bounds on what the AI client can save in one call, so a runaway client cannot flood the
@@ -29,6 +31,15 @@ const transcriptQuote = {
   quote: z.string().max(textLimits.long).describe("Words copied exactly from that segment."),
 };
 
+// The start key every tool but start_interview_companion takes. A missing or non-text value becomes
+// "", which no key equals, so the tool answers with the one refusal rather than a validation error.
+// The listed schema still shows it as a required string.
+const startKey = z
+  .preprocess((value) => (typeof value === "string" ? value : ""), z.string())
+  .describe("The start key from start_interview_companion in this conversation.");
+
+type ToolResult = ReturnType<typeof toolResult>;
+
 // Builds the MCP server and its tools. It gets core's read operations and only the writes
 // the AI client may make, which go through the same checks as the app's own AI and are refused
 // while the Interviewer has not turned them on. No tool can change anything else. Transport
@@ -36,11 +47,39 @@ const transcriptQuote = {
 export function createMcpServer(core: AiClientCore): McpServer {
   const server = new McpServer({ name: "interview-companion", version: "0.1.0" }, { instructions: serverInstructions });
   const readOnly = { readOnlyHint: true, openWorldHint: false };
+  const startKeys = createStartKeys();
   // Every tool's description starts with the app's name, so a model does not pick it for a
-  // general question (the standing instructions say when the tools apply).
-  const registerTool: typeof server.registerTool = (name, config, callback) =>
-    server.registerTool(name, { ...config, description: `Interview Companion: ${config.description}` }, callback);
+  // general question (the standing instructions say when the tools apply). Every tool registered
+  // here takes the start key and answers only the refusal without a key this process gave.
+  const registerTool = <Shape extends z.ZodRawShape = Record<never, never>>(
+    name: string,
+    config: { description: string; inputSchema?: Shape; annotations: ToolAnnotations },
+    callback: (args: z.output<z.ZodObject<Shape>>) => ToolResult,
+  ) =>
+    server.registerTool(
+      name,
+      {
+        ...config,
+        description: `Interview Companion: Requires the start key from start_interview_companion. ${config.description}`,
+        inputSchema: { ...config.inputSchema, startKey },
+      },
+      ({ startKey, ...args }: { startKey: string }) =>
+        startKeys.isValid(startKey) ? callback(args as z.output<z.ZodObject<Shape>>) : errorResult(notStartedMessage),
+    );
 
+  server.registerTool(
+    "start_interview_companion",
+    {
+      description:
+        "Interview Companion: call this only when the user has explicitly asked, in this conversation, to use " +
+        "Interview Companion. It returns the start key this conversation needs for every other Interview Companion tool.",
+      annotations: readOnly,
+      // Claude Code asks the user on every call of a tool with this flag, so the model cannot start
+      // Interview Companion on its own.
+      _meta: { "anthropic/requiresUserInteraction": true },
+    },
+    () => ({ content: [{ type: "text" as const, text: startKeySentence(startKeys.issue()) }] }),
+  );
   registerTool(
     "list_candidates",
     { description: "List every Candidate with their role and number of Interviews.", annotations: readOnly },
@@ -399,7 +438,10 @@ export function createMcpServer(core: AiClientCore): McpServer {
       messages: [
         {
           role: "user",
-          content: { type: "text", text: briefPrompt(candidate, { canSave: core.aiClientWritesAllowed() }) },
+          content: {
+            type: "text",
+            text: withStartKey(briefPrompt(candidate, { canSave: core.aiClientWritesAllowed() })),
+          },
         },
       ],
     }),
@@ -416,9 +458,14 @@ export function createMcpServer(core: AiClientCore): McpServer {
       },
     },
     ({ candidate }) => ({
-      messages: [{ role: "user", content: { type: "text", text: candidatePrompt(candidate) } }],
+      messages: [{ role: "user", content: { type: "text", text: withStartKey(candidatePrompt(candidate)) } }],
     }),
   );
+  // Running a prompt is the user's own act, so its text starts Interview Companion: it carries a
+  // fresh key, and the model needs no start call.
+  function withStartKey(text: string): string {
+    return `${startKeySentence(startKeys.issue())}\n\n${text}`;
+  }
   return server;
 }
 

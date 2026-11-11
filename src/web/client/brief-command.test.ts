@@ -6,6 +6,10 @@ describe("The brief command the Workspace copies", () => {
     expect(briefCommand("Ada Demir")).toBe("/mcp__interview-companion__brief Ada Demir");
   });
 
+  it("starts with the command, so pasting it runs the prompt, which starts Interview Companion in that chat", () => {
+    expect(briefCommand("Ada Demir").startsWith("/mcp__interview-companion__brief ")).toBe(true);
+  });
+
   it("keeps the name on one line, so pasting it does not send it early", () => {
     expect(briefCommand("  Ada \n Demir\t")).toBe("/mcp__interview-companion__brief Ada Demir");
   });

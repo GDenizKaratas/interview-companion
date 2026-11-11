@@ -17,6 +17,8 @@ let candidate: Candidate;
 // public interface, so this test has its own small fake instead of core's testing helper.
 let proposed: ProposedAiNote[];
 let clock: Date;
+// The start key this conversation got from start_interview_companion; call and refusal pass it.
+let startKey: string;
 
 beforeEach(async () => {
   dir = mkdtempSync(join(tmpdir(), "interview-companion-"));
@@ -28,6 +30,7 @@ beforeEach(async () => {
   await createMcpServer(aiClientCore(core)).connect(serverSide);
   client = new Client({ name: "test-client", version: "1.0.0" });
   await client.connect(clientSide);
+  startKey = await start();
 });
 
 afterEach(async () => {
@@ -36,17 +39,33 @@ afterEach(async () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-// Calls a tool and returns its JSON answer. Fails the test if the tool reports an error.
+// Starts Interview Companion as the user's explicit request would, and returns the start key.
+async function start(on = client): Promise<string> {
+  const result = await on.callTool({ name: "start_interview_companion", arguments: {} });
+  const text = (result.content as { type: string; text: string }[])[0]!.text;
+  expect(result.isError, text).toBeFalsy();
+  return keyIn(text);
+}
+
+// The start key written in a tool's answer or a prompt's text.
+function keyIn(text: string): string {
+  const match = /start key for this conversation is ([A-Za-z0-9_-]+)\./.exec(text);
+  expect(match, text).not.toBeNull();
+  return match![1]!;
+}
+
+// Calls a tool with this conversation's start key and returns its JSON answer. Fails the test if
+// the tool reports an error.
 async function call(name: string, args: Record<string, unknown> = {}): Promise<unknown> {
-  const result = await client.callTool({ name, arguments: args });
+  const result = await client.callTool({ name, arguments: { startKey, ...args } });
   const text = (result.content as { type: string; text: string }[])[0]!.text;
   expect(result.isError, text).toBeFalsy();
   return JSON.parse(text);
 }
 
-// Calls a tool that should refuse, and returns its error message.
+// Calls a tool with this conversation's start key when it should refuse, and returns its error message.
 async function refusal(name: string, args: Record<string, unknown>): Promise<string> {
-  const result = await client.callTool({ name, arguments: args });
+  const result = await client.callTool({ name, arguments: { startKey, ...args } });
   expect(result.isError).toBe(true);
   return (result.content as { type: string; text: string }[])[0]!.text;
 }
@@ -71,6 +90,7 @@ describe("MCP server", () => {
       "save_candidate_brief",
       "save_suggested_questions",
       "search_evidence",
+      "start_interview_companion",
     ]);
     for (const tool of tools) {
       expect(tool.annotations?.readOnlyHint, tool.name).toBe(!tool.name.startsWith("save_"));
@@ -662,6 +682,162 @@ describe("MCP server", () => {
         ],
       }),
     ).toContain("only once");
+  });
+});
+
+const notStarted =
+  "Interview Companion is not started in this conversation. Ask the user whether to start it; do not call Interview Companion tools unless they say yes.";
+
+// Arguments that would be valid for each tool, so only the start key decides.
+function validArguments(interviewId: string): Record<string, Record<string, unknown>> {
+  return {
+    list_candidates: {},
+    get_candidate: { candidateId: candidate.id },
+    get_interviewer_notes: { candidateId: candidate.id },
+    get_saved_questions: { candidateId: candidate.id },
+    get_ai_notes: { interviewId },
+    get_asked_questions: { interviewId },
+    get_saved_question_checks: { candidateId: candidate.id },
+    get_transcript: { interviewId },
+    get_cv: { candidateId: candidate.id },
+    get_candidate_brief: { candidateId: candidate.id },
+    search_evidence: { candidateId: candidate.id, query: "Redis" },
+    save_ai_notes: { interviewId, notes: [redisNote] },
+    save_asked_questions: { interviewId, askedQuestions: [] },
+    save_suggested_questions: { candidateId: candidate.id, suggestions: [] },
+    save_candidate_brief: { candidateId: candidate.id, text: "# Brief", evidence: [] },
+  };
+}
+
+// Calls a tool with exactly these arguments and returns the whole result.
+async function rawCall(name: string, args: Record<string, unknown>, on = client) {
+  const result = await on.callTool({ name, arguments: args });
+  return { isError: result.isError, content: result.content as { type: string; text: string }[] };
+}
+
+describe("Starting Interview Companion in a conversation", () => {
+  it("offers a start tool that the AI client must ask the user about, and that gives a fresh start key", async () => {
+    const { tools } = await client.listTools();
+    const startTool = tools.find((tool) => tool.name === "start_interview_companion")!;
+
+    expect(startTool.description).toBe(
+      "Interview Companion: call this only when the user has explicitly asked, in this conversation, to use " +
+        "Interview Companion. It returns the start key this conversation needs for every other Interview Companion tool.",
+    );
+    expect(startTool._meta?.["anthropic/requiresUserInteraction"]).toBe(true);
+
+    const result = await rawCall("start_interview_companion", {});
+    expect(result.content).toHaveLength(1);
+    expect(result.content[0]!.text).toContain("Pass it as startKey to the other Interview Companion tools in this conversation only.");
+    const first = keyIn(result.content[0]!.text);
+    expect(first).toMatch(/^[A-Za-z0-9_-]{16,}$/);
+    expect(await start()).not.toBe(first);
+  });
+
+  it("every other tool requires the start key, and says so first", async () => {
+    const { tools } = await client.listTools();
+
+    for (const tool of tools.filter((tool) => tool.name !== "start_interview_companion")) {
+      expect(tool.description, tool.name).toMatch(/^Interview Companion: Requires the start key from start_interview_companion\. \S/);
+      expect(tool.inputSchema.required, tool.name).toContain("startKey");
+      expect(tool.inputSchema.properties?.startKey, tool.name).toMatchObject({ type: "string" });
+      expect(tool._meta?.["anthropic/requiresUserInteraction"], tool.name).toBeUndefined();
+    }
+  });
+
+  it("without a start key, or with one it did not give, every tool returns only the refusal: no data, no names", async () => {
+    const interview = readyInterview();
+    core.allowAiClientWrites(true);
+    const keyOfAnotherProcess = await (async () => {
+      const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+      await createMcpServer(aiClientCore(core)).connect(serverSide);
+      const other = new Client({ name: "other-client", version: "1.0.0" });
+      await other.connect(clientSide);
+      const key = await start(other);
+      await other.close();
+      return key;
+    })();
+
+    for (const [name, args] of Object.entries(validArguments(interview.id))) {
+      for (const key of [undefined, "", 42, "not-a-key", keyOfAnotherProcess, ` ${startKey}`]) {
+        const result = await rawCall(name, key === undefined ? args : { ...args, startKey: key });
+        expect(result, `${name} with ${String(key)}`).toEqual({ isError: true, content: [{ type: "text", text: notStarted }] });
+      }
+    }
+    // Nothing was saved.
+    expect(core.listAiNotes(interview.id)).toEqual([]);
+    expect(core.getCandidateBrief(candidate.id)).toBeNull();
+  });
+
+  it("refuses an unknown Candidate without a start key the same way, so a refusal says nothing about who is in the app", async () => {
+    const known = await rawCall("get_candidate", { candidateId: candidate.id });
+    const unknown = await rawCall("get_candidate", { candidateId: "no-such-candidate" });
+
+    expect(unknown).toEqual(known);
+    expect(JSON.stringify(known)).not.toContain("Ada");
+  });
+
+  it("with a start key it gave, every tool works as before, in any order and as often as needed", async () => {
+    const interview = readyInterview();
+    core.allowAiClientWrites(true);
+    const second = await start();
+
+    for (const [name, args] of Object.entries(validArguments(interview.id))) {
+      for (const key of [startKey, second]) {
+        const result = await rawCall(name, { ...args, startKey: key });
+        expect(result.isError, `${name}: ${result.content[0]!.text}`).toBeFalsy();
+      }
+    }
+  });
+
+  it("keeps the last 1,000 start keys it gave, and drops the oldest", async () => {
+    const keys = [startKey];
+    for (let i = 0; i < 1000; i++) keys.push(await start());
+
+    expect((await rawCall("list_candidates", { startKey: keys[0] })).content[0]!.text).toBe(notStarted);
+    expect((await rawCall("list_candidates", { startKey: keys[1] })).isError).toBeFalsy();
+    expect((await rawCall("list_candidates", { startKey: keys[1000] })).isError).toBeFalsy();
+  });
+
+  it("each prompt gives a fresh start key in its text, because running a prompt is the user's own act", async () => {
+    for (const [name, args] of [
+      ["candidate", { candidate: "Ada" }],
+      ["candidate", {}],
+      ["brief", { candidate: "Ada Demir" }],
+    ] as const) {
+      const { messages } = await client.getPrompt({ name, arguments: args });
+      const text = (messages[0]!.content as { type: string; text: string }).text;
+      const key = keyIn(text);
+      expect(text, name).toContain(`Your start key for this conversation is ${key}.`);
+      expect(text, name).toContain("Pass it as startKey to the other Interview Companion tools in this conversation only.");
+      expect(key).not.toBe(startKey);
+      expect((await rawCall("list_candidates", { startKey: key })).isError, name).toBeFalsy();
+    }
+  });
+
+  it("the guide's example sentences ask to start Interview Companion, and its command is the candidate prompt's", async () => {
+    for (const [language, text, start] of [
+      ["tr", tr.text, "Interview Companion'ı başlat"],
+      ["en", en.text, "Start Interview Companion"],
+    ] as const) {
+      for (const example of text.mcpGuide.examples) expect(example, language).toMatch(new RegExp(`^${start}[ ,]`));
+      expect(text.mcpGuide.steps[1]!.hint, language).toContain("interview-companion:candidate");
+      expect(text.mcpGuide.askCommand, language).toMatch(/^\/mcp__interview-companion__candidate /);
+    }
+    const { prompts } = await client.listPrompts();
+    expect(prompts.map((prompt) => prompt.name)).toContain("candidate");
+  });
+
+  it("tells the AI client how the user starts Interview Companion, and to start it for no other conversation", () => {
+    const instructions = client.getInstructions() ?? "";
+
+    expect(instructions).toContain("Every tool except start_interview_companion needs a start key");
+    expect(instructions).toContain("The user starts Interview Companion in a conversation");
+    expect(instructions).toContain("with this server's candidate or brief prompt");
+    expect(instructions).toContain("by asking you to start Interview Companion");
+    expect(instructions).toContain("Then call start_interview_companion");
+    expect(instructions).toContain("Never call start_interview_companion for a conversation that is about something else");
+    expect(instructions).toContain("a start key from another conversation");
   });
 });
 

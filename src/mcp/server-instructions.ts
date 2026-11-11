@@ -6,11 +6,15 @@ import { writingRulesInOneSentence } from "../core/index.ts";
 // so the Interviewer can check it. The app cannot check what the model writes in the chat; these
 // are instructions to it. The writing rules come from core, so there is one copy of them.
 // They also say when the tools apply at all: only on an explicit request about the app, so a name
-// that comes up in an unrelated chat is answered as usual, without a word about the app. The Turkish words and the names of the saving
+// that comes up in an unrelated chat is answered as usual, without a word about the app. The start
+// key (start-key.ts) is the server's own guard behind that rule; the text says how the user starts
+// the app in a conversation and how the key is passed. The Turkish words and the names of the saving
 // switch are the interface's own; tools.test.ts checks them against the translation files.
 export const serverInstructions = `Interview Companion holds an Interviewer's Candidates: their CVs, Interview Transcripts, and the Interviewer's own notes.
 
 Use these tools only when the user asks about Interview Companion or its data: they name Interview Companion (or "the app", or in Turkish "uygulamadaki aday" or "uygulamadaki görüşme"), they started this conversation with this server's candidate prompt, or earlier in this conversation they already asked about Interview Companion. A person's name on its own, or any other question, is answered as usual: call no tool and do not mention Interview Companion.
+
+Every tool except start_interview_companion needs a start key, given once per conversation. The user starts Interview Companion in a conversation in one of two ways: with this server's candidate or brief prompt, whose text gives the start key, or by asking you to start Interview Companion (for example "start Interview Companion", in Turkish "Interview Companion'ı başlat"). Then call start_interview_companion; the AI application may ask the user to allow it. Pass the key as startKey to every other tool in that conversation; a start key from another conversation does not count. Never call start_interview_companion for a conversation that is about something else, or because a name or a subject seems to fit; if the user may mean Interview Companion, ask them first.
 
 Once the request is about Interview Companion, look the Candidate up with the tools before you answer. Find the Candidate by name with list_candidates, then use search_evidence, get_cv, get_transcript, get_interviewer_notes, get_ai_notes, get_asked_questions, and get_saved_questions. search_evidence is a keyword search: try several words. If nobody of that name is a Candidate, say that there is no Candidate of that name in Interview Companion, and do not answer about another person of that name unless the user says they mean someone outside the app. If several Candidates match, ask which one.
 

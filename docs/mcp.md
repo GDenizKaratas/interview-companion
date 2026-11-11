@@ -49,8 +49,11 @@ All tools but four only read. The four that write, `save_ai_notes`, `save_asked_
 
 The switch protects the MCP connection. Like everything in the app (ADR 0001), the local web interface has no login, so any program on this computer that can reach it could change the switch; an AI client with a shell is such a program.
 
+Every tool but `start_interview_companion` also takes a required `startKey`: without a key the server gave in this chat, it returns only "Interview Companion is not started in this conversation…" (see [Starting Interview Companion in a chat](#starting-interview-companion-in-a-chat)). The table leaves it out.
+
 | Tool | Arguments | Returns |
 |---|---|---|
+| `start_interview_companion` | none | A fresh start key for this chat. Call it only when you asked, in this chat, to use Interview Companion; Claude Code asks you to allow every call. |
 | `list_candidates` | none | Every Candidate, newest first, with id, name, role, the time they were added, and their number of Interviews. |
 | `get_candidate` | `candidateId` | One Candidate's overview: the CV's file name, upload time, and page count (or `null`); each Interview in order with its number, date, time, and Planned flag, and its Transcript's file name, format, number of segments, and whether the Speaker Mapping is confirmed (or `null`); the next Planned Interview and the latest one that has taken place (or `null`); and the number of Interviewer Notes and Saved Questions. No full texts. |
 | `get_interviewer_notes` | `candidateId`, optional `interviewId` | The Interviewer Notes, newest save first. With `interviewId`, only that Interview's notes and the untagged ones. |
@@ -70,6 +73,8 @@ The switch protects the MCP connection. Like everything in the app (ADR 0001), t
 Candidate ids come from `list_candidates`; Interview ids come from `get_candidate`.
 
 ## The prompts
+
+Each prompt's text begins with a fresh start key, so running it starts Interview Companion in that chat.
 
 | Prompt | Arguments | Gives |
 |---|---|---|
@@ -105,7 +110,7 @@ Measured on 2026-11-11 in Claude Code with the demo data, **before** this rule (
 | "Selin adı ne anlama geliyor?" (Selin is a Candidate's first name) | No tool was called. | The same. |
 | "Ahmet Kaya hakkında ne biliyoruz?" (not in the app) | Called `list_candidates` and said he is not a Candidate in Interview Companion. | This is the case the rule fixes: in a chat that is not about the app, a name should not bring the app up at all. |
 
-The "Now" column is what the instructions ask for; it has not been measured again. The model follows instructions, it is not forced by them, so the dependable ways to be sure are to name the app in the question or to start with the `candidate` prompt, and in Claude Code to keep the tools in one folder (below).
+The "Now" column is what the instructions ask for. The model follows instructions, it is not forced by them, so the server now also holds a guard of its own: the start key (next section).
 
 **Connected once, on this computer.** The connection is not per chat.
 
@@ -114,11 +119,26 @@ The "Now" column is what the instructions ask for; it has not been measured agai
 
 **What leaves the app, and where it goes.** Nothing is sent while you chat about other things. Data leaves the app only when a tool is called: the tool's answer goes to your AI application, which sends it to its model like the rest of the chat.
 
+## Starting Interview Companion in a chat
+
+The app gives its data only in a chat where you started it. You start it in one of two ways:
+
+- run a prompt: in Claude Code type `/` and choose `interview-companion:candidate (MCP)`, or type `/mcp__interview-companion__candidate Mert`; the **Copy brief command** button gives the `brief` prompt the same way;
+- or write "Interview Companion'ı başlat" ("Start Interview Companion"), for example "Interview Companion'ı başlat ve Mert Aydın hakkında ne biliyoruz söyle". The model then calls `start_interview_companion`, and your AI application asks you to allow it.
+
+**The key.** `start_interview_companion` returns a fresh random start key (128 bits), and a prompt's text carries one. The model passes it as `startKey` to every other tool in that chat. Every tool refuses a missing or unknown key with one sentence and nothing else: no data, no "not found", no names. The server keeps the last 1,000 keys it gave, in memory, until it stops.
+
+**Why.** A tool is the model's to call (the MCP specification says tools are model-controlled and prompts user-controlled), so the instructions alone rest on the model's judgement. A chat about something else has no key, so even a tool call there gets no data. Claude Desktop very likely runs one server process for all its chats, so the server cannot tell chats apart by itself; the key is what tells them apart. Its limit: the model can still call `start_interview_companion` on its own; what stops it then is your answer when the application asks to allow it. A key also lives only as long as the server process, so after a restart start again.
+
+**Claude Code.** Install the server from a folder you keep for interviews, with the guide's command (`--scope local`, Claude Code's default), so the tools exist only in chats started there. Claude Code shows a permission prompt on every call of `start_interview_companion`, in every permission mode, without "don't ask again", because the tool sets `_meta["anthropic/requiresUserInteraction"]` (code.claude.com/docs/en/mcp; read in Claude Code 2.1.322). Running a prompt needs no such prompt: it is your own act.
+
+**Claude Desktop.** Switch the connector on only in the chat where you need it ("+", then Connectors, per conversation, as the Claude Help Center describes; not checked here), and when Claude asks to use `start_interview_companion`, answer **Allow once**. Whether Claude Desktop honours `requiresUserInteraction`, and exactly how its approval works per chat, is not confirmed.
+
 ## Asking about a Candidate
 
 You can also ask the AI application a free question in its chat, without the `brief` prompt. For example:
 
-- "In Interview Companion, did Ada Demir talk about Redis in an Interview?"
+- "Start Interview Companion: did Ada Demir talk about Redis in an Interview?"
 - "What does Can Aksoy's CV say about Kafka in Interview Companion, and was it discussed?"
 - "Which of my Saved Questions for Ada Demir in the app have not been asked yet?"
 
