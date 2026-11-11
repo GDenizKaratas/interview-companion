@@ -51,72 +51,73 @@ const text = {
   mcpGuide: {
     open: "Use with MCP",
     title: "Use AI without an API key (MCP)",
-    intro: "Claude Code reads this app's data and does the AI work. No API key is needed here.",
+    intro: "Connect Claude Desktop or Claude Code once; it reads what is in this app directly. You copy or upload nothing: whatever you add here later is there the next time you ask.",
     steps: [
-      { title: "Connect once", hint: "Copy the command, paste it into a terminal, press Enter." },
-      { title: "Open a Candidate", hint: "Click Candidate Brief at the top, then Copy brief command." },
-      { title: "Paste into Claude Code", hint: "Press Enter; it does the rest." },
-      { title: "See the result here", hint: "Saved here when the box below is ticked." },
+      { title: "Connect once", hint: "Choose your AI application below and copy the text." },
+      { title: "Ask about a Candidate by name", hint: "Ask anything; the answer comes with its quote and source: in the CV, in an Interview, or not there at all. For example:" },
+      { title: "See it here", hint: "When the box is ticked, the notes, questions, and brief it writes are saved here and show when you open the page again." },
     ],
-    commandLabel: "The command for step 1:",
+    examples: ["What do we know about Mert Aydın?", "Take notes from Mert Aydın's last interview and save them."],
+    clientWrites: "Allow saving here",
+    connectLabel: "Step 1: your AI application",
+    apps: {
+      desktop: {
+        name: "Claude Desktop",
+        hint: "Paste this text into the file that Settings > Developer > Edit Config opens, and save it. Then quit Claude Desktop and open it again.",
+      },
+      code: {
+        name: "Claude Code",
+        hint: "Run this command once in Terminal.",
+      },
+    },
     copy: "Copy",
     copied: "Copied",
-    clientWrites: {
-      title: "Saving from your AI client",
-      label: "Let Claude Code save its results here",
-      detail:
-        "Off: the result stays only in the Claude Code chat. On: AI Notes, asked questions, Suggested Questions, and the Candidate Brief are saved here, and the app looks for every quote in its source. Your notes, your questions, and your Candidates never change.",
-      saveFailed: "The setting could not be loaded or saved.",
-    },
-    technical: "Step 1 is done once and needs Node.js. For Claude Desktop, see docs/mcp.md in the project folder.",
+    safety: "Your AI application reads, and saves what it writes only when the box is ticked. It cannot delete or change Candidates, Interviews, CVs, Transcripts, or your own notes.",
+    saveFailed: "The setting could not be loaded or saved.",
     close: "Close",
   },
   // Every fact here comes from docs/research/getting-a-transcript.md. Add nothing it does not confirm.
   transcriptGuide: {
     open: "How do I get a Transcript?",
     title: "How do I get a Transcript?",
-    reads: "The app reads a .vtt file with speaker names, or text where every line is \"Speaker: text\".",
     routesLabel: "Your meeting tool",
     routes: {
       teams: {
         name: "Microsoft Teams",
-        needs: "Needs a work or school account where transcription is allowed. Transcribes Turkish.",
+        needs: "Works in Turkish. Needs a work or school account.",
         steps: [
           { title: "Start transcription", hint: "In the meeting, when the Interview begins." },
-          { title: "Download the .vtt", hint: "After the meeting. By default only the organiser and co-organisers can." },
+          { title: "Download the .vtt", hint: "After the meeting. The meeting's organiser can download it." },
           { title: "Import it here", hint: "With the Import Transcript button." },
         ],
-        notes: ["Whether a free personal Teams account can transcribe is not confirmed."],
+        notes: ["Whether a free personal Teams account can do it is not confirmed."],
       },
       zoom: {
         name: "Zoom",
-        needs: "Needs a paid plan: Pro, Business, Education, or Enterprise. Transcribes Turkish.",
+        needs: "Works in Turkish. Needs a paid plan: Pro, Business, Education, or Enterprise.",
         steps: [
           { title: "Record to the cloud", hint: "With the audio transcript turned on." },
-          { title: "Download the .vtt", hint: "From Recordings & Transcripts, Cloud recordings." },
+          { title: "Download the .vtt", hint: "From the Recordings & Transcripts page." },
           { title: "Import it here", hint: "With the Import Transcript button." },
         ],
-        notes: ["Someone Zoom could not identify comes as \"Unknown Speaker\"."],
+        notes: [] as string[],
       },
       meet: {
         name: "Google Meet",
-        needs: "Google Meet does not transcribe Turkish, on any plan. This route does not work for an Interview in Turkish.",
+        needs: "Google's help page says Meet transcripts are offered in eight languages for now; Turkish is not on the list yet.",
         steps: [] as { title: string; hint: string }[],
-        notes: ["For an Interview in a supported language, the transcript is a Google Doc, which the app may not read yet."],
+        notes: ["For an Interview in Turkish, use Teams, Zoom, or \"No paid plan\"."],
       },
       local: {
         name: "No paid plan",
-        needs: "Needs no paid plan. The recording can stay on your computer.",
+        needs: "Needs no paid plan. The recording stays on your computer.",
         steps: [
-          { title: "Record the call", hint: "Zoom's free plan records to the computer." },
-          { title: "Transcribe it on your computer", hint: "With a tool that labels speakers, for example Buzz (free; not on Intel Macs) or MacWhisper." },
-          { title: "Name the speakers", hint: "Turn speaker labels on, name each speaker, export as .vtt." },
+          { title: "Record the call", hint: "For example with Zoom's free plan, to the computer." },
+          { title: "Transcribe it on your computer", hint: "With a tool that labels speakers: Buzz (free, not on Intel Macs) or MacWhisper." },
+          { title: "Name the speakers", hint: "Then export as .vtt." },
           { title: "Import it here", hint: "With the Import Transcript button." },
         ],
-        notes: [
-          "This route has not been tried with a real file from these tools yet. If the file is refused, check that every line has its speaker's name.",
-          "A note-taker service that joins the call is another way, but the app may not read the file it gives, and it sends the Candidate's voice to another company.",
-        ],
+        notes: ["This route has not been tried with a real file from these tools yet."],
       },
     },
     consent: {
@@ -130,8 +131,7 @@ const text = {
       ],
       notLegalAdvice: "This is not legal advice; ask the person responsible for personal data at your company.",
     },
-    checked:
-      "Checked on 11 November 2026 mostly from each vendor's own pages; plans and languages change. Sources: docs/research/getting-a-transcript.md in the project folder.",
+    checked: "Checked on 11 November 2026; plans and languages may change.",
     close: "Close",
   },
   candidates: {

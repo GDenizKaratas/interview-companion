@@ -148,6 +148,8 @@ The VS Code extension uses the same configuration as Claude Code in the terminal
 
 Claude Desktop does not always see the `PATH` of your terminal. If the server does not start, replace `"node"` with the full path that `which node` prints (on Windows, `where node`).
 
+**Use with MCP** in the app shows this configuration for your copy, ready to copy: it names the Node.js that runs the app by its full path, and passes `DATA_DIR` in `env` when the app runs with one. If the file already has other servers, add only the `interview-companion` entry inside `mcpServers`. After Node.js is upgraded, its path may change; open the guide again and copy the new configuration.
+
 ## Manual check with the demo data in Claude Code
 
 1. Load the demo set, if it is not there yet: `npm run demo`. It adds Deniz Yılmaz, with a CV and a First Interview with a Transcript, and four more fictional Candidates.

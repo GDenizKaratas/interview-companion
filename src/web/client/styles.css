@@ -497,6 +497,34 @@ button.link-button:hover:not(:disabled) {
   text-align: left;
 }
 
+/* A setting a step decides, such as letting the AI client save here, at the foot of its box. */
+.step .settings-check.step-check {
+  margin-top: auto;
+  padding-top: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+/* Short sentences to try, under a step's hint. */
+.step ul.step-examples {
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--navy);
+}
+
+.step ul.step-examples li + li {
+  margin-top: 0.15rem;
+}
+
+.confirm-dialog-subject p.guide-connect-hint {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+}
+
 /* How do I get a Transcript: one route at a time, chosen above its steps. */
 .guide-routes {
   flex-wrap: wrap;
@@ -1563,6 +1591,7 @@ button.range-tab.chosen {
   font-size: 0.72rem;
   line-height: 1.5;
   color: #dbe5f5;
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
@@ -2339,6 +2368,10 @@ button.question-state:disabled {
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-raised);
+}
+
+.confirm-dialog.top {
+  margin-top: 8vh;
 }
 
 .confirm-dialog::backdrop {
@@ -3203,13 +3236,7 @@ button.cv-shortcut svg {
   padding: 0 0.35rem;
 }
 
-/* A setting with a checkbox in AI Settings. */
-.settings-section {
-  margin-top: 1rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--line);
-}
-
+/* A setting with a checkbox. */
 .settings-check {
   display: flex;
   align-items: flex-start;
