@@ -5,12 +5,14 @@ import { HowItWorksDialog } from "./HowItWorksDialog.tsx";
 import { McpGuideDialog, openMcpGuide } from "./McpGuideDialog.tsx";
 import { linkTo } from "./navigation.ts";
 import { languages } from "./languages.ts";
+import { TranscriptGuideDialog, openTranscriptGuide } from "./TranscriptGuideDialog.tsx";
 import { useText } from "./text.tsx";
 
-type Open = "howItWorks" | "apiKey" | "mcp" | undefined;
+type Open = "howItWorks" | "apiKey" | "mcp" | "transcriptGuide" | undefined;
 
 // The bar at the top of every page: the app's mark and name, how the app works, the two ways
-// to use AI (an API key, or MCP), and the interface language switch.
+// to use AI (an API key, or MCP), and the interface language switch. It also holds the guide on
+// getting a Transcript, opened from the Transcript card and from How it works.
 export function AppBar() {
   const { text, languageCode, chooseLanguage } = useText();
   const [open, setOpen] = useState<Open>();
@@ -19,12 +21,15 @@ export function AppBar() {
   useEffect(() => {
     const loadKey = () => api.getApiKeyStatus().then((status) => setKeySaved(status.saved), () => {});
     const showMcp = () => setOpen("mcp");
+    const showTranscriptGuide = () => setOpen("transcriptGuide");
     void loadKey();
     window.addEventListener(apiKeyChanged, loadKey);
     window.addEventListener(openMcpGuide, showMcp);
+    window.addEventListener(openTranscriptGuide, showTranscriptGuide);
     return () => {
       window.removeEventListener(apiKeyChanged, loadKey);
       window.removeEventListener(openMcpGuide, showMcp);
+      window.removeEventListener(openTranscriptGuide, showTranscriptGuide);
     };
   }, []);
 
@@ -62,10 +67,16 @@ export function AppBar() {
         ))}
       </select>
       {open === "howItWorks" && (
-        <HowItWorksDialog onUseApiKey={() => setOpen("apiKey")} onUseMcp={() => setOpen("mcp")} onClose={() => setOpen(undefined)} />
+        <HowItWorksDialog
+          onUseApiKey={() => setOpen("apiKey")}
+          onUseMcp={() => setOpen("mcp")}
+          onTranscriptGuide={() => setOpen("transcriptGuide")}
+          onClose={() => setOpen(undefined)}
+        />
       )}
       {open === "apiKey" && <ApiKeyDialog onClose={() => setOpen(undefined)} />}
       {open === "mcp" && <McpGuideDialog onClose={() => setOpen(undefined)} />}
+      {open === "transcriptGuide" && <TranscriptGuideDialog onClose={() => setOpen(undefined)} />}
     </header>
   );
 }

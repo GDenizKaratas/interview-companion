@@ -66,6 +66,68 @@ const translation: TranslationFile = {
       technical: "1. adım bir kez yapılır ve Node.js gerekir. Claude Desktop için proje klasöründeki docs/mcp.md dosyasına bakın.",
       close: "Kapat",
     },
+    transcriptGuide: {
+      open: "Transkripti nasıl alırım?",
+      title: "Transkripti nasıl alırım?",
+      reads: "Uygulama konuşmacı adlarını içeren bir .vtt dosyasını ya da her satırı \"Konuşmacı: metin\" olan bir metni okur.",
+      routesLabel: "Toplantı aracınız",
+      routes: {
+        teams: {
+          name: "Microsoft Teams",
+          needs: "Transkripsiyona izin verilen bir iş ya da okul hesabı gerekir. Türkçeyi yazıya döker.",
+          steps: [
+            { title: "Transkripsiyonu başlatın", hint: "Toplantıda, görüşme başlarken." },
+            { title: ".vtt dosyasını indirin", hint: "Toplantıdan sonra. Varsayılan olarak yalnızca toplantı düzenleyicisi ve ortak düzenleyiciler indirebilir." },
+            { title: "Buraya aktarın", hint: "Transkript içe aktar düğmesiyle." },
+          ],
+          notes: ["Ücretsiz kişisel Teams hesabının transkript çıkarıp çıkaramadığı doğrulanmadı."],
+        },
+        zoom: {
+          name: "Zoom",
+          needs: "Ücretli bir plan gerekir: Pro, Business, Education ya da Enterprise. Türkçeyi yazıya döker.",
+          steps: [
+            { title: "Buluta kaydedin", hint: "Ses transkripti açıkken." },
+            { title: ".vtt dosyasını indirin", hint: "Recordings & Transcripts altında, Cloud recordings bölümünden." },
+            { title: "Buraya aktarın", hint: "Transkript içe aktar düğmesiyle." },
+          ],
+          notes: ["Zoom'un tanıyamadığı kişi \"Unknown Speaker\" olarak gelir."],
+        },
+        meet: {
+          name: "Google Meet",
+          needs: "Google Meet hiçbir planda Türkçeyi yazıya dökmez. Bu yol Türkçe bir görüşme için işe yaramaz.",
+          steps: [],
+          notes: ["Desteklenen bir dildeki görüşmede transkript bir Google Dokümanlar belgesi olur; uygulama onu henüz okuyamayabilir."],
+        },
+        local: {
+          name: "Ücretli plan yoksa",
+          needs: "Ücretli plan gerekmez. Kayıt bilgisayarınızda kalabilir.",
+          steps: [
+            { title: "Görüşmeyi kaydedin", hint: "Zoom'un ücretsiz planı bilgisayara kaydeder." },
+            { title: "Bilgisayarınızda yazıya dökün", hint: "Konuşmacıları ayıran bir araçla, örneğin Buzz (ücretsiz; Intel Mac'lerde konuşmacı ayırmaz) ya da MacWhisper." },
+            { title: "Konuşmacılara ad verin", hint: "Konuşmacı etiketlerini açın, her birine ad verin, .vtt olarak dışa aktarın." },
+            { title: "Buraya aktarın", hint: "Transkript içe aktar düğmesiyle." },
+          ],
+          notes: [
+            "Bu yol bu araçlardan çıkan gerçek bir dosyayla henüz denenmedi. Dosya kabul edilmezse her satırda konuşmacının adı olduğunu kontrol edin.",
+            "Görüşmeye katılan bir not alma hizmeti başka bir yoldur; ama verdiği dosyayı uygulama okuyamayabilir ve adayın sesini başka bir şirkete gönderir.",
+          ],
+        },
+      },
+      consent: {
+        title: "Kaydetmeden önce",
+        points: [
+          "Kayda başlamadan önce adaya söyleyin.",
+          "Şirketinizin aydınlatma metnini verin.",
+          "Şirketiniz açık rızaya dayanıyorsa rızayı ayrıca isteyin.",
+          "Kaydı Türkiye dışındaki bir bulut hizmeti işliyorsa yurt dışına veri aktarımı kuralları geçerlidir.",
+          "Kayda artık ihtiyacınız kalmayınca silin.",
+        ],
+        notLegalAdvice: "Bu hukuki tavsiye değildir; şirketinizde kişisel verilerden sorumlu kişiye danışın.",
+      },
+      checked:
+        "11 Kasım 2026'da çoğunlukla her şirketin kendi sayfalarından kontrol edildi; planlar ve diller değişir. Kaynaklar: proje klasöründeki docs/research/getting-a-transcript.md.",
+      close: "Kapat",
+    },
     candidates: {
       title: "Adaylar",
       empty: "Henüz aday yok. İlkini yukarıdaki düğmeyle ekleyin.",
