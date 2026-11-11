@@ -17,6 +17,8 @@ export interface CandidateOverview {
   nextPlanned: Interview | null;
   // The latest Interview that has taken place, or null when none has.
   latestTakenPlace: Interview | null;
+  // The Candidate has no Interview at all, with or without a date (hasNoInterviewYet).
+  noInterviewYet: boolean;
   interviewerNoteCount: number;
   savedQuestionCount: number;
 }
@@ -54,9 +56,16 @@ export function getCandidateOverview(db: DatabaseSync, today: Today, candidateId
     }),
     nextPlanned: interviews.find((interview) => interview.planned) ?? null,
     latestTakenPlace: interviews.findLast(hasTakenPlace) ?? null,
+    noInterviewYet: hasNoInterviewYet(interviews),
     interviewerNoteCount: listInterviewerNotes(db, candidateId).length,
     savedQuestionCount: listSavedQuestions(db, candidateId).length,
   };
+}
+
+// The rule of the Candidate list's "No Interview yet" view: not one Interview has been added,
+// Planned, undated, or taken place. Such a Candidate is still waiting to be planned.
+export function hasNoInterviewYet(interviews: readonly Interview[]): boolean {
+  return interviews.length === 0;
 }
 
 // An Interview with its Candidate, for the Candidate list and the calendar.

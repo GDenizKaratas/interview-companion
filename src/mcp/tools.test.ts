@@ -98,6 +98,7 @@ describe("MCP server", () => {
       interviews: [{ ...interview, transcript: null }],
       nextPlanned: null,
       latestTakenPlace: interview,
+      noInterviewYet: false,
       interviewerNoteCount: 0,
       savedQuestionCount: 1,
     });

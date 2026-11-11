@@ -82,6 +82,7 @@ export function useAddManyCandidates({
   roleField,
   shown,
   initialFiles,
+  onRunAdded,
   onAdded,
   onClose,
 }: {
@@ -91,8 +92,11 @@ export function useAddManyCandidates({
   shown: boolean;
   // Files the dialog opens with, such as PDFs dropped on the Candidate list.
   initialFiles?: PickedFiles;
-  // At least one Candidate was added; the dialog closes and the list shows them.
-  onAdded: () => void;
+  // A run of adding ended having added at least one Candidate; the dialog stays open on the report.
+  onRunAdded: () => void;
+  // At least one Candidate was added; the dialog closes and the list shows them. With a role, the
+  // Interviewer asked to see that role's Candidates.
+  onAdded: (show?: { role: string }) => void;
   onClose: () => void;
 }) {
   const { text } = useText();
@@ -115,6 +119,10 @@ export function useAddManyCandidates({
   // Whether any run of adding, before a fix of the files not added, added a Candidate. Closing
   // then shows the Candidate list again with them.
   const addedAny = useRef(false);
+  // The role as core saved it for the Candidates added, for "Show these Candidates". Once set, the
+  // role field is locked, so a fix of the files not added adds to the same role and the button
+  // shows every Candidate this dialog added.
+  const [addedRole, setAddedRole] = useState<string | undefined>();
   // Raised when a check ends without changing the rows, so the next waiting row starts.
   const [checksEnded, setChecksEnded] = useState(0);
 
@@ -232,20 +240,24 @@ export function useAddManyCandidates({
   async function addAll() {
     const toAdd = rows.filter(willBeAdded);
     const outcomes = new Map<number, Outcome>();
+    let addedThisRun = false;
     stopRequested.current = false;
     setStopping(false);
     setPhase({ kind: "adding", done: 0, total: toAdd.length });
     for (const [i, row] of toAdd.entries()) {
       if (stopRequested.current) break;
       try {
-        await api.createCandidateWithCv({ name: row.name, role }, row.file, { onlyIfNew: !row.addAnyway });
+        const candidate = await api.createCandidateWithCv({ name: row.name, role }, row.file, { onlyIfNew: !row.addAnyway });
         outcomes.set(row.key, { added: true });
+        setAddedRole(candidate.role);
         addedAny.current = true;
+        addedThisRun = true;
       } catch (error) {
         outcomes.set(row.key, { added: false, error });
       }
       setPhase({ kind: "adding", done: i + 1, total: toAdd.length });
     }
+    if (addedThisRun) onRunAdded();
     if (closeWhenStopped.current) {
       close();
       return;
@@ -355,8 +367,9 @@ export function useAddManyCandidates({
         }}
         onDrop={handleDrop}
       >
-        <fieldset className="candidate-form" disabled={phase.kind === "adding"}>
+        <fieldset className="candidate-form" disabled={phase.kind === "adding" || addedRole !== undefined}>
           {roleField}
+          {addedRole !== undefined && <p className="form-hint">{t.roleKept}</p>}
         </fieldset>
         <input
           ref={fileInput}
@@ -450,9 +463,14 @@ export function useAddManyCandidates({
             {t.fixNotAdded}
           </button>
         )}
-        <button type="button" onClick={requestClose}>
+        <button type="button" className={addedRole === undefined ? undefined : "secondary"} onClick={requestClose}>
           {t.close}
         </button>
+        {addedRole !== undefined && (
+          <button type="button" onClick={() => onAdded({ role: addedRole })}>
+            {t.showThese}
+          </button>
+        )}
       </>
     ) : phase.kind === "adding" ? (
       <>
@@ -482,8 +500,9 @@ export function useAddManyCandidates({
     // Closes without asking, as the one-Candidate form does, still showing what any run added.
     close,
     addFiles,
-    // While adding, or once the report is shown, the way cannot be changed.
-    locked: phase.kind !== "choosing",
+    // While adding, once the report is shown, or once anyone was added, the way cannot be changed:
+    // the files not added are fixed here, under the same role.
+    locked: phase.kind !== "choosing" || addedRole !== undefined,
   };
 }
 

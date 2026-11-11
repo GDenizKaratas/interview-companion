@@ -44,7 +44,7 @@ export type { BriefEvidence, CandidateBrief, NewBriefEvidence, NewCandidateBrief
 export type { CandidateCvCheck, CandidateCvStatus, CandidateCvToCheck } from "./candidate-cv-check.ts";
 export type { CandidateOverview, InterviewOverview, DatedInterview } from "./candidate-overview.ts";
 export type { CandidateExport, CandidateImport, ExistingCandidate, ImportOptions, ImportProblem } from "./candidate-transfer.ts";
-export type { Candidate, NewCandidate } from "./candidates.ts";
+export type { Candidate, NewCandidate, RoleInUse } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
 export type {
   EvidenceQuery,
@@ -95,6 +95,8 @@ export interface Core {
   loadDemoCandidateOnFirstStart(): Promise<candidates.Candidate | undefined>;
   loadDemoCandidates(): Promise<candidates.Candidate[]>;
   listCandidateRoles(): string[];
+  listRolesInUse(): candidates.RoleInUse[];
+  findRoleInUse(role: string): string | undefined;
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
   rescheduleInterview(id: string, input: interviews.InterviewTime): interviews.Interview;
@@ -255,6 +257,8 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     loadDemoCandidateOnFirstStart: () => demoCandidate.loadDemoCandidateOnFirstStart(db, cvFolder, today, now),
     loadDemoCandidates: () => demoCandidate.loadDemoCandidates(db, cvFolder, today, now),
     listCandidateRoles: () => candidates.listCandidateRoles(db),
+    listRolesInUse: () => candidates.listRolesInUse(db),
+    findRoleInUse: (role) => candidates.findRoleInUse(db, role),
     addInterview: (input) => interviews.addInterview(db, today, input),
     listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),
     rescheduleInterview: (id, input) => interviews.rescheduleInterview(db, today, id, input),

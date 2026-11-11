@@ -11,7 +11,7 @@ import { ExportCandidateDialog } from "./ExportCandidateDialog.tsx";
 import { InterviewSelector } from "./InterviewSelector.tsx";
 import { MoreMenu } from "./MoreMenu.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
-import { linkTo, navigate } from "./navigation.ts";
+import { linkTo, listPath, navigate } from "./navigation.ts";
 import { SavedQuestions } from "./SavedQuestions.tsx";
 import { TranscriptPanel, type SegmentHighlight } from "./TranscriptPanel.tsx";
 import { useText } from "./text.tsx";
@@ -140,10 +140,10 @@ export function Workspace({ candidateId }: { candidateId: string }) {
     setDeleting(true);
     try {
       await api.deleteCandidate(candidateId);
-      navigate("/");
+      navigate(listPath());
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
-        navigate("/");
+        navigate(listPath());
       } else {
         setDeleteFailed(true);
         setDeleting(false);
@@ -185,7 +185,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
     <main className="workspace">
       {/* One row: who, which Interview, the search, the brief, and the rare actions in a menu. */}
       <header className="workspace-bar">
-        <a className="icon-button back-link" href="/" onClick={linkTo("/")} aria-label={text.workspace.back} title={text.workspace.back}>
+        <a className="icon-button back-link" href={listPath()} onClick={linkTo(listPath())} aria-label={text.workspace.back} title={text.workspace.back}>
           <BackIcon />
         </a>
         {load.state === "ready" && (

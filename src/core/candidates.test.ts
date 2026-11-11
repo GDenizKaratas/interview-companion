@@ -119,3 +119,34 @@ describe("Candidates", () => {
     expect(second.role).toBe("backend engineer");
   });
 });
+
+describe("Roles in use", () => {
+  it("lists each role a Candidate has, in Turkish alphabetical order, with its Candidates", () => {
+    const ada = core.createCandidate({ name: "Ada Demir", role: "Ürün Yöneticisi" });
+    const can = core.createCandidate({ name: "Can Aksoy", role: "Uzman" });
+    const ece = core.createCandidate({ name: "Ece Yalın", role: "Ürün Yöneticisi" });
+    const deniz = core.createCandidate({ name: "Deniz Kaya", role: "Backend Engineer" });
+
+    expect(core.listRolesInUse()).toEqual([
+      { role: "Backend Engineer", candidateIds: [deniz.id] },
+      { role: "Uzman", candidateIds: [can.id] },
+      { role: "Ürün Yöneticisi", candidateIds: [ada.id, ece.id] },
+    ]);
+  });
+
+  it("leaves out a role that only Role Questions use", () => {
+    core.addRoleQuestion({ role: "Data Engineer", text: "How do you test a pipeline?" });
+
+    expect(core.listRolesInUse()).toEqual([]);
+  });
+
+  it("finds the spelling Candidates carry for a role typed in another letter case or with other spaces, and nothing for a role no Candidate has", () => {
+    core.createCandidate({ name: "Ada Demir", role: "Veri Analisti" });
+    core.addRoleQuestion({ role: "Data Engineer", text: "How do you test a pipeline?" });
+
+    expect(core.findRoleInUse(" VERİ   ANALİSTİ")).toBe("Veri Analisti");
+    expect(core.findRoleInUse("Veri Bilimci")).toBeUndefined();
+    expect(core.findRoleInUse("Data Engineer")).toBeUndefined();
+    expect(core.findRoleInUse("   ")).toBeUndefined();
+  });
+});

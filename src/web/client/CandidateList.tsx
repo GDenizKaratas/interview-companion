@@ -1,19 +1,32 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
 import { AddCandidateDialog } from "./AddCandidateDialog.tsx";
-import { api, type CandidateOverview, type DatedInterview, type Interview } from "./api.ts";
+import { api, type CandidateOverview, type DatedInterview, type Interview, type RoleInUse } from "./api.ts";
 import { CvPreviewDialog } from "./CvPreviewDialog.tsx";
 import { localDay, shortDay } from "./dates.ts";
 import { ImportCandidate, type ImportCandidateHandle } from "./ImportCandidate.tsx";
 import { InterviewCalendar } from "./InterviewCalendar.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
-import { candidatePath, linkTo, navigate } from "./navigation.ts";
+import { candidatePath, linkTo, navigate, readListQuery, showListQuery } from "./navigation.ts";
 import { isPdfFile, readDrop, type PickedFiles } from "./picked-files.ts";
 import { RoleQuestionsDialog } from "./RoleQuestionsDialog.tsx";
 import { useText } from "./text.tsx";
 
-type View = "planned" | "all";
+type View = "planned" | "noInterview" | "all";
+
+// The views as they are written in the page's address.
+const viewInAddress: Record<View, string> = { planned: "planned", noInterview: "no-interview", all: "all" };
+
+// The role, view, and page kept in the address ("?role=…&view=…&page=3"), so going back to the
+// list from a Workspace returns to the same filtered list and page. A value the page does not know
+// is ignored. The page is counted from 1 in the address and from 0 here.
+function choicesInAddress(): { role: string; view: View | undefined; page: number } {
+  const query = readListQuery();
+  const view = (Object.keys(viewInAddress) as View[]).find((key) => viewInAddress[key] === query.get("view"));
+  const page = Number(query.get("page"));
+  return { role: query.get("role") ?? "", view, page: Number.isInteger(page) && page > 1 ? page - 1 : 0 };
+}
 
 // The home page: the Candidates the Interviewer meets next, or all of them, in one table, and
 // beside it the calendar of all Interviews.
@@ -21,9 +34,14 @@ export function CandidateList() {
   const { text } = useText();
   const [candidates, setCandidates] = useState<CandidateOverview[] | undefined>();
   const [dated, setDated] = useState<DatedInterview[] | undefined>();
+  // The roles Candidates have, each with its Candidates, once loaded.
+  const [rolesInUse, setRolesInUse] = useState<RoleInUse[] | undefined>();
   const [search, setSearch] = useState("");
   // The view the Interviewer chose. Until they choose, the page decides.
-  const [chosenView, setChosenView] = useState<View | undefined>();
+  const [chosenView, setChosenView] = useState<View | undefined>(() => choicesInAddress().view);
+  // The role whose Candidates are shown, as core spells it, or "" for every role.
+  const [chosenRole, setChosenRole] = useState(() => choicesInAddress().role);
+  const [page, setPage] = useState(() => choicesInAddress().page);
   // The Candidate whose CV is open over the list.
   const [cvOf, setCvOf] = useState<CandidateOverview["candidate"] | undefined>();
   const [roles, setRoles] = useState<string[]>([]);
@@ -41,14 +59,45 @@ export function CandidateList() {
   }, []);
 
   function loadCandidates() {
-    Promise.all([api.listCandidateOverviews(), api.listDatedInterviews()]).then(
-      ([overviews, interviews]) => {
+    Promise.all([api.listCandidateOverviews(), api.listDatedInterviews(), api.listRolesInUse()]).then(
+      ([overviews, interviews, roleGroups]) => {
         setCandidates(overviews);
         setDated(interviews);
+        setRolesInUse(roleGroups);
       },
       () => setLoadError(true),
     );
   }
+
+  // A role from the address that is not spelled as core spells it, such as one typed in another
+  // letter case, is looked up in core. A role no Candidate has any more is cleared, with the
+  // address, so it cannot come back to life once a Candidate has that role again.
+  useEffect(() => {
+    if (rolesInUse === undefined || chosenRole === "" || rolesInUse.some((group) => group.role === chosenRole)) return;
+    let current = true;
+    api.findRoleInUse(chosenRole).then(
+      (found) => {
+        if (current) setChosenRole(found.role ?? "");
+      },
+      () => {},
+    );
+    return () => {
+      current = false;
+    };
+  }, [rolesInUse, chosenRole]);
+
+  // The app's name link leads to "/" while the list is already shown: the choices follow the address.
+  useEffect(() => {
+    const onPopState = () => {
+      if (window.location.pathname !== "/") return;
+      const { role, view, page } = choicesInAddress();
+      setChosenRole(role);
+      setChosenView(view);
+      setPage(page);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   // PDFs dropped anywhere on the page open the Add Candidate dialog with them listed. Only while
   // no dialog is open: a dialog handles what is dropped on it. Dragging text is left alone.
@@ -82,32 +131,58 @@ export function CandidateList() {
   }
 
   const t = text.home;
+  // A chosen role narrows every view and the search, by the Candidates core lists for it. Until a
+  // role from the address is matched or cleared, every Candidate is shown.
+  const role = rolesInUse?.find((group) => group.role === chosenRole);
+  // With one role there is nothing to choose between, so the filter is hidden.
+  const roleFilterShown = (rolesInUse?.length ?? 0) > 1;
+  const inRole = role ? new Set(role.candidateIds) : undefined;
+  const ofRole = (overview: CandidateOverview) => inRole === undefined || inRole.has(overview.candidate.id);
+  const everyone = (candidates ?? []).filter(ofRole);
+  const byId = new Map(everyone.map((overview) => [overview.candidate.id, overview]));
   // Candidates met today or with a Planned Interview, the one who is met soonest first. Core
   // gives the order, and says which Interviews are today or Planned. Today's stay all day, so
   // the list does not lose a Candidate when their Interview's time passes.
-  const byId = new Map(candidates?.map((overview) => [overview.candidate.id, overview]));
   const plannedIds = [...new Set(dated?.filter((entry) => entry.today || entry.interview.planned).map(({ candidate }) => candidate.id))];
-  const planned = plannedIds.flatMap((id) => byId.get(id) ?? []);
+  const byView: Record<View, CandidateOverview[]> = {
+    planned: plannedIds.flatMap((id) => byId.get(id) ?? []),
+    // Core says who has no Interview yet.
+    noInterview: everyone.filter((overview) => overview.noInterviewYet),
+    all: everyone,
+  };
   // Opens on who comes next; with nothing Planned, on everyone, so the page is never empty.
-  const view = chosenView ?? (planned.length > 0 ? "planned" : "all");
+  const view = chosenView ?? (byView.planned.length > 0 ? "planned" : "all");
   const needle = folded(search.trim());
-  // A search looks through every Candidate, whichever view is chosen: someone who is in the app
-  // is always found.
-  const shown = (view === "planned" && needle === "" ? planned : (candidates ?? [])).filter(
+  // A search looks through every Candidate of the chosen role, whichever view is chosen: someone
+  // who is in the app is always found once the role filter is cleared.
+  const shown = (needle === "" ? byView[view] : everyone).filter(
     ({ candidate }) => needle === "" || folded(candidate.name).includes(needle) || folded(candidate.role).includes(needle),
   );
   // One page of rows fits the window, so the list never pushes the page down. A search or a
-  // change of view starts again at the first page.
+  // change of view or role starts again at the first page; loading the list does not, so a page
+  // from the address is kept.
   const pageSize = usePageSize();
   const pages = Math.max(1, Math.ceil(shown.length / pageSize));
-  const [page, setPage] = useState(0);
-  const listKey = `${view}|${needle}`;
+  const loaded = candidates !== undefined && dated !== undefined;
+  const listKey = loaded ? `${view}|${role?.role ?? ""}|${needle}` : undefined;
   const [pagedKey, setPagedKey] = useState(listKey);
-  if (pagedKey !== listKey) {
+  if (listKey !== undefined && pagedKey !== listKey) {
     setPagedKey(listKey);
-    setPage(0);
+    if (pagedKey !== undefined) setPage(0);
   }
   const currentPage = Math.min(page, pages - 1);
+  // Until the list has loaded, the page from the address is kept as it is.
+  const pageShown = loaded ? currentPage : page;
+
+  // The role, view, and page chosen are kept in the address, without a history entry for each
+  // choice. The first page is left out.
+  useEffect(() => {
+    const query = new URLSearchParams();
+    if (chosenRole !== "") query.set("role", chosenRole);
+    if (chosenView) query.set("view", viewInAddress[chosenView]);
+    if (pageShown > 0) query.set("page", String(pageShown + 1));
+    showListQuery(query);
+  }, [chosenRole, chosenView, pageShown]);
   const pageRows = shown.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
   const undated = candidates?.reduce((n, overview) => n + overview.interviews.filter((i) => i.date === null).length, 0) ?? 0;
 
@@ -149,17 +224,39 @@ export function CandidateList() {
                 onChange={(event) => setSearch(event.target.value)}
               />
             </label>
+            {roleFilterShown && (
+              <select
+                className="role-filter"
+                value={role?.role ?? ""}
+                aria-label={t.roles.label}
+                title={t.roles.label}
+                onChange={(event) => {
+                  // The view the Interviewer is on stays: choosing a role does not move the page
+                  // to another view by the default-view rule.
+                  setChosenView(view);
+                  setChosenRole(event.target.value);
+                }}
+              >
+                <option value="">{t.roles.all}</option>
+                {rolesInUse?.map((group) => (
+                  <option key={group.role} value={group.role}>
+                    {group.role} · {group.candidateIds.length}
+                  </option>
+                ))}
+              </select>
+            )}
             <div className="view-choice" role="group" aria-label={t.views.label}>
-              {(["planned", "all"] as const).map((key) => (
+              {(["planned", "noInterview", "all"] as const).map((key) => (
                 <button
                   key={key}
                   type="button"
                   aria-pressed={view === key}
-                  className={view === key ? "role-choice chosen" : "role-choice"}
+                  // An empty view is dimmed, but can still be opened: it says why it is empty.
+                  className={view === key ? "role-choice chosen" : byView[key].length === 0 ? "role-choice none" : "role-choice"}
                   onClick={() => setChosenView(key)}
                 >
                   {t.views[key]}
-                  <span className="view-count">{key === "planned" ? planned.length : candidates.length}</span>
+                  <span className="view-count">{byView[key].length}</span>
                 </button>
               ))}
             </div>
@@ -167,8 +264,8 @@ export function CandidateList() {
         )}
         {candidates && candidates.length > 0 && shown.length === 0 && (
           <p className="empty">
-            {needle !== "" ? t.noMatch : t.noPlanned}{" "}
-            {view === "planned" && needle === "" && (
+            {needle !== "" ? t.noMatch : view === "noInterview" ? (role ? t.noneWithoutInterviewInRole : t.noneWithoutInterview) : t.noPlanned}{" "}
+            {view !== "all" && needle === "" && (
               <button type="button" className="link-button" onClick={() => setChosenView("all")}>
                 {t.showAll}
               </button>
@@ -186,7 +283,13 @@ export function CandidateList() {
             </thead>
             <tbody>
               {pageRows.map((overview) => (
-                <CandidateRow key={overview.candidate.id} overview={overview} onViewCv={() => setCvOf(overview.candidate)} />
+                <CandidateRow
+                  key={overview.candidate.id}
+                  overview={overview}
+                  // While a role is chosen, the filter already says it.
+                  showRole={!(roleFilterShown && role)}
+                  onViewCv={() => setCvOf(overview.candidate)}
+                />
               ))}
             </tbody>
           </table>
@@ -211,11 +314,13 @@ export function CandidateList() {
               importCandidate.current?.chooseFile();
               setAdding(false);
             }}
-            onAdded={() => {
+            onAdded={(show) => {
               setAdding(false);
               // The new Candidates have no Planned Interview yet, so they show among all Candidates,
-              // from the first page and with no search hiding them.
-              setChosenView("all");
+              // from the first page and with no search or other role hiding them. Asked to show
+              // them, the list shows their role's Candidates who have no Interview yet.
+              setChosenView(show ? "noInterview" : "all");
+              setChosenRole(show?.role ?? "");
               setSearch("");
               setPage(0);
               loadCandidates();
@@ -261,7 +366,7 @@ function usePageSize(): number {
 
 // One Candidate in the table. The whole row opens the Workspace; the name is the real link,
 // so it also works with the keyboard and opens in a new tab.
-function CandidateRow({ overview, onViewCv }: { overview: CandidateOverview; onViewCv: () => void }) {
+function CandidateRow({ overview, showRole, onViewCv }: { overview: CandidateOverview; showRole: boolean; onViewCv: () => void }) {
   const { text } = useText();
   const t = text.home;
   const { candidate, cv, interviews, nextPlanned, latestTakenPlace } = overview;
@@ -272,10 +377,17 @@ function CandidateRow({ overview, onViewCv }: { overview: CandidateOverview; onV
         <a className="candidate-name" href={path} onClick={linkTo(path)}>
           {candidate.name}
         </a>
-        <span className="candidate-role">
-          {candidate.role}
-          {interviews.length > 1 && <span className="interview-count"> · {fill(t.interviewCount, { count: String(interviews.length) })}</span>}
-        </span>
+        {(showRole || interviews.length > 1) && (
+          <span className="candidate-role">
+            {showRole && candidate.role}
+            {interviews.length > 1 && (
+              <span className="interview-count">
+                {showRole && " · "}
+                {fill(t.interviewCount, { count: String(interviews.length) })}
+              </span>
+            )}
+          </span>
+        )}
       </td>
       <td className="interview-cell">
         {nextPlanned && <InterviewWhen interview={nextPlanned} planned />}

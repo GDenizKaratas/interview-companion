@@ -32,9 +32,18 @@ describe("Candidate overview", () => {
       interviews: [],
       nextPlanned: null,
       latestTakenPlace: null,
+      noInterviewYet: true,
       interviewerNoteCount: 0,
       savedQuestionCount: 0,
     });
+  });
+
+  it("says a Candidate has no Interview yet until one is added, even one without a date", () => {
+    expect(core.getCandidateOverview(candidate.id).noInterviewYet).toBe(true);
+
+    core.addInterview({ candidateId: candidate.id });
+
+    expect(core.getCandidateOverview(candidate.id).noInterviewYet).toBe(false);
   });
 
   it("counts the CV pages, the notes, and the questions, and shows each Interview's Transcript state", async () => {

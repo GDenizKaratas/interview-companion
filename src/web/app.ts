@@ -218,6 +218,13 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
 
   api.get("/candidate-roles", (c) => c.json(core.listCandidateRoles()));
 
+  // The roles Candidates have, each with its Candidates, for the role filter of the Candidate list.
+  api.get("/roles-in-use", (c) => c.json(core.listRolesInUse()));
+
+  // The spelling under which Candidates have the role in ?role=, by core's role rule, or null
+  // when no Candidate has it.
+  api.get("/role-in-use", (c) => c.json({ role: core.findRoleInUse(c.req.query("role") ?? "") ?? null }));
+
   api.get("/candidates/:id", (c) => {
     const candidate = core.getCandidate(c.req.param("id"));
     return candidate ? c.json(candidate) : c.json({ error: "Candidate not found." }, 404);
