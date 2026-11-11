@@ -9,7 +9,7 @@ import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { candidateOfInterview, listInterviews, requireInterview, type Today } from "./interviews.ts";
 import { containsQuote } from "./quotes.ts";
-import { listSavedQuestions } from "./saved-questions.ts";
+import { findSavedQuestion, listSavedQuestions, markSavedQuestion, type SavedQuestion } from "./saved-questions.ts";
 import {
   callModel,
   requireConfirmedTranscript,
@@ -347,4 +347,14 @@ export function listSavedQuestionStates(db: DatabaseSync, today: Today, candidat
       differsFromTranscripts: transcriptState !== "planned" && (question.mark === "asked") !== (transcriptState === "asked"),
     };
   });
+}
+
+// Records the Interviewer's word on whether a Saved Question was asked. A mark is kept only when
+// it says something the Transcripts do not: saying what they already say removes the mark, so the
+// question follows the Transcripts again. Refuses an unknown question with NotFoundError.
+export function setSavedQuestionAsked(db: DatabaseSync, today: Today, id: string, asked: boolean): SavedQuestion {
+  const question = findSavedQuestion(db, id);
+  const { transcriptState } = listSavedQuestionStates(db, today, question.candidateId).find((state) => state.savedQuestionId === id)!;
+  const transcriptsSayAsked = transcriptState === "asked";
+  return markSavedQuestion(db, id, asked === transcriptsSayAsked ? null : asked ? "asked" : "notAsked");
 }

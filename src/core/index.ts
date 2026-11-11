@@ -106,6 +106,7 @@ export interface Core {
   editSavedQuestion(id: string, text: string): savedQuestions.SavedQuestion;
   tagSavedQuestion(id: string, interviewId: string | null): savedQuestions.SavedQuestion;
   markSavedQuestion(id: string, mark: savedQuestions.QuestionMark | null): savedQuestions.SavedQuestion;
+  setSavedQuestionAsked(id: string, asked: boolean): savedQuestions.SavedQuestion;
   deleteSavedQuestion(id: string): void;
   moveSavedQuestion(id: string, position: number, filter?: interviews.InterviewFilter): void;
   addRoleQuestion(input: roleQuestions.NewRoleQuestion): roleQuestions.RoleQuestion;
@@ -262,6 +263,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     editSavedQuestion: (id, text) => savedQuestions.editSavedQuestion(db, id, text),
     tagSavedQuestion: (id, interviewId) => savedQuestions.tagSavedQuestion(db, id, interviewId),
     markSavedQuestion: (id, mark) => savedQuestions.markSavedQuestion(db, id, mark),
+    setSavedQuestionAsked: (id, asked) => askedQuestions.setSavedQuestionAsked(db, today, id, asked),
     deleteSavedQuestion: (id) => savedQuestions.deleteSavedQuestion(db, id),
     moveSavedQuestion: (id, position, filter) => savedQuestions.moveSavedQuestion(db, id, position, filter),
     addRoleQuestion: (input) => roleQuestions.addRoleQuestion(db, input),

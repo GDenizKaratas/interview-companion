@@ -3,7 +3,7 @@ import { ModalDialog } from "./ModalDialog.tsx";
 
 interface ConfirmDialogProps {
   title: string;
-  // What will be deleted, shown so the Interviewer can check it before confirming.
+  // What will be deleted or overruled, shown so the Interviewer can check it before confirming.
   children?: ReactNode;
   confirmLabel: string;
   cancelLabel: string;

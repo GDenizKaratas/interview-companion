@@ -1699,6 +1699,11 @@ button.question-state:disabled {
   color: var(--muted);
 }
 
+/* A row with that line keeps its tag and origin on a line of their own, so they never cover the way back. */
+.question:has(.question-own-mark) > .question-meta {
+  grid-row: 3;
+}
+
 .question-state svg {
   width: 1.05rem;
   height: 1.05rem;

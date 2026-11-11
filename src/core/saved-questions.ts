@@ -158,7 +158,7 @@ export function moveInList(ids: string[], id: string, position: number): string[
   return moved;
 }
 
-function findSavedQuestion(db: DatabaseSync, id: string): SavedQuestion {
+export function findSavedQuestion(db: DatabaseSync, id: string): SavedQuestion {
   const row = db.prepare(`SELECT ${columns} FROM saved_question WHERE id = ?`).get(id);
   if (!row) {
     throw new NotFoundError("This question does not exist.");

@@ -420,6 +420,40 @@ describe("The Interviewer's mark and the state of a Saved Question", () => {
   });
 });
 
+describe("Saying by hand whether a Saved Question was asked", () => {
+  const stateOf = (id: string) => core.listSavedQuestionStates(candidate.id).find((s) => s.savedQuestionId === id)!;
+
+  it("keeps a mark only while it says something the Transcripts do not", async () => {
+    ready();
+    const found = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    const notFound = core.addSavedQuestion({ candidateId: candidate.id, text: "Testleri nasıl yazdınız?" });
+    fake.askedQuestions = [{ ...payments, savedQuestionId: found.id }];
+    await core.findAskedQuestions(interview.id);
+
+    // Against the Transcripts: the Interviewer's word is kept as a mark.
+    expect(core.setSavedQuestionAsked(found.id, false).mark).toBe("notAsked");
+    expect(stateOf(found.id)).toMatchObject({ state: "planned", decidedBy: "interviewer", differsFromTranscripts: true });
+    expect(core.setSavedQuestionAsked(notFound.id, true).mark).toBe("asked");
+    expect(stateOf(notFound.id)).toMatchObject({ state: "asked", decidedBy: "interviewer", differsFromTranscripts: true });
+
+    // Back to what the Transcripts say: no mark is needed, and none is left.
+    expect(core.setSavedQuestionAsked(found.id, true).mark).toBeNull();
+    expect(stateOf(found.id)).toMatchObject({ state: "asked", decidedBy: "transcripts" });
+    expect(core.setSavedQuestionAsked(notFound.id, false).mark).toBeNull();
+    expect(stateOf(notFound.id)).toMatchObject({ state: "notFound", decidedBy: "transcripts" });
+  });
+
+  it("marks a question no Transcript was checked for as asked, and takes the mark off again", () => {
+    const question = core.addSavedQuestion({ candidateId: candidate.id, text: "Kuyrukları nasıl izlediniz?" });
+
+    expect(core.setSavedQuestionAsked(question.id, true).mark).toBe("asked");
+    expect(stateOf(question.id)).toMatchObject({ state: "asked", decidedBy: "interviewer", differsFromTranscripts: false });
+    expect(core.setSavedQuestionAsked(question.id, false).mark).toBeNull();
+    expect(stateOf(question.id)).toMatchObject({ state: "planned", decidedBy: "transcripts" });
+    expect(() => core.setSavedQuestionAsked("no-such-question", true)).toThrow(NotFoundError);
+  });
+});
+
 describe("Asked Questions from the AI client", () => {
   it("saves them with the same quote check, marked as from the AI client, only while saving is allowed", () => {
     confirmRoles(importTranscript());

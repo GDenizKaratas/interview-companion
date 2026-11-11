@@ -7,7 +7,6 @@ import {
   type Core,
   type CvFile,
   type EvidenceSources,
-  type QuestionMark,
   type SpeakerRole,
 } from "../core/index.ts";
 
@@ -327,12 +326,18 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
     );
   });
 
-  // The Interviewer's mark on a question: "asked", "notAsked", or null, which removes it. Core
-  // refuses anything else.
-  api.put("/saved-questions/:id/mark", async (c) => {
+  // The Interviewer says whether a question was asked: the body is { asked: true | false }. Core
+  // keeps a mark only when that differs from what the Transcripts say.
+  api.put("/saved-questions/:id/asked", async (c) => {
     const fields = await jsonFields(c);
-    return respondOrRefuse(c, () => c.json(core.markSavedQuestion(c.req.param("id"), (fields.mark ?? null) as QuestionMark | null)));
+    return respondOrRefuse(c, () => {
+      if (typeof fields.asked !== "boolean") throw new InvalidInputError("asked", "required", "Say whether the question was asked: true or false.");
+      return c.json(core.setSavedQuestionAsked(c.req.param("id"), fields.asked));
+    });
   });
+
+  // Removes the Interviewer's mark, so the question follows the Transcripts again.
+  api.delete("/saved-questions/:id/mark", (c) => respondOrRefuse(c, () => c.json(core.markSavedQuestion(c.req.param("id"), null))));
 
   api.delete("/saved-questions/:id", (c) =>
     respondOrRefuse(c, () => {

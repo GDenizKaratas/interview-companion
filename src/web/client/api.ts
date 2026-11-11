@@ -180,8 +180,10 @@ export const api = {
   tagSavedQuestion: (id: string, interviewId: string | null) =>
     request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}/interview`, sendJson("PUT", { interviewId })),
   // The Interviewer's own mark; null removes it, and the state follows the Transcripts again.
-  markSavedQuestion: (id: string, mark: QuestionMark | null) =>
-    request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}/mark`, sendJson("PUT", { mark })),
+  setSavedQuestionAsked: (id: string, asked: boolean) =>
+    request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}/asked`, sendJson("PUT", { asked })),
+  removeSavedQuestionMark: (id: string) =>
+    request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}/mark`, { method: "DELETE" }),
   deleteSavedQuestion: (id: string) => request<void>(`/saved-questions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   // position is in the list as shown with the Interview filter interviewId.
   moveSavedQuestion: (id: string, position: number, interviewId: string | null) =>
