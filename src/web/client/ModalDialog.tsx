@@ -20,11 +20,14 @@ interface ModalDialogProps {
   wide?: boolean;
   // Room for a guide with steps side by side.
   large?: boolean;
+  // Held near the top of the window instead of in its middle, so a dialog whose height changes
+  // with a choice inside it keeps its top, and that choice, in place.
+  top?: boolean;
 }
 
 // The app's small modal dialog: the page behind it cannot be clicked, and Escape cancels only this
 // dialog, not one it was opened from.
-export function ModalDialog({ title, kind, children, actions, onCancel, wide, large }: ModalDialogProps) {
+export function ModalDialog({ title, kind, children, actions, onCancel, wide, large, top }: ModalDialogProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const pressedOutside = useRef(false);
@@ -36,7 +39,7 @@ export function ModalDialog({ title, kind, children, actions, onCancel, wide, la
   return (
     <dialog
       ref={dialog}
-      className={large ? "confirm-dialog wide large" : wide ? "confirm-dialog wide" : "confirm-dialog"}
+      className={`${large ? "confirm-dialog wide large" : wide ? "confirm-dialog wide" : "confirm-dialog"}${top ? " top" : ""}`}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();

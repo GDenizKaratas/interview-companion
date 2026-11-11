@@ -10,6 +10,7 @@ import {
   type InterviewPlanRequest,
   type SpeakerRole,
 } from "../core/index.ts";
+import { mcpSetup } from "./mcp-setup.ts";
 
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
 // mcpServerPath is the absolute path of the MCP server's file, and dataDir the data folder the
@@ -24,14 +25,11 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   // Every Candidate's Interviews that have a date, earliest first, each with its Candidate.
   api.get("/dated-interviews", (c) => c.json(core.listDatedInterviews()));
 
-  // The command that adds the MCP server to Claude Code for every folder, or null when the path
-  // is not known. A data folder other than the default is passed on, so both read the same data.
+  // What connects Claude Code and Claude Desktop to the MCP server, or nulls when the path is not
+  // known. The Node.js that runs this server runs the MCP server too.
   api.get("/mcp-setup", (c) => {
-    if (!options.mcpServerPath) return c.json({ command: null });
-    const dataDir = options.dataDir ? ` -e DATA_DIR=${shellQuoted(options.dataDir)}` : "";
-    return c.json({
-      command: `claude mcp add --scope user interview-companion${dataDir} -- node ${shellQuoted(options.mcpServerPath)}`,
-    });
+    if (!options.mcpServerPath) return c.json({ command: null, desktopConfig: null });
+    return c.json(mcpSetup({ serverPath: options.mcpServerPath, nodePath: process.execPath, dataDir: options.dataDir }));
   });
 
   api.get("/candidates", (c) => c.json(core.listCandidates()));
@@ -553,9 +551,4 @@ async function respondOrRefuse(c: Context, run: () => Response | Promise<Respons
 function attachment(fileName: string): string {
   const ascii = fileName.normalize("NFD").replace(/[^\x20-\x7e]/g, "").replace(/["\\]/g, "") || "candidate.zip";
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(fileName).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)}`;
-}
-
-// A path as one shell word: as it is when it has only safe characters, in single quotes otherwise.
-function shellQuoted(path: string): string {
-  return /^[\w@%+=:,./-]+$/.test(path) ? path : `'${path.replaceAll("'", "'\\''")}'`;
 }
