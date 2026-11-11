@@ -2,13 +2,10 @@ import { useEffect, useState } from "react";
 import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
 import { api } from "./api.ts";
 import { HowItWorksDialog } from "./HowItWorksDialog.tsx";
-import { McpGuideDialog } from "./McpGuideDialog.tsx";
+import { McpGuideDialog, openMcpGuide } from "./McpGuideDialog.tsx";
 import { linkTo } from "./navigation.ts";
 import { languages } from "./languages.ts";
 import { useText } from "./text.tsx";
-
-// Fired on window to open the guide for using AI through MCP, from anywhere in the app.
-export const openMcpGuide = "open-mcp-guide";
 
 type Open = "howItWorks" | "apiKey" | "mcp" | undefined;
 
@@ -42,7 +39,11 @@ export function AppBar() {
         ?
       </button>
       <button type="button" className="bar-button" title={keySaved ? text.aiSettings.saved : undefined} onClick={() => setOpen("apiKey")}>
-        {keySaved && <span className="bar-check">✔</span>}
+        {keySaved && (
+          <span className="bar-check" aria-hidden="true">
+            ✔
+          </span>
+        )}
         {text.aiSettings.open}
       </button>
       <button type="button" className="bar-button" onClick={() => setOpen("mcp")}>

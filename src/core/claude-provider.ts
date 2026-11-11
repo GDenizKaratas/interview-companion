@@ -368,7 +368,7 @@ function languageName(language: string): string {
 function failureOf(error: unknown): AiProviderError {
   const options = { cause: error };
   if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) {
-    return new AiProviderError("apiKeyRefused", "The API key was refused. Check it in AI settings.", options);
+    return new AiProviderError("apiKeyRefused", "The API key was refused. Check it under “Use with an API key”.", options);
   }
   if (error instanceof Anthropic.RateLimitError) {
     return new AiProviderError("rateLimited", "Too many requests to the model. Try again in a minute.", options);

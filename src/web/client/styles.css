@@ -440,6 +440,12 @@ button.link-button:hover:not(:disabled) {
   max-height: min(34rem, 75vh);
 }
 
+.settings-other-way {
+  margin: 0.75rem 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
 .confirm-dialog-subject p.guide-intro {
   margin-bottom: 0.9rem;
 }
@@ -1020,8 +1026,9 @@ button.range-tab.chosen {
   padding: 0;
 }
 
+/* As tall as the window leaves under the calendar, so the page itself does not scroll. */
 .calendar:not(.expanded) .interview-list {
-  max-height: 17rem;
+  max-height: max(7rem, calc(100vh - 41rem));
   overflow: auto;
 }
 
@@ -1813,7 +1820,7 @@ select.note-tag,
   }
 }
 
-/* The dialog that asks before anything is deleted, and the AI settings. */
+/* The dialog that asks before anything is deleted, and the API key dialog. */
 .confirm-dialog {
   width: min(26rem, calc(100vw - 2rem));
   box-sizing: border-box;
@@ -2127,7 +2134,7 @@ button.role-choice.chosen:hover:not(:disabled) {
   color: var(--muted);
 }
 
-/* AI settings */
+/* The API key dialog */
 .settings-dialog {
   width: min(34rem, calc(100vw - 2rem));
 }

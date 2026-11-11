@@ -75,7 +75,7 @@ Candidate ids come from `list_candidates`; Interview ids come from `get_candidat
 |---|---|---|
 | `brief` | `candidate`: the Candidate's name or id | The steps, rules, and template for preparing one Candidate. |
 
-In Claude Code it is the command `/mcp__interview-companion__brief <name>`. The **Copy brief command** button in a Candidate's Workspace bar copies it with the Candidate's name, so you only paste it.
+In Claude Code it is the command `/mcp__interview-companion__brief <name>`. The **Copy brief command** button in the Candidate Brief dialog of a Candidate's Workspace copies it with the Candidate's name, so you only paste it.
 
 The steps depend on the "Saving from your AI client" switch at the moment the command runs:
 

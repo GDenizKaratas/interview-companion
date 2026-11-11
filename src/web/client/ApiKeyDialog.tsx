@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { openMcpGuide } from "./McpGuideDialog.tsx";
 import { useText } from "./text.tsx";
-
-// The window event that opens the MCP guide. The app bar listens for it; it is named here too so
-// this dialog does not import the bar that renders it.
-const openMcpGuideEvent = "open-mcp-guide";
 
 // Fired on window when the API key is saved or removed, so the AI Notes panel can update.
 export const apiKeyChanged = "api-key-changed";
@@ -96,15 +93,15 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
         <p>{t.whatIsSent}</p>
         <p>{t.notSent}</p>
       </div>
-      {saved === false && (
-        <p className="settings-detail">
+      {saved !== undefined && (
+        <p className="settings-other-way">
           {t.noKeyWay}{" "}
           <button
             type="button"
             className="link-button"
             onClick={() => {
               onClose();
-              window.dispatchEvent(new Event(openMcpGuideEvent));
+              window.dispatchEvent(new Event(openMcpGuide));
             }}
           >
             {text.mcpGuide.open}

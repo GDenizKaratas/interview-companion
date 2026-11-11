@@ -4,6 +4,9 @@ import { ModalDialog } from "./ModalDialog.tsx";
 import { StepFlow } from "./StepFlow.tsx";
 import { useText } from "./text.tsx";
 
+// Fired on window to open this guide from anywhere in the app. The app bar listens for it.
+export const openMcpGuide = "open-mcp-guide";
+
 // How to use AI without an API key: the Interviewer's own AI client reads the app's data through
 // the MCP server. The steps, the command to run once, and the switch that lets the client save
 // what it writes. The command comes from the server, so it holds the real path of this copy and

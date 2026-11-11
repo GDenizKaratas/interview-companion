@@ -156,7 +156,7 @@ export function CandidateList() {
           </table>
         )}
         {pages > 1 && (
-          <nav className="pager" aria-label={text.candidates.title}>
+          <nav className="pager" aria-label={t.pages}>
             <button type="button" className="icon-button" aria-label={t.previousPage} title={t.previousPage} disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>
               ‹
             </button>

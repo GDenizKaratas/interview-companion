@@ -352,7 +352,7 @@ describe("MCP server", () => {
     }
     expect(text).toMatch(/saving from the AI client is off/i);
     expect(text).toMatch(/only read/i);
-    expect(text).toContain("AI Settings");
+    expect(text).toContain("Use with MCP");
   });
 
   it("brief writes and saves AI Notes, Suggested Questions, and the Candidate Brief while saving is on", async () => {
@@ -411,7 +411,7 @@ describe("MCP server", () => {
 
     const message = await refusal("save_ai_notes", { interviewId: interview.id, notes: [redisNote] });
 
-    expect(message).toContain("AI Settings");
+    expect(message).toContain("Use with MCP");
     expect(core.listAiNotes(interview.id)).toEqual([]);
   });
 
@@ -438,7 +438,7 @@ describe("MCP server", () => {
       answerSummary: "Said they used Redis with BullMQ.",
       answerEvidence: [{ segmentNumber: 2, quote: "Redis with BullMQ" }],
     };
-    expect(await refusal("save_asked_questions", { interviewId: interview.id, askedQuestions: [askedQueue] })).toContain("AI Settings");
+    expect(await refusal("save_asked_questions", { interviewId: interview.id, askedQuestions: [askedQueue] })).toContain("Use with MCP");
     core.allowAiClientWrites(true);
 
     const result = (await call("save_asked_questions", {
@@ -477,7 +477,7 @@ describe("MCP server", () => {
   it("save_candidate_brief refuses while saving from the AI client is off", async () => {
     const message = await refusal("save_candidate_brief", { candidateId: candidate.id, text: "# Brief", evidence: [] });
 
-    expect(message).toContain("AI Settings");
+    expect(message).toContain("Use with MCP");
     expect(await call("get_candidate_brief", { candidateId: candidate.id })).toBeNull();
   });
 

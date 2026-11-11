@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 export function StepFlow({ steps, label }: { steps: { title: string; hint: string }[]; label: string }) {
   return (
     // Up to four steps share one row; more are laid out three to a row.
-    <ol className={steps.length <= 4 ? "step-flow one-row" : "step-flow rows-of-three"} style={{ "--steps": steps.length } as CSSProperties} aria-label={label}>
+    <ol className={steps.length <= 4 ? "step-flow" : "step-flow rows-of-three"} style={{ "--steps": steps.length } as CSSProperties} aria-label={label}>
       {steps.map((step, index) => (
         <li key={step.title} className="step">
           <span className="step-number">{index + 1}</span>

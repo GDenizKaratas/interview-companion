@@ -285,7 +285,8 @@ function NoteItem({
   );
 }
 
-// "14:02" for a note saved today, "2026-11-03 14:02" otherwise, in this computer's time zone.
+// The time alone for a note saved today, the day and month first otherwise, in the interface
+// language and this computer's time zone.
 function formatSavedAt(savedAt: string, languageCode: string): string {
   const saved = new Date(savedAt);
   const today = new Date();
