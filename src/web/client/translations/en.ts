@@ -549,6 +549,12 @@ const text = {
     required: "Type a word to search for.",
     failed: "The search could not be run.",
   },
+  // Refusals from core that no panel words in its own way. Every other refusal reason has its
+  // words beside the panel that shows it; refusal-text.ts gathers them into one complete map.
+  refusals: {
+    candidateExists: "This Candidate is already in the app with this role.",
+    aiClientWritesOff: "Saving from your AI client is off. Turn it on under “Use with MCP”, then try again.",
+  },
   panels: {
     expand: "Open full screen",
     expandWord: "Full screen",

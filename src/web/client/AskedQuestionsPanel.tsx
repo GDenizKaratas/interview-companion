@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from "react";
-import { generationErrorMessage } from "./AiNotesPanel.tsx";
 import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
 import { ConnectAi } from "./ConnectAi.tsx";
 import { api, type AskedQuestion, type AskedQuestions, type Interview, type Transcript } from "./api.ts";
 import { ExchangeDialog } from "./ExchangeDialog.tsx";
 import { fill } from "./languages.ts";
+import { generationErrorMessage } from "./refusal-text.ts";
 import { useText } from "./text.tsx";
 import { WrongMark } from "./WrongMark.tsx";
 
