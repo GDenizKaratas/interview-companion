@@ -98,6 +98,35 @@ export function listCandidateRoles(db: DatabaseSync): string[] {
   return rolesInOrderWritten(db).sort(alphabetical.compare);
 }
 
+// A role that at least one Candidate has, with those Candidates, oldest first.
+export interface RoleInUse {
+  // The spelling written first among the Candidates who share the role.
+  role: string;
+  candidateIds: string[];
+}
+
+// Every role that a Candidate has, once each by the role rule (isSameRole), in alphabetical
+// order. Roles that only Role Questions use are left out: no Candidate can be filtered by them.
+export function listRolesInUse(db: DatabaseSync): RoleInUse[] {
+  const rows = db.prepare("SELECT id, role FROM candidate ORDER BY rowid").all() as unknown as { id: string; role: string }[];
+  const roles: RoleInUse[] = [];
+  for (const row of rows) {
+    const known = roles.find((existing) => isSameRole(existing.role, row.role));
+    if (known) known.candidateIds.push(row.id);
+    else roles.push({ role: row.role, candidateIds: [row.id] });
+  }
+  const alphabetical = new Intl.Collator("en", { sensitivity: "accent" });
+  return roles.sort((a, b) => alphabetical.compare(a.role, b.role));
+}
+
+// Whether a Candidate already has this role, by the rule that saves roles: spaces trimmed and
+// collapsed, letter case ignored. An empty role is in use by no one.
+export function isRoleInUse(db: DatabaseSync, role: string): boolean {
+  const cleaned = collapseSpaces(role.trim());
+  if (cleaned === "") return false;
+  return listRolesInUse(db).some((existing) => isSameRole(existing.role, cleaned));
+}
+
 // Candidate roles first, then roles that only Role Questions use, each in the order first written.
 function rolesInOrderWritten(db: DatabaseSync): string[] {
   const rows = db

@@ -119,3 +119,39 @@ describe("Candidates", () => {
     expect(second.role).toBe("backend engineer");
   });
 });
+
+describe("Roles in use", () => {
+  it("lists each role a Candidate has, in alphabetical order, with its Candidates", () => {
+    const ada = core.createCandidate({ name: "Ada Demir", role: "Veri Analisti" });
+    const can = core.createCandidate({ name: "Can Aksoy", role: "Backend Engineer" });
+    const ece = core.createCandidate({ name: "Ece Yalın", role: "Veri Analisti" });
+
+    expect(core.listRolesInUse()).toEqual([
+      { role: "Backend Engineer", candidateIds: [can.id] },
+      { role: "Veri Analisti", candidateIds: [ada.id, ece.id] },
+    ]);
+  });
+
+  it("counts roles that differ only in letter case or spaces as one, under the spelling written first", () => {
+    const ada = core.createCandidate({ name: "Ada Demir", role: "veri analisti" });
+    const can = core.createCandidate({ name: "Can Aksoy", role: "VERİ  ANALİSTİ" });
+
+    expect(core.listRolesInUse()).toEqual([{ role: "veri analisti", candidateIds: [ada.id, can.id] }]);
+  });
+
+  it("leaves out a role that only Role Questions use", () => {
+    core.addRoleQuestion({ role: "Data Engineer", text: "How do you test a pipeline?" });
+
+    expect(core.listRolesInUse()).toEqual([]);
+  });
+
+  it("says a role is in use when a Candidate has it, by the same rule that saves roles", () => {
+    core.createCandidate({ name: "Ada Demir", role: "Veri Analisti" });
+    core.addRoleQuestion({ role: "Data Engineer", text: "How do you test a pipeline?" });
+
+    expect(core.isRoleInUse("  VERİ   analisti ")).toBe(true);
+    expect(core.isRoleInUse("Veri Bilimci")).toBe(false);
+    expect(core.isRoleInUse("Data Engineer")).toBe(false);
+    expect(core.isRoleInUse("   ")).toBe(false);
+  });
+});
