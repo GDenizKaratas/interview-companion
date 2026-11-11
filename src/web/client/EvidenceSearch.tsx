@@ -6,17 +6,21 @@ import { MarkedText } from "./MarkedText.tsx";
 import { useText } from "./text.tsx";
 import { formatTime } from "./transcript-text.ts";
 
-// One search over the Candidate's CV and Transcripts, in the Workspace bar. The results open in
-// a panel under the bar, over the Workspace, so they never push the panels down. Each result
-// shows the exact excerpt and where it is; clicking it closes the results and opens that place
-// in the CV or Transcript panel. The results can be shown again until the search is cleared.
+// One search over the Candidate's CV and Transcripts: a single field in the Workspace bar, and
+// Enter searches. The results open in a panel under the bar, over the Workspace, so they never
+// push the panels down; what to search, and whether only the Candidate's words count, is chosen
+// there. Each result shows the exact excerpt and where it is; clicking it closes the results and
+// opens that place in the CV or Transcript. Focusing the field shows the last results again.
 export function EvidenceSearch({
   candidateId,
   interviews,
+  resetKey,
   onOpen,
 }: {
   candidateId: string;
   interviews: Interview[];
+  // Changes when an Interview is deleted: the results may point into it, so they are dropped.
+  resetKey: number;
   onOpen: (result: EvidenceResult) => void;
 }) {
   const { text } = useText();
@@ -28,6 +32,13 @@ export function EvidenceSearch({
   const [search, setSearch] = useState<SearchResult | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [open, setOpen] = useState(false);
+  const [shownResetKey, setShownResetKey] = useState(resetKey);
+  if (shownResetKey !== resetKey) {
+    setShownResetKey(resetKey);
+    setSearch(undefined);
+    setError(undefined);
+    setOpen(false);
+  }
 
   async function runSearch(options = { sources, candidateOnly }) {
     setSearching(true);
@@ -93,51 +104,61 @@ export function EvidenceSearch({
       }}
     >
       <form className="evidence-search-form" onSubmit={submit}>
-        <input
-          type="search"
-          value={query}
-          placeholder={t.placeholder}
-          aria-label={t.label}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <select aria-label={t.sourcesLabel} value={sources} onChange={(event) => changeOptions({ sources: event.target.value as EvidenceSources, candidateOnly })}>
-          <option value="all">{t.sources.all}</option>
-          <option value="cv">{t.sources.cv}</option>
-          <option value="transcripts">{t.sources.transcripts}</option>
-        </select>
-        <label className="evidence-candidate-only" title={t.candidateOnlyHint}>
-          <input type="checkbox" checked={candidateOnly} onChange={(event) => changeOptions({ sources, candidateOnly: event.target.checked })} />
-          {t.candidateOnly}
+        <label className="search-field">
+          <SearchIcon />
+          <input
+            type="search"
+            value={query}
+            placeholder={t.placeholder}
+            aria-label={t.label}
+            onChange={(event) => setQuery(event.target.value)}
+            onFocus={() => (search || error) && setOpen(true)}
+          />
         </label>
-        <button type="submit" disabled={searching}>
-          {searching ? t.searching : t.submit}
-        </button>
-        {search && !open && (
-          <button type="button" className="quiet" onClick={() => setOpen(true)}>
-            {resultCount}
-          </button>
-        )}
-        {(search || error) && (
-          <button type="button" className="quiet" onClick={clear}>
-            {t.clear}
-          </button>
-        )}
+        {searching && <span className="hint">{t.searching}</span>}
       </form>
-      {error && open && (
+      {(search || error) && open && (
         <div className="evidence-results">
-          <p className="error">{error}</p>
-        </div>
-      )}
-      {search && open && (
-        <div className="evidence-results">
-          <button type="button" className="icon-button evidence-close" aria-label={t.closeResults} title={t.closeResults} onClick={() => setOpen(false)}>
-            ×
-          </button>
-          {search.results.length === 0 ? (
+          <div className="evidence-options">
+            <div className="view-choice" role="group" aria-label={t.sourcesLabel}>
+              {(["all", "cv", "transcripts"] as const).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={sources === key}
+                  className={sources === key ? "role-choice chosen" : "role-choice"}
+                  onClick={() => changeOptions({ sources: key, candidateOnly })}
+                >
+                  {t.sources[key]}
+                </button>
+              ))}
+            </div>
+            <label className="evidence-candidate-only">
+              <input
+                type="checkbox"
+                checked={candidateOnly}
+                disabled={sources === "cv"}
+                onChange={(event) => changeOptions({ sources, candidateOnly: event.target.checked })}
+              />
+              <span>
+                {t.candidateOnly}
+                <span className="hint">{t.candidateOnlyHint}</span>
+              </span>
+            </label>
+            <button type="button" className="quiet" onClick={clear}>
+              {t.clear}
+            </button>
+            <button type="button" className="icon-button evidence-close" aria-label={t.closeResults} title={t.closeResults} onClick={() => setOpen(false)}>
+              ×
+            </button>
+          </div>
+          {error && <p className="error">{error}</p>}
+          {search && search.results.length === 0 && (
             <p className="empty">
               {t.nothingFound} <span className="hint">{t.nothingFoundDetail}</span>
             </p>
-          ) : (
+          )}
+          {search && search.results.length > 0 && (
             <p className="evidence-summary">
               <strong>
                 {fill(t.foundIn, {
@@ -147,10 +168,10 @@ export function EvidenceSearch({
               <span className="hint">{resultCount}</span>
             </p>
           )}
-          {search.unconfirmedInterviewIds.length > 0 && (
+          {search && search.unconfirmedInterviewIds.length > 0 && (
             <p className="hint">{fill(t.unconfirmed, { interviews: search.unconfirmedInterviewIds.map(nameOf).join(", ") })}</p>
           )}
-          {search.results.length > 0 && (
+          {search && search.results.length > 0 && (
             <ol className="evidence-list">
               {search.results.map((result) => (
                 <li key={result.source === "cv" ? `cv-${result.page}-${result.excerptStart}` : `${result.interviewId}-${result.segmentNumber}`}>
@@ -167,5 +188,14 @@ export function EvidenceSearch({
         </div>
       )}
     </section>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10.2 10.2 14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
   );
 }

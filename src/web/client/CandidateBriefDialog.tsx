@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api, type BriefEvidence, type Candidate, type CandidateBrief, type Interview } from "./api.ts";
+import { CopyBriefCommand } from "./CopyBriefCommand.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill, type Text } from "./languages.ts";
 import { inlineParts, parseMarkdown, type MarkdownBlock } from "./markdown.ts";
@@ -55,6 +56,8 @@ export function CandidateBriefDialog({
           {candidate.name}
           <span className="role">{t.title}</span>
         </h2>
+        {/* The command that makes an AI client write and save this brief. */}
+        <CopyBriefCommand candidateName={candidate.name} />
         <button type="button" className="icon-button" aria-label={t.close} title={t.close} onClick={onClose}>
           ×
         </button>

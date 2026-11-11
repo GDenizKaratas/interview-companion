@@ -17,23 +17,10 @@ interface SuggestedQuestionsProps {
   onAccepted: () => void;
 }
 
-// Suggested Questions, under the Saved Questions. Collapsed by default: nothing is loaded and
-// no model call can happen until the Interviewer opens it, and generation runs only on the button.
-export function SuggestedQuestions(props: SuggestedQuestionsProps) {
-  const { text } = useText();
-  const t = text.panels.questions.suggestions;
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="suggestions">
-      <button type="button" className="link-button suggestions-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-        {open ? "▾" : "▸"} {t.open}
-      </button>
-      {open && <OpenSuggestions {...props} />}
-    </div>
-  );
-}
-
-function OpenSuggestions({ candidateId, interviews, sourceVersion, onAccepted }: SuggestedQuestionsProps) {
+// Suggested Questions, the second tab of the Questions card. The card mounts this only once the
+// Interviewer opens the tab, so nothing is loaded and no model call can happen before that, and
+// generation runs only on the button.
+export function SuggestedQuestions({ candidateId, interviews, sourceVersion, onAccepted }: SuggestedQuestionsProps) {
   const { text } = useText();
   const t = text.panels.questions.suggestions;
   const [apiKeySaved, setApiKeySaved] = useState<boolean | undefined>();

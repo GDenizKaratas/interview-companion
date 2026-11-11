@@ -185,6 +185,9 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   api.get("/candidates/:id/saved-question-checks", (c) =>
     respondOrRefuse(c, () => c.json(core.listSavedQuestionChecks(c.req.param("id")))),
   );
+  api.get("/candidates/:id/saved-question-states", (c) =>
+    respondOrRefuse(c, () => c.json(core.listSavedQuestionStates(c.req.param("id")))),
+  );
   // Generates the Interview's AI Notes with the model. Only this route ever calls it.
   api.post("/interviews/:id/ai-notes", (c) =>
     respondOrRefuse(c, async () => c.json(await core.generateAiNotes(c.req.param("id")), 201)),
@@ -203,6 +206,9 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
       return c.body(null, 204);
     }),
   );
+
+  // One Candidate at a glance: who they are, the CV, and each Interview with its Transcript's state.
+  api.get("/candidates/:id/overview", (c) => respondOrRefuse(c, () => c.json(core.getCandidateOverview(c.req.param("id")))));
 
   api.get("/candidates/:id/interviews", (c) =>
     respondOrRefuse(c, () => c.json(core.listInterviews(c.req.param("id")))),

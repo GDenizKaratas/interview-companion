@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useText } from "./text.tsx";
 
+// The name of the document event that closes every full-screen card.
+export const collapsePanels = "collapse-panels";
+
 // A card with a title and a full-screen button that shows on hover or focus. Full screen turns
 // the same card into a layer almost the size of the window, over a dimmed page; the card stays
 // mounted, so nothing loaded or typed is lost. Escape (outside a field or dialog), the button,
@@ -25,6 +28,13 @@ export function ExpandableCard({
   const { text } = useText();
   const [expanded, setExpanded] = useState(false);
   const card = useRef<HTMLElement>(null);
+
+  // The Workspace asks every card to leave full screen when it shows a quote in another card.
+  useEffect(() => {
+    const collapse = () => setExpanded(false);
+    document.addEventListener(collapsePanels, collapse);
+    return () => document.removeEventListener(collapsePanels, collapse);
+  }, []);
 
   useEffect(() => {
     if (!expanded) return;
