@@ -44,7 +44,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateCvCheck, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewAiStep, InterviewerNote, QuestionMark, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, InputRule, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateCvCheck, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewAiStep, InterviewerNote, QuestionMark, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -105,11 +105,8 @@ export const api = {
   getCandidate: (id: string) => request<Candidate>(`/candidates/${encodeURIComponent(id)}`),
   createCandidate: (input: NewCandidate) => request<Candidate>("/candidates", sendJson("POST", input)),
   deleteCandidate: (id: string) => request<void>(`/candidates/${encodeURIComponent(id)}`, { method: "DELETE" }),
-  createCandidateWithCv: (input: NewCandidate, cv: File, options: { onlyIfNew?: boolean; signal?: AbortSignal } = {}) =>
-    request<Candidate>("/candidates", {
-      ...sendForm(options.onlyIfNew ? { ...input, cv, onlyIfNew: "true" } : { ...input, cv }),
-      signal: options.signal,
-    }),
+  createCandidateWithCv: (input: NewCandidate, cv: File, options: { onlyIfNew?: boolean } = {}) =>
+    request<Candidate>("/candidates", sendForm(options.onlyIfNew ? { ...input, cv, onlyIfNew: "true" } : { ...input, cv })),
   // name is left out to have core read it from the CV.
   checkCandidateCv: (role: string, cv: File, name?: string, signal?: AbortSignal) =>
     request<CandidateCvCheck>("/candidate-cv-checks", {

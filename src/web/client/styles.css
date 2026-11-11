@@ -835,6 +835,29 @@ button.cv-drop.compact {
   border-width: 1px;
 }
 
+/* The drop area with the quiet folder link: under it while the list is empty, beside it after. */
+.add-many-choose {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.add-many-choose.compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.add-many-choose.compact button.cv-drop {
+  flex: 1 1 auto;
+}
+
+button.link-button.add-many-folder {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .cv-drop-title {
   font-size: 0.95rem;
   font-weight: 600;

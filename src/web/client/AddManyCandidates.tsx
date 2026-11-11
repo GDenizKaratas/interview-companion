@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { AddButton } from "./AddButton.tsx";
-import { api, ApiError, type CandidateCvCheck } from "./api.ts";
+import { api, ApiError, type CandidateCvCheck, type InputRule } from "./api.ts";
+import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { fill, type Text } from "./languages.ts";
+import { pdfsOfFolder, readDrop, type PickedFiles } from "./picked-files.ts";
 import { useText } from "./text.tsx";
 
 // How many CVs are checked at the same time, so the page and the server stay responsive.
@@ -17,8 +19,11 @@ interface CvRow {
   nameEdited: boolean;
   // Core's answer for this file, or undefined until the first one arrives.
   check: CandidateCvCheck | undefined;
-  // The row waits for a check (again): it is new, or its name or the role changed.
+  // The row waits for a check (again): it is new, or its name or the role changed. It counts as
+  // being checked at once, so nothing is added from an answer to the old name or role.
   pending: boolean;
+  // A changed name or role is sent only when typing pauses; until then the check is held back.
+  holding: boolean;
   // Raised on each change that needs a new check, so an answer to an older one is ignored.
   version: number;
   checkFailed: boolean;
@@ -29,7 +34,7 @@ interface CvRow {
 type RowStatus =
   | { kind: "checking" }
   | { kind: "checkFailed" }
-  | { kind: "refused"; rule: string }
+  | { kind: "refused"; rule: InputRule }
   | { kind: "needsName" }
   | { kind: "alreadyAdded" }
   | { kind: "ready" };
@@ -42,13 +47,26 @@ type Phase =
   | { kind: "adding"; done: number; total: number }
   | { kind: "finished"; outcomes: Map<number, Outcome>; stopped: boolean };
 
-// Every judgement comes from core's check: the browser only shows it.
+// Every judgement comes from core's check: the browser only shows the status core gave.
 function statusOf(row: CvRow): RowStatus {
   if (row.check === undefined) return row.checkFailed ? { kind: "checkFailed" } : { kind: "checking" };
-  if (row.check.refusal !== null) return { kind: "refused", rule: row.check.refusal };
-  if (row.check.name === "") return { kind: "needsName" };
-  if (row.check.alreadyAdded) return { kind: "alreadyAdded" };
-  return { kind: "ready" };
+  const { status, refusal } = row.check;
+  return status === "refused" ? { kind: "refused", rule: refusal ?? "format" } : { kind: status };
+}
+
+function newRow(key: number, file: File): CvRow {
+  return {
+    key,
+    file,
+    name: "",
+    nameEdited: false,
+    check: undefined,
+    pending: true,
+    holding: false,
+    version: 0,
+    checkFailed: false,
+    addAnyway: false,
+  };
 }
 
 function willBeAdded(row: CvRow): boolean {
@@ -62,41 +80,53 @@ function willBeAdded(row: CvRow): boolean {
 export function useAddManyCandidates({
   role,
   roleField,
+  shown,
+  initialFiles,
   onAdded,
   onClose,
 }: {
   role: string;
   roleField: ReactNode;
+  // Whether this way is the one shown in the dialog.
+  shown: boolean;
+  // Files the dialog opens with, such as PDFs dropped on the Candidate list.
+  initialFiles?: PickedFiles;
   // At least one Candidate was added; the dialog closes and the list shows them.
   onAdded: () => void;
   onClose: () => void;
 }) {
   const { text } = useText();
   const t = text.candidates.many;
-  const [rows, setRows] = useState<CvRow[]>([]);
+  const [rows, setRows] = useState<CvRow[]>(() => (initialFiles?.files ?? []).map((file, i) => newRow(i, file)));
+  const [ignored, setIgnored] = useState(initialFiles?.ignored ?? 0);
   const [phase, setPhase] = useState<Phase>({ kind: "choosing" });
   const [dragging, setDragging] = useState(false);
   const [stopping, setStopping] = useState(false);
-  const [confirmingClose, setConfirmingClose] = useState(false);
+  // Which question is open over the dialog: stop adding, or close and lose the list.
+  const [confirming, setConfirming] = useState<"stop" | "discard" | undefined>();
   const fileInput = useRef<HTMLInputElement>(null);
-  const nextKey = useRef(0);
+  const folderInput = useRef<HTMLInputElement>(null);
+  const nextKey = useRef(initialFiles?.files.length ?? 0);
   const inFlight = useRef(new Map<number, AbortController>());
   const nameTimers = useRef(new Map<number, number>());
   const roleRef = useRef(role);
   const stopRequested = useRef(false);
   const closeWhenStopped = useRef(false);
+  // Whether any run of adding, before a fix of the files not added, added a Candidate. Closing
+  // then shows the Candidate list again with them.
+  const addedAny = useRef(false);
   // Raised when a check ends without changing the rows, so the next waiting row starts.
   const [checksEnded, setChecksEnded] = useState(0);
 
   // A changed role changes which Candidates are already in the app, so every CV is checked again.
+  // The rows count as being checked at once; the check is sent once typing pauses.
   useEffect(() => {
+    if (roleRef.current === role) return;
     roleRef.current = role;
+    for (const controller of inFlight.current.values()) controller.abort();
+    setRows((current) => current.map((row) => ({ ...row, pending: true, holding: true, version: row.version + 1 })));
     const timer = window.setTimeout(() => {
-      setRows((current) =>
-        current.some((row) => row.check !== undefined || row.checkFailed)
-          ? current.map((row) => ({ ...row, pending: true, version: row.version + 1 }))
-          : current,
-      );
+      setRows((current) => current.map((row) => (row.holding ? { ...row, holding: false } : row)));
     }, recheckDelay);
     return () => window.clearTimeout(timer);
   }, [role]);
@@ -105,7 +135,7 @@ export function useAddManyCandidates({
   useEffect(() => {
     for (const row of rows) {
       if (inFlight.current.size >= checksAtOnce) break;
-      if (!row.pending || inFlight.current.has(row.key)) continue;
+      if (!row.pending || row.holding || inFlight.current.has(row.key)) continue;
       const controller = new AbortController();
       inFlight.current.set(row.key, controller);
       const { key, version } = row;
@@ -134,50 +164,49 @@ export function useAddManyCandidates({
     }
   }, [rows, checksEnded]);
 
-  // Stops every check when the dialog closes, and keeps a CV dropped beside the dialog from
-  // opening in the browser tab, which would lose the list.
+  // Stops every check when the dialog closes.
   useEffect(() => {
     const checks = inFlight.current;
     const timers = nameTimers.current;
+    return () => {
+      for (const controller of checks.values()) controller.abort();
+      for (const timer of timers.values()) window.clearTimeout(timer);
+    };
+  }, []);
+
+  // While this way is shown, a CV dropped beside the drop area must not open in the browser tab,
+  // which would lose the list. The one-Candidate form keeps the browser's own dragging.
+  useEffect(() => {
+    if (!shown) return;
     const keepFile = (event: globalThis.DragEvent) => event.preventDefault();
     window.addEventListener("dragover", keepFile);
     window.addEventListener("drop", keepFile);
     return () => {
       window.removeEventListener("dragover", keepFile);
       window.removeEventListener("drop", keepFile);
-      for (const controller of checks.values()) controller.abort();
-      for (const timer of timers.values()) window.clearTimeout(timer);
     };
-  }, []);
+  }, [shown]);
 
-  function addFiles(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    const added = [...files].map(
-      (file): CvRow => ({
-        key: nextKey.current++,
-        file,
-        name: "",
-        nameEdited: false,
-        check: undefined,
-        pending: true,
-        version: 0,
-        checkFailed: false,
-        addAnyway: false,
-      }),
-    );
+  function addFiles(files: File[], ignoredFiles = 0) {
+    if (ignoredFiles > 0) setIgnored((n) => n + ignoredFiles);
+    if (files.length === 0) return;
+    const added = files.map((file) => newRow(nextKey.current++, file));
     setRows((current) => [...current, ...added]);
   }
 
   function changeName(key: number, name: string) {
-    setRows((current) => current.map((row) => (row.key === key ? { ...row, name, nameEdited: true } : row)));
+    inFlight.current.get(key)?.abort();
+    setRows((current) =>
+      current.map((row) =>
+        row.key === key ? { ...row, name, nameEdited: true, pending: true, holding: true, version: row.version + 1 } : row,
+      ),
+    );
     window.clearTimeout(nameTimers.current.get(key));
     nameTimers.current.set(
       key,
       window.setTimeout(() => {
         nameTimers.current.delete(key);
-        setRows((current) =>
-          current.map((row) => (row.key === key ? { ...row, pending: true, version: row.version + 1 } : row)),
-        );
+        setRows((current) => current.map((row) => (row.key === key ? { ...row, holding: false } : row)));
       }, recheckDelay),
     );
   }
@@ -194,7 +223,8 @@ export function useAddManyCandidates({
   function handleDrop(event: DragEvent) {
     event.preventDefault();
     setDragging(false);
-    if (phase.kind === "choosing") addFiles(event.dataTransfer.files);
+    if (phase.kind !== "choosing") return;
+    readDrop(event.dataTransfer).then(({ files, ignored: left }) => addFiles(files, left));
   }
 
   // Adds the ready files one at a time, so one refused file does not stop the others and the
@@ -210,18 +240,38 @@ export function useAddManyCandidates({
       try {
         await api.createCandidateWithCv({ name: row.name, role }, row.file, { onlyIfNew: !row.addAnyway });
         outcomes.set(row.key, { added: true });
+        addedAny.current = true;
       } catch (error) {
         outcomes.set(row.key, { added: false, error });
       }
       setPhase({ kind: "adding", done: i + 1, total: toAdd.length });
     }
-    const addedAny = [...outcomes.values()].some((outcome) => outcome.added);
     if (closeWhenStopped.current) {
-      if (addedAny) onAdded();
-      else onClose();
+      close();
       return;
     }
     setPhase({ kind: "finished", outcomes, stopped: stopRequested.current });
+  }
+
+  // Back from the report to the list, with only the files that were not added, checked again.
+  // Names typed and choices made on them are kept.
+  function fixNotAdded() {
+    if (phase.kind !== "finished") return;
+    const { outcomes } = phase;
+    setRows((current) =>
+      current
+        .filter((row) => !outcomes.get(row.key)?.added)
+        .map((row) => ({ ...row, pending: true, holding: false, checkFailed: false, version: row.version + 1 })),
+    );
+    setIgnored(0);
+    setStopping(false);
+    setPhase({ kind: "choosing" });
+  }
+
+  // Closes the dialog; when anything was added in any run, the Candidate list is loaded again.
+  function close() {
+    if (addedAny.current) onAdded();
+    else onClose();
   }
 
   function stop() {
@@ -229,18 +279,51 @@ export function useAddManyCandidates({
     setStopping(true);
   }
 
-  // Escape, the × button, or Cancel. While files are being added, the Interviewer is asked first.
+  // Escape, the × button, or Cancel. While files are being added, or while a list waits to be
+  // added, the Interviewer is asked first.
   function requestClose() {
-    if (phase.kind === "adding") setConfirmingClose(true);
-    else if (phase.kind === "finished" && [...phase.outcomes.values()].some((outcome) => outcome.added)) onAdded();
-    else onClose();
+    if (phase.kind === "adding") setConfirming("stop");
+    else if (phase.kind === "choosing" && rows.length > 0) setConfirming("discard");
+    else close();
   }
 
-  function confirmClose() {
-    setConfirmingClose(false);
+  // Stop and close: the file being added is finished first. If adding ended while the question
+  // was open, there is nothing left to stop.
+  function confirmStop() {
+    setConfirming(undefined);
+    if (phase.kind !== "adding") {
+      close();
+      return;
+    }
     closeWhenStopped.current = true;
     stop();
   }
+
+  const confirmDialog =
+    confirming === "stop" ? (
+      <ConfirmDialog
+        title={t.confirmClose.title}
+        confirmLabel={t.confirmClose.stop}
+        cancelLabel={t.confirmClose.keepGoing}
+        onConfirm={confirmStop}
+        onCancel={() => setConfirming(undefined)}
+      >
+        <p>{t.confirmClose.detail}</p>
+      </ConfirmDialog>
+    ) : confirming === "discard" ? (
+      <ConfirmDialog
+        title={t.confirmDiscard.title}
+        confirmLabel={t.confirmDiscard.close}
+        cancelLabel={t.confirmDiscard.keep}
+        onConfirm={() => {
+          setConfirming(undefined);
+          close();
+        }}
+        onCancel={() => setConfirming(undefined)}
+      >
+        <p>{t.confirmDiscard.detail}</p>
+      </ConfirmDialog>
+    ) : null;
 
   const statuses = rows.map(statusOf);
   const count = (kind: RowStatus["kind"]) => statuses.filter((status) => status.kind === kind).length;
@@ -254,6 +337,7 @@ export function useAddManyCandidates({
     count("needsName") > 0 ? counted(t.summary.needName, t.summary.needNameOne, count("needsName")) : null,
     count("refused") + count("checkFailed") > 0 ? fill(t.summary.cannot, { count: String(count("refused") + count("checkFailed")) }) : null,
     duplicates.length > 0 ? fill(t.summary.alreadyAdded, { count: String(duplicates.length) }) : null,
+    ignored > 0 ? counted(t.summary.ignored, t.summary.ignoredOne, ignored) : null,
   ].filter((part) => part !== null);
 
   const content =
@@ -281,19 +365,38 @@ export function useAddManyCandidates({
           multiple
           hidden
           onChange={(event) => {
-            addFiles(event.target.files);
+            addFiles([...(event.target.files ?? [])]);
+            event.target.value = "";
+          }}
+        />
+        {/* The browser marks a folder chooser with its own attribute, which React does not know. */}
+        <input
+          ref={(input) => {
+            folderInput.current = input;
+            if (input) input.webkitdirectory = true;
+          }}
+          type="file"
+          hidden
+          onChange={(event) => {
+            const { files, ignored: left } = pdfsOfFolder(event.target.files ?? []);
+            addFiles(files, left);
             event.target.value = "";
           }}
         />
         {phase.kind === "choosing" && (
-          <button
-            type="button"
-            className={rows.length === 0 ? "cv-drop" : "cv-drop compact"}
-            onClick={() => fileInput.current?.click()}
-          >
-            <span className="cv-drop-title">{rows.length === 0 ? t.drop : t.dropMore}</span>
-            {rows.length === 0 && <span className="cv-drop-detail">{t.dropDetail}</span>}
-          </button>
+          <div className={rows.length === 0 ? "add-many-choose" : "add-many-choose compact"}>
+            <button
+              type="button"
+              className={rows.length === 0 ? "cv-drop" : "cv-drop compact"}
+              onClick={() => fileInput.current?.click()}
+            >
+              <span className="cv-drop-title">{rows.length === 0 ? t.drop : t.dropMore}</span>
+              {rows.length === 0 && <span className="cv-drop-detail">{t.dropDetail}</span>}
+            </button>
+            <button type="button" className="link-button add-many-folder" onClick={() => folderInput.current?.click()}>
+              {t.chooseFolder}
+            </button>
+          </div>
         )}
         {rows.length > 0 && (
           <>
@@ -337,11 +440,20 @@ export function useAddManyCandidates({
       </div>
     );
 
+  const notAddedCount = phase.kind === "finished" ? rows.filter((row) => !phase.outcomes.get(row.key)?.added).length : 0;
+
   const actions =
     phase.kind === "finished" ? (
-      <button type="button" onClick={requestClose}>
-        {t.close}
-      </button>
+      <>
+        {notAddedCount > 0 && (
+          <button type="button" className="secondary" onClick={fixNotAdded}>
+            {t.fixNotAdded}
+          </button>
+        )}
+        <button type="button" onClick={requestClose}>
+          {t.close}
+        </button>
+      </>
     ) : phase.kind === "adding" ? (
       <>
         <span className="add-many-progress" aria-live="polite">
@@ -365,11 +477,13 @@ export function useAddManyCandidates({
   return {
     content,
     actions,
+    confirmDialog,
     requestClose,
-    busy: phase.kind === "adding",
-    confirmingClose,
-    confirmClose,
-    cancelClose: () => setConfirmingClose(false),
+    // Closes without asking, as the one-Candidate form does, still showing what any run added.
+    close,
+    addFiles,
+    // While adding, or once the report is shown, the way cannot be changed.
+    locked: phase.kind !== "choosing",
   };
 }
 
@@ -523,7 +637,7 @@ function saveRefusal(text: Text, error: unknown): string {
   return text.candidates.saveFailed;
 }
 
-function refusalReason(text: Text, rule: string): string {
+function refusalReason(text: Text, rule: InputRule): string {
   if (rule === "readableText") return text.panels.cv.refused.readableText;
   if (rule === "format") return text.panels.cv.refused.format;
   if (rule === "required") return text.candidates.many.emptyFile;

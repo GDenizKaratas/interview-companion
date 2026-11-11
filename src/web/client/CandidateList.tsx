@@ -9,6 +9,7 @@ import { InterviewCalendar } from "./InterviewCalendar.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
 import { candidatePath, linkTo, navigate } from "./navigation.ts";
+import { isPdfFile, readDrop, type PickedFiles } from "./picked-files.ts";
 import { RoleQuestionsDialog } from "./RoleQuestionsDialog.tsx";
 import { useText } from "./text.tsx";
 
@@ -28,6 +29,8 @@ export function CandidateList() {
   const [roles, setRoles] = useState<string[]>([]);
   const [roleQuestionsOpen, setRoleQuestionsOpen] = useState(false);
   const [adding, setAdding] = useState(false);
+  // CVs dropped on the page, which the Add Candidate dialog opens with.
+  const [droppedFiles, setDroppedFiles] = useState<PickedFiles | undefined>();
   const [loadError, setLoadError] = useState(false);
   // Opens the file chooser of the import, which lives on this page so it outlasts the add dialog.
   const importCandidate = useRef<ImportCandidateHandle>(null);
@@ -46,6 +49,32 @@ export function CandidateList() {
       () => setLoadError(true),
     );
   }
+
+  // PDFs dropped anywhere on the page open the Add Candidate dialog with them listed. Only while
+  // no dialog is open: a dialog handles what is dropped on it. Dragging text is left alone.
+  useEffect(() => {
+    if (adding || cvOf || roleQuestionsOpen) return;
+    const takesDrop = (event: DragEvent) =>
+      (event.dataTransfer?.types.includes("Files") ?? false) && document.querySelector("dialog[open]") === null;
+    const onDragOver = (event: DragEvent) => {
+      if (takesDrop(event)) event.preventDefault();
+    };
+    const onDrop = (event: DragEvent) => {
+      if (!takesDrop(event) || !event.dataTransfer) return;
+      event.preventDefault();
+      readDrop(event.dataTransfer).then((picked) => {
+        if (!picked.files.some(isPdfFile)) return;
+        setDroppedFiles(picked);
+        setAdding(true);
+      });
+    };
+    window.addEventListener("dragover", onDragOver);
+    window.addEventListener("drop", onDrop);
+    return () => {
+      window.removeEventListener("dragover", onDragOver);
+      window.removeEventListener("drop", onDrop);
+    };
+  }, [adding, cvOf, roleQuestionsOpen]);
 
   // Earlier roles are only suggestions; if they cannot be loaded the form still works.
   function loadRoles() {
@@ -95,7 +124,14 @@ export function CandidateList() {
               <ListIcon />
               {text.roleQuestions.open}
             </button>
-            <AddButton onClick={() => setAdding(true)}>{text.candidates.add}</AddButton>
+            <AddButton
+              onClick={() => {
+                setDroppedFiles(undefined);
+                setAdding(true);
+              }}
+            >
+              {text.candidates.add}
+            </AddButton>
           </span>
         </header>
         <ImportCandidate ref={importCandidate} />
@@ -169,6 +205,7 @@ export function CandidateList() {
         {adding && (
           <AddCandidateDialog
             roles={roles}
+            initialFiles={droppedFiles}
             onClose={() => setAdding(false)}
             onImport={() => {
               importCandidate.current?.chooseFile();
@@ -176,8 +213,11 @@ export function CandidateList() {
             }}
             onAdded={() => {
               setAdding(false);
-              // The new Candidate has no Planned Interview yet, so they show among all Candidates.
+              // The new Candidates have no Planned Interview yet, so they show among all Candidates,
+              // from the first page and with no search hiding them.
               setChosenView("all");
+              setSearch("");
+              setPage(0);
               loadCandidates();
               loadRoles();
             }}

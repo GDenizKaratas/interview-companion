@@ -2,10 +2,10 @@ import { useId, useRef, useState, type ChangeEvent, type FormEvent } from "react
 import { AddButton } from "./AddButton.tsx";
 import { useAddManyCandidates } from "./AddManyCandidates.tsx";
 import { api, ApiError } from "./api.ts";
-import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { cvRefusalMessage } from "./cv-refusal.ts";
 import type { Text } from "./languages.ts";
 import { ModalDialog } from "./ModalDialog.tsx";
+import type { PickedFiles } from "./picked-files.ts";
 import { useText } from "./text.tsx";
 
 // The dialog that adds Candidates, over the Candidate list, in one of two ways: one Candidate
@@ -13,11 +13,14 @@ import { useText } from "./text.tsx";
 // importing a Candidate export instead. It closes once the Candidates are saved.
 export function AddCandidateDialog({
   roles,
+  initialFiles,
   onAdded,
   onImport,
   onClose,
 }: {
   roles: string[];
+  // CVs dropped on the Candidate list: the dialog opens on the many way with them listed.
+  initialFiles?: PickedFiles;
   onAdded: () => void;
   // The Interviewer wants to import a Candidate export instead.
   onImport: () => void;
@@ -28,7 +31,7 @@ export function AddCandidateDialog({
   const rolesId = useId();
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
-  const [way, setWay] = useState<"one" | "many">("one");
+  const [way, setWay] = useState<"one" | "many">(initialFiles ? "many" : "one");
   const [saveError, setSaveError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
   // The optional CV. Choosing one fills the name box with core's guess.
@@ -51,10 +54,18 @@ export function AddCandidateDialog({
     </label>
   );
 
-  const many = useAddManyCandidates({ role, roleField, onAdded, onClose });
+  const many = useAddManyCandidates({ role, roleField, shown: way === "many", initialFiles, onAdded, onClose });
 
   function handleCvChosen(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const chosen = [...(event.target.files ?? [])];
+    // Several CVs chosen here mean several Candidates: the many way lists them.
+    if (chosen.length > 1) {
+      many.addFiles(chosen);
+      event.target.value = "";
+      setWay("many");
+      return;
+    }
+    const file = chosen[0];
     setCv(file);
     setSaveError(undefined);
     guessFor.current = file;
@@ -96,7 +107,7 @@ export function AddCandidateDialog({
           type="button"
           aria-pressed={way === key}
           className={way === key ? "role-choice chosen" : "role-choice"}
-          disabled={many.busy}
+          disabled={many.locked}
           onClick={() => setWay(key)}
         >
           {text.candidates.ways[key]}
@@ -105,24 +116,12 @@ export function AddCandidateDialog({
     </div>
   );
 
-  const confirmClose = many.confirmingClose && (
-    <ConfirmDialog
-      title={text.candidates.many.confirmClose.title}
-      confirmLabel={text.candidates.many.confirmClose.stop}
-      cancelLabel={text.candidates.many.confirmClose.keepGoing}
-      onConfirm={many.confirmClose}
-      onCancel={many.cancelClose}
-    >
-      <p>{text.candidates.many.confirmClose.detail}</p>
-    </ConfirmDialog>
-  );
-
   if (way === "many") {
     return (
       <ModalDialog title={text.candidates.addTitle} kind="form" wide large onCancel={many.requestClose} actions={many.actions}>
         {wayChoice}
         {many.content}
-        {confirmClose}
+        {many.confirmDialog}
       </ModalDialog>
     );
   }
@@ -132,10 +131,10 @@ export function AddCandidateDialog({
       title={text.candidates.addTitle}
       kind="form"
       wide
-      onCancel={onClose}
+      onCancel={many.close}
       actions={
         <>
-          <button type="button" className="secondary" onClick={onClose}>
+          <button type="button" className="secondary" onClick={many.close}>
             {text.candidates.cancel}
           </button>
           <AddButton type="submit" form={formId} disabled={saving}>
@@ -155,7 +154,7 @@ export function AddCandidateDialog({
         <div className="cv-choice">
           <span>{text.candidates.cvLabel}</span>
           <span className="cv-choice-row">
-            <input ref={cvInput} type="file" accept="application/pdf,.pdf" hidden onChange={handleCvChosen} />
+            <input ref={cvInput} type="file" accept="application/pdf,.pdf" multiple hidden onChange={handleCvChosen} />
             {/* Once a file is chosen, the button shows its name; clicking it chooses another. */}
             <button type="button" className="secondary cv-choose" title={cv?.name} onClick={() => cvInput.current?.click()}>
               {cv ? cv.name : text.candidates.cvChoose}

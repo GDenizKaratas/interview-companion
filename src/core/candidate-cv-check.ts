@@ -11,11 +11,18 @@ export interface CandidateCvToCheck {
   name?: string;
 }
 
+// What can be done with one CV, in the order the rules apply: a file that breaks a rule as a CV
+// is refused; a CV with no name needs one; a Candidate with the name and role is already added;
+// else it is ready to add.
+export type CandidateCvStatus = "ready" | "needsName" | "alreadyAdded" | "refused";
+
 // What the Interviewer needs to know about one CV before a Candidate is added from it.
 export interface CandidateCvCheck {
   // The name the Candidate would get: the one given, or else the one read from the CV's text. It
   // is empty when none could be read there.
   name: string;
+  // The one status the interface shows, so it works nothing out itself.
+  status: CandidateCvStatus;
   // The rule the file breaks as a CV, or null when it can be added.
   refusal: InputRule | null;
   // Whether a Candidate with this name and role is already in the app.
@@ -30,7 +37,14 @@ export async function checkCandidateCv(db: DatabaseSync, input: CandidateCvToChe
   // files, names such as "Profile (12).pdf" would become Candidates' names without being noticed,
   // so a CV with no name in it is left for the Interviewer to name.
   const name = (input.name ?? guessNameFromLines(firstPageLines, "")).trim();
-  return { name, refusal, alreadyAdded: refusal === null && isCandidateAdded(db, name, input.role) };
+  const alreadyAdded = refusal === null && isCandidateAdded(db, name, input.role);
+  return { name, status: statusOf(refusal, name, alreadyAdded), refusal, alreadyAdded };
+}
+
+function statusOf(refusal: InputRule | null, name: string, alreadyAdded: boolean): CandidateCvStatus {
+  if (refusal !== null) return "refused";
+  if (name === "") return "needsName";
+  return alreadyAdded ? "alreadyAdded" : "ready";
 }
 
 async function readCv(file: CvFile) {

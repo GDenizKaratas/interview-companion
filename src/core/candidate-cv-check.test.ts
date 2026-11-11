@@ -38,7 +38,7 @@ describe("Checking a CV before a Candidate is added from it", () => {
   it("reads the name, finds nothing wrong with a new Candidate, and saves nothing", async () => {
     const check = await core.checkCandidateCv({ role, cv: { fileName: "cv.pdf", bytes: cvOf("Ece Yalın") } });
 
-    expect(check).toEqual({ name: "Ece Yalın", refusal: null, alreadyAdded: false });
+    expect(check).toEqual({ name: "Ece Yalın", status: "ready", refusal: null, alreadyAdded: false });
     expect(core.listCandidates()).toEqual([]);
     expect(storedPdfFiles()).toEqual([]);
   });
@@ -54,6 +54,22 @@ describe("Checking a CV before a Candidate is added from it", () => {
     ];
 
     expect(checks.map((check) => check.refusal)).toEqual(["readableText", "format", "required"]);
+    expect(checks.map((check) => check.status)).toEqual(["refused", "refused", "refused"]);
+  });
+
+  it("gives one status per CV, so the interface decides nothing: a refusal comes before a missing name, and a missing name before a Candidate already in the app", async () => {
+    core.createCandidate({ name: "Ece Yalın", role });
+    const noName = makePdf([[{ text: "Built payment services with Node.js and PostgreSQL since 2019.", size: 10 }]]);
+
+    const statuses = [
+      (await core.checkCandidateCv({ role, cv: { fileName: "cv.pdf", bytes: cvOf("Ada Demir") } })).status,
+      (await core.checkCandidateCv({ role, cv: { fileName: "cv.pdf", bytes: noName } })).status,
+      (await core.checkCandidateCv({ role, cv: { fileName: "cv.pdf", bytes: cvOf("Ece Yalın") } })).status,
+      (await core.checkCandidateCv({ role, cv: { fileName: "cv.pdf", bytes: makePdf([[]]) }, name: "Ece Yalın" })).status,
+      (await core.checkCandidateCv({ role, cv: { fileName: "cv.pdf", bytes: cvOf("Ece Yalın") }, name: " " })).status,
+    ];
+
+    expect(statuses).toEqual(["ready", "needsName", "alreadyAdded", "refused", "needsName"]);
   });
 
   it("gives an empty name when none can be read from the CV", async () => {
@@ -61,7 +77,7 @@ describe("Checking a CV before a Candidate is added from it", () => {
 
     const check = await core.checkCandidateCv({ role, cv: { fileName: "CV.pdf", bytes: cv } });
 
-    expect(check).toEqual({ name: "", refusal: null, alreadyAdded: false });
+    expect(check).toEqual({ name: "", status: "needsName", refusal: null, alreadyAdded: false });
   });
 
   it("reads the name from a profile export laid out in two columns, with contact details first", async () => {
@@ -100,7 +116,7 @@ describe("Checking a CV before a Candidate is added from it", () => {
 
     const check = await core.checkCandidateCv({ role, cv: { fileName: "Ece_Yalin_CV.pdf", bytes } });
 
-    expect(check).toEqual({ name: "", refusal: null, alreadyAdded: false });
+    expect(check).toEqual({ name: "", status: "needsName", refusal: null, alreadyAdded: false });
   });
 
   it("marks a CV whose name and role a Candidate in the app already has, whatever the letter case and spacing", async () => {
@@ -111,7 +127,7 @@ describe("Checking a CV before a Candidate is added from it", () => {
       cv: { fileName: "cv.pdf", bytes: cvOf("IŞIL DEMİR") },
     });
 
-    expect(check).toEqual({ name: "IŞIL DEMİR", refusal: null, alreadyAdded: true });
+    expect(check).toEqual({ name: "IŞIL DEMİR", status: "alreadyAdded", refusal: null, alreadyAdded: true });
   });
 
   it("does not mark the same name under another role, or another name under the same role", async () => {
@@ -129,10 +145,11 @@ describe("Checking a CV before a Candidate is added from it", () => {
 
     expect(await core.checkCandidateCv({ role, cv, name: " ada demir " })).toEqual({
       name: "ada demir",
+      status: "alreadyAdded",
       refusal: null,
       alreadyAdded: true,
     });
-    expect(await core.checkCandidateCv({ role, cv, name: "  " })).toEqual({ name: "", refusal: null, alreadyAdded: false });
+    expect(await core.checkCandidateCv({ role, cv, name: "  " })).toEqual({ name: "", status: "needsName", refusal: null, alreadyAdded: false });
   });
 
   it("marks nothing while no role is chosen", async () => {
@@ -140,7 +157,7 @@ describe("Checking a CV before a Candidate is added from it", () => {
 
     const check = await core.checkCandidateCv({ role: " ", cv: { fileName: "cv.pdf", bytes: cvOf("Ece Yalın") } });
 
-    expect(check).toEqual({ name: "Ece Yalın", refusal: null, alreadyAdded: false });
+    expect(check).toEqual({ name: "Ece Yalın", status: "ready", refusal: null, alreadyAdded: false });
   });
 
   it("marks a Candidate added a moment ago from an earlier file, so the same CV chosen twice is caught", async () => {
@@ -167,7 +184,7 @@ describe("Checking a CV before a Candidate is added from it", () => {
     const cv = { fileName: "Ece_Yalin.pdf", bytes: cvOf("Ece Yalın") };
     await core.createCandidateWithCv({ name: "Ece Yalın", role, cv });
 
-    await core.createCandidateWithCv({ name: "Ece Yalın", role, cv });
+    await core.createCandidateWithCv({ name: "Ece Yalın", role, cv, onlyIfNew: false });
 
     expect(core.listCandidates()).toHaveLength(2);
   });
@@ -191,7 +208,7 @@ describe("Adding many Candidates from their CVs", () => {
     const notAdded: string[] = [];
     for (const cv of files) {
       const check = await core.checkCandidateCv({ role: "backend engineer", cv });
-      if (check.refusal !== null || check.name === "" || check.alreadyAdded) notAdded.push(cv.fileName);
+      if (check.status !== "ready") notAdded.push(cv.fileName);
       else await core.createCandidateWithCv({ name: check.name, role: "backend engineer", cv });
     }
 

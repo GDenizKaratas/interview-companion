@@ -41,7 +41,7 @@ export type {
 export type { AskedQuestion, AskedQuestionGeneration, AskedQuestions, SavedQuestionCheck,
   SavedQuestionState, SegmentQuote } from "./asked-questions.ts";
 export type { BriefEvidence, CandidateBrief, NewBriefEvidence, NewCandidateBrief } from "./candidate-brief.ts";
-export type { CandidateCvCheck, CandidateCvToCheck } from "./candidate-cv-check.ts";
+export type { CandidateCvCheck, CandidateCvStatus, CandidateCvToCheck } from "./candidate-cv-check.ts";
 export type { CandidateOverview, InterviewOverview, DatedInterview } from "./candidate-overview.ts";
 export type { CandidateExport, CandidateImport, ExistingCandidate, ImportOptions, ImportProblem } from "./candidate-transfer.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
