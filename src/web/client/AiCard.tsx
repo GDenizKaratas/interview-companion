@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { AiNotesPanel, generationErrorMessage } from "./AiNotesPanel.tsx";
+import { AiNotesPanel } from "./AiNotesPanel.tsx";
 import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
 import { api, type Interview, type InterviewAiStep } from "./api.ts";
 import { AskedQuestionsPanel } from "./AskedQuestionsPanel.tsx";
 import { fill } from "./languages.ts";
 import { ConnectAi } from "./ConnectAi.tsx";
+import { generationErrorMessage } from "./refusal-text.ts";
 import { useText } from "./text.tsx";
 
 interface AiCardProps {

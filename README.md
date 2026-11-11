@@ -95,6 +95,8 @@ npm start
 
 Then open http://localhost:3000 in a browser. The interface starts in Turkish; the language menu is at the top right. Running `npm run demo` again gives a fresh demo set and leaves your own Candidates alone.
 
+**Where your data is.** Your Candidates, CVs, Transcripts, notes, and the API key are kept in your own application-data folder, not in the project folder: on macOS `~/Library/Application Support/Interview Companion`, on Windows `%APPDATA%\Interview Companion`, on Linux `~/.local/share/interview-companion`. The app prints the folder when it starts. It is never uploaded to GitHub, and deleting the project folder does not delete it. To back it up, copy that folder while the app is stopped, or save each Candidate with **Export**. If you lose the API key, create a new one in the Anthropic Console.
+
 ## On the agenda
 
 Plans, not promises. The reasons and sources are in [docs/research/what-could-come-next.md](docs/research/what-could-come-next.md).
@@ -115,4 +117,4 @@ Plans, not promises. The reasons and sources are in [docs/research/what-could-co
 
 ## For developers
 
-One TypeScript project with three modules: `core` holds every rule and all data access; `web` (a local server and the browser interface) and `mcp` (the MCP server) only call `core`. The data is in `data/` inside the project folder (one SQLite file and the CV files); set `DATA_DIR` for another folder and `PORT` for another port. The app listens only on your own computer (`127.0.0.1`). Run `npm test`, `npm run typecheck`, and `npm run lint`. The terms used in code and documents are in [GLOSSARY.md](GLOSSARY.md); more in [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/adr](docs/adr), [docs/mcp.md](docs/mcp.md), and [CONTRIBUTING.md](CONTRIBUTING.md). License: [MIT](LICENSE).
+One TypeScript project with three modules: `core` holds every rule and all data access; `web` (a local server and the browser interface) and `mcp` (the MCP server) only call `core`. The data (one SQLite file and the CV files) is in the application-data folder above, chosen in `src/core/data-folder.ts`; a copy that already has `data/interview-companion.sqlite` in the project folder keeps using it. Set `DATA_DIR` for another folder and `PORT` for another port. `data/`, `.env`, and `private/` are in `.gitignore`. The app listens only on your own computer (`127.0.0.1`). Run `npm test`, `npm run typecheck`, and `npm run lint`. The terms used in code and documents are in [GLOSSARY.md](GLOSSARY.md); more in [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/adr](docs/adr), [docs/mcp.md](docs/mcp.md), and [CONTRIBUTING.md](CONTRIBUTING.md). License: [MIT](LICENSE).

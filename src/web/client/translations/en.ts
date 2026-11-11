@@ -63,7 +63,12 @@ const text = {
       "Start Interview Companion, take notes from Mert Aydın's last interview, and save them.",
     ],
     exampleCopied: "Copied",
-    when: "In a chat where you did not start it, it cannot reach the app's data. In Claude Code you can also start it by typing the command:",
+    startHint: {
+      code: "In the chat, type /mcp__interview-companion__candidate (you can add the Candidate's name after it), or write 'Start Interview Companion' and allow it when Claude asks. Once started, it stays on for the whole chat. Click a sentence to copy it:",
+      desktop: "In a new chat, write 'Start Interview Companion'; allow it when Claude asks. Once started, it stays on for the whole chat. Click a sentence to copy it:",
+    },
+    when: "In a chat where you did not start it, it cannot reach the app's data.",
+    commandLead: "The ready command:",
     askCommand: "/mcp__interview-companion__candidate Mert",
     clientWrites: "Allow saving here",
     clientWritesOn: "On: the notes, questions, and Candidate Brief Claude writes are saved in this app.",
@@ -72,7 +77,7 @@ const text = {
     apps: {
       desktop: {
         name: "Claude Desktop",
-        hint: "Add this text to Claude Desktop's configuration file and save it, then quit Claude Desktop and open it again. The file:",
+        hint: "In Claude Desktop, open Settings > Developer > Edit Config, add this text to the file that opens and save it, then quit Claude Desktop completely and open it again. The file:",
       },
       code: {
         name: "Claude Code",
@@ -548,6 +553,12 @@ const text = {
     page: "page {page}",
     required: "Type a word to search for.",
     failed: "The search could not be run.",
+  },
+  // Refusals from core that no panel words in its own way. Every other refusal reason has its
+  // words beside the panel that shows it; refusal-text.ts gathers them into one complete map.
+  refusals: {
+    candidateExists: "This Candidate is already in the app with this role.",
+    aiClientWritesOff: "Saving from your AI client is off. Turn it on under “Use with MCP”, then try again.",
   },
   panels: {
     expand: "Open full screen",

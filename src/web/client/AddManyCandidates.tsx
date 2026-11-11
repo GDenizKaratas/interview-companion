@@ -4,6 +4,7 @@ import { api, ApiError, type CandidateCvCheck, type InputRule } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { fill, type Text } from "./languages.ts";
 import { pdfsOfFolder, readDrop, type PickedFiles } from "./picked-files.ts";
+import { refusalText } from "./refusal-text.ts";
 import { useText } from "./text.tsx";
 
 // How many CVs are checked at the same time, so the page and the server stay responsive.
@@ -653,7 +654,7 @@ function saveRefusal(text: Text, error: unknown): string {
     if (error.rule === "required" && error.field === "name") return text.candidates.required.name;
     if (error.rule === "required" && error.field === "role") return text.candidates.required.role;
   }
-  return text.candidates.saveFailed;
+  return refusalText(text, error, text.candidates.saveFailed);
 }
 
 function refusalReason(text: Text, rule: InputRule): string {

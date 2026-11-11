@@ -62,7 +62,12 @@ const translation: TranslationFile = {
         "Interview Companion'ı başlat, Mert Aydın'ın son görüşmesinden not al ve kaydet.",
       ],
       exampleCopied: "Kopyalandı",
-      when: "Başlatmadığınız sohbette uygulamanın verisine erişemez. Claude Code'da komutu yazarak da başlatabilirsiniz:",
+      startHint: {
+        code: "Sohbette /mcp__interview-companion__candidate yazın (sonuna adayın adını ekleyebilirsiniz) ya da 'Interview Companion'ı başlat' yazıp Claude izin isteyince onaylayın. Bir kez başlatınca o sohbet boyunca açık kalır. Kopyalamak için bir cümleye tıklayın:",
+        desktop: "Yeni bir sohbette 'Interview Companion'ı başlat' yazın; Claude izin isteyince onaylayın. Bir kez başlatınca o sohbet boyunca açık kalır. Kopyalamak için bir cümleye tıklayın:",
+      },
+      when: "Başlatmadığınız sohbette uygulamanın verisine erişemez.",
+      commandLead: "Hazır komut:",
       askCommand: "/mcp__interview-companion__candidate Mert",
       clientWrites: "Buraya kaydetmeye izin ver",
       clientWritesOn: "Açık: Claude'un yazdığı notlar, sorular ve Aday Özeti bu uygulamaya kaydedilir.",
@@ -71,7 +76,7 @@ const translation: TranslationFile = {
       apps: {
         desktop: {
           name: "Claude Desktop",
-          hint: "Bu metni Claude Desktop'ın ayar dosyasına ekleyip kaydedin, sonra Claude Desktop'ı kapatıp yeniden açın. Dosya:",
+          hint: "Claude Desktop'ta Settings (Ayarlar) > Developer (Geliştirici) > Edit Config ile açılan dosyaya bu metni ekleyip kaydedin, sonra Claude Desktop'ı tamamen kapatıp yeniden açın. Menü adları uygulamanın diline göre farklı görünebilir. Dosya:",
         },
         code: {
           name: "Claude Code",
@@ -527,6 +532,10 @@ const translation: TranslationFile = {
       page: "sayfa {page}",
       required: "Aramak için bir kelime yazın.",
       failed: "Arama yapılamadı.",
+    },
+    refusals: {
+      candidateExists: "Bu aday bu rolle zaten uygulamada.",
+      aiClientWritesOff: "AI uygulamanızdan kaydetme kapalı. “MCP ile kullan” bölümünden açın, sonra yeniden deneyin.",
     },
     panels: {
       expand: "Tam ekran aç",

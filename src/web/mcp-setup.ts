@@ -6,17 +6,29 @@ import type { DesktopEntry } from "./claude-desktop.ts";
 // file. A data folder other than the default is passed on, so the app and the AI application read
 // the same data. Claude Desktop does not always see the terminal's PATH, so its configuration
 // names the Node.js that runs this app by its full path. The configuration is on one line, so it
-// takes little room in the guide; JSON does not need line breaks.
-export function mcpSetup({ serverPath, nodePath, dataDir }: { serverPath: string; nodePath: string; dataDir?: string }): {
+// takes little room in the guide; JSON does not need line breaks. Paths in the commands are
+// quoted for the system's own command line (`platform`, process.platform by default).
+export function mcpSetup({
+  serverPath,
+  nodePath,
+  dataDir,
+  platform = process.platform,
+}: {
+  serverPath: string;
+  nodePath: string;
+  dataDir?: string;
+  platform?: string;
+}): {
   command: string;
   commandEveryFolder: string;
   desktopConfig: string;
 } {
-  const env = dataDir ? ` -e DATA_DIR=${shellQuoted(dataDir)}` : "";
+  const quoted = platform === "win32" ? windowsQuoted : shellQuoted;
+  const env = dataDir ? ` -e DATA_DIR=${quoted(dataDir)}` : "";
   const server = desktopEntry({ serverPath, nodePath, dataDir });
   return {
-    command: `claude mcp add --scope local interview-companion${env} -- node ${shellQuoted(serverPath)}`,
-    commandEveryFolder: `claude mcp add --scope user interview-companion${env} -- node ${shellQuoted(serverPath)}`,
+    command: `claude mcp add --scope local interview-companion${env} -- node ${quoted(serverPath)}`,
+    commandEveryFolder: `claude mcp add --scope user interview-companion${env} -- node ${quoted(serverPath)}`,
     desktopConfig: JSON.stringify({ mcpServers: { "interview-companion": server } }),
   };
 }
@@ -27,7 +39,17 @@ export function desktopEntry({ serverPath, nodePath, dataDir }: { serverPath: st
   return { command: nodePath, args: [serverPath], ...(dataDir ? { env: { DATA_DIR: dataDir } } : {}) };
 }
 
-// A path as one shell word: as it is when it has only safe characters, in single quotes otherwise.
+// A path as one POSIX shell word: as it is when it has only safe characters, in single quotes otherwise.
 function shellQuoted(path: string): string {
   return /^[\w@%+=:,./-]+$/.test(path) ? path : `'${path.replaceAll("'", "'\\''")}'`;
+}
+
+// A path as one word for the Windows command line, which cmd.exe and PowerShell both read: as it
+// is when it has only safe characters, in double quotes otherwise. Single quotes mean nothing to
+// cmd.exe. Inside the quotes a double quote is escaped with a backslash, and backslashes right
+// before a double quote or the closing quote are doubled, as Windows programs split arguments.
+function windowsQuoted(path: string): string {
+  if (/^[\w@+=:,./\\-]+$/.test(path)) return path;
+  const escaped = path.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, "$1$1");
+  return `"${escaped}"`;
 }

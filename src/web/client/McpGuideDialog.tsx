@@ -17,7 +17,8 @@ const icons = [stepIcons.link, stepIcons.speech, stepIcons.checkList];
 const askStep = 1;
 const savingStep = 2;
 
-const appKeys = ["desktop", "code"] as const;
+// Claude Code first: pasting one command in a terminal is the surest way to connect.
+const appKeys = ["code", "desktop"] as const;
 type AppKey = (typeof appKeys)[number];
 
 // The states in which the one-click connect cannot work, so the manual way is shown open.
@@ -38,7 +39,7 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
   const { text } = useText();
   const t = text.mcpGuide;
   const [setup, setSetup] = useState<Record<AppKey | "everyFolder", string | null>>({ desktop: null, code: null, everyFolder: null });
-  const [app, setApp] = useState<AppKey>("desktop");
+  const [app, setApp] = useState<AppKey>("code");
   const [copied, setCopied] = useState<string | null>(null);
   const [clientWrites, setClientWrites] = useState<boolean | undefined>();
   const [error, setError] = useState(false);
@@ -155,6 +156,8 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
 
   const steps = t.steps.map((step, index) => ({
     ...step,
+    // How to start it in a chat depends on the AI application chosen in step 1.
+    hint: index === askStep ? t.startHint[app] : step.hint,
     icon: icons[index] ?? [],
     extra:
       index === 0 ? (
@@ -229,10 +232,16 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
         <p className="guide-intro">{t.intro}</p>
         <StepFlow steps={steps} label={t.title} />
         <p className="guide-note guide-when">
-          {t.when}{" "}
-          <button type="button" className="example-chip command-chip" onClick={() => copy(t.askCommand, "askCommand")}>
-            {copied === "askCommand" ? t.exampleCopied : t.askCommand}
-          </button>
+          {t.when}
+          {app === "code" && (
+            <>
+              {" "}
+              {t.commandLead}{" "}
+              <button type="button" className="example-chip command-chip" onClick={() => copy(t.askCommand, "askCommand")}>
+                {copied === "askCommand" ? t.exampleCopied : t.askCommand}
+              </button>
+            </>
+          )}
         </p>
         {app === "desktop" ? (
           <>
