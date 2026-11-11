@@ -30,7 +30,7 @@ The **?** button in the app shows the same six steps.
 ## What you need
 
 - **Setup:** done once, with a few commands ([below](#setup)). If you do not use a terminal, ask a technical colleague. Tried on macOS; not tried on Windows or Linux.
-- **A Transcript:** Microsoft Teams (work or school account) and Zoom (paid plan) give a file with the speakers' names. Google Meet offers transcripts in a short list of languages for now, and Turkish was not on it on 2026-11-11 ([Google's help page](https://support.google.com/meet/answer/12849897)). For other cases, the guide explains recording the Interview with the Candidate's consent and turning it into text on your computer.
+- **A Transcript:** Microsoft Teams (work or school account) and Zoom (paid plan) give a file with the speakers' names. Google Meet's own transcript has no Turkish yet ([Google's help page](https://support.google.com/meet/answer/12849897)); for Turkish, use [Tactiq](https://tactiq.io) (the first 10 transcripts a month are free; Tactiq keeps the transcript) and import its TXT file, as the guide explains. For other cases, the guide explains recording the Interview with the Candidate's consent and turning it into text on your computer.
 - **For the AI,** one of the two ways below. Everything else in the app works without AI.
 
 ## Two ways to use the AI
@@ -106,7 +106,7 @@ Plans, not promises. The reasons and sources are in [docs/research/what-could-co
 
 **Needs more work**
 
-- Turning a recording into text on the computer: the voice does not leave it. Quality on Turkish is not yet tried.
+- Recording the Interview inside the app and turning it into Turkish text: no extra software, and the voice does not leave the computer.
 - Fetching Transcripts from Teams or Zoom automatically: each company has its own approval process.
 - Live sync with Google Calendar: it needs Google's verification; the calendar file gives most of the value.
 - A team working on the same Candidates together: it needs a real server with accounts and permissions.

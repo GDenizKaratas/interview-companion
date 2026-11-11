@@ -7,16 +7,19 @@ import { useText } from "./text.tsx";
 // Fired on window to open this guide from anywhere in the app. The app bar listens for it.
 export const openTranscriptGuide = "open-transcript-guide";
 
-// Google Meet comes first because most people look for it first, and they learn at once that it
-// does not transcribe Turkish and where to go instead.
+// Google Meet comes first because most people look for it first. Its own transcript has no
+// Turkish, so its tab gives Tactiq for those who stay on Meet, then Teams and Zoom.
 const routeKeys = ["meet", "teams", "zoom", "local"] as const;
 type RouteKey = (typeof routeKeys)[number];
+
+// Tactiq's page in the Chrome Web Store, checked on 2026-11-11.
+const tactiqStorePage = "https://chromewebstore.google.com/detail/tactiq-ai-note-taker-for/fggkaccpbmombhnjkjokndojfgagejfb";
 
 // One small line drawing for each step of each route, in the order of its steps.
 const routeIcons: Record<RouteKey, string[][]> = {
   teams: [stepIcons.speech, stepIcons.pageDown, stepIcons.pageUp],
   zoom: [stepIcons.cloud, stepIcons.pageDown, stepIcons.pageUp],
-  meet: [],
+  meet: [stepIcons.pageDown, stepIcons.speech, stepIcons.pageUp],
   local: [stepIcons.camera, stepIcons.laptop, stepIcons.nameTag, stepIcons.pageUp],
 };
 
@@ -60,6 +63,15 @@ export function TranscriptGuideDialog({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       <p className="guide-route-needs">{route.needs}</p>
+      {chosen === "meet" && (
+        <div className="guide-route-title">
+          <h3>{t.meetRoutes.tactiqTitle}</h3>
+          {/* Tactiq is another company's product; the app only names it and links to its store page. */}
+          <a className="link-as-button" href={tactiqStorePage} target="_blank" rel="noreferrer">
+            {t.meetRoutes.tactiqAdd}
+          </a>
+        </div>
+      )}
       {steps.length > 0 && <StepFlow steps={steps} label={route.name} />}
       {route.notes.map((note) => (
         <p key={note} className="guide-note">
@@ -67,10 +79,16 @@ export function TranscriptGuideDialog({ onClose }: { onClose: () => void }) {
         </p>
       ))}
       {chosen === "meet" && (
-        <p className="guide-note">
-          <button type="button" className="link-button" onClick={() => setChosen("local")}>
-            {t.meetInstead}
+        <p className="guide-note guide-other-tools">
+          <strong>{t.meetRoutes.otherTitle}</strong>{" "}
+          <button type="button" className="link-button" onClick={() => setChosen("teams")}>
+            {t.routes.teams.name}
           </button>
+          {t.meetRoutes.otherBetween}
+          <button type="button" className="link-button" onClick={() => setChosen("zoom")}>
+            {t.routes.zoom.name}
+          </button>
+          {t.meetRoutes.otherAfter}
         </p>
       )}
       <section className="guide-box" aria-labelledby="transcript-consent-title">

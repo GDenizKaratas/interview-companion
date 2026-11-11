@@ -103,7 +103,13 @@ const text = {
     open: "How do I get a Transcript?",
     title: "How do I get a Transcript?",
     routesLabel: "Your meeting tool",
-    meetInstead: "See what to do with no paid plan",
+    meetRoutes: {
+      tactiqTitle: "If you stay on Meet: Tactiq",
+      tactiqAdd: "Add Tactiq to Chrome",
+      otherTitle: "If you can use another tool:",
+      otherBetween: " (work or school account) and ",
+      otherAfter: " (paid plan) give the Turkish transcript as a file with speaker names.",
+    },
     routes: {
       teams: {
         name: "Microsoft Teams",
@@ -127,9 +133,13 @@ const text = {
       },
       meet: {
         name: "Google Meet",
-        needs: "Google's help page says Meet transcripts are offered in eight languages for now; Turkish is not on the list yet.",
-        steps: [] as { title: string; hint: string }[],
-        notes: ["For an Interview in Turkish, use Teams, Zoom, or \"No paid plan\"."],
+        needs: "Meet's own transcript does not come in Turkish yet.",
+        steps: [
+          { title: "Add it to Chrome", hint: "Tactiq is a Chrome extension. Sign in with your Google account." },
+          { title: "Let it write in the call", hint: "In Tactiq, choose Turkish as the meeting language." },
+          { title: "Download TXT, import it here", hint: "After the call, open the transcript in Tactiq." },
+        ],
+        notes: ["The first 10 transcripts a month are free, then paid. Tactiq keeps the transcript on its servers: tell the Candidate."],
       },
       local: {
         name: "No paid plan",

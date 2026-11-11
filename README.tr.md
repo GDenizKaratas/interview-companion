@@ -30,7 +30,7 @@ Uygulamadaki **?** düğmesi aynı altı adımı gösterir.
 ## Neye ihtiyacınız var
 
 - **Kurulum:** bir kez, birkaç komutla yapılır ([aşağıda](#kurulum)). Terminal kullanmaya alışkın değilseniz teknik bir arkadaşınızdan isteyin. macOS'ta denendi; Windows ve Linux'ta denenmedi.
-- **Transkript:** Microsoft Teams (iş ya da okul hesabı) ve Zoom (ücretli plan) konuşmacı adlarıyla bir dosya verir. Google Meet transkripti şimdilik sınırlı sayıda dilde sunuyor ve 11 Kasım 2026'da Türkçe bu listede yoktu ([Google'ın yardım sayfası](https://support.google.com/meet/answer/12849897)). Diğer durumlar için rehber, görüşmeyi adayın onayıyla kaydedip bilgisayarınızda yazıya dökmeyi anlatır.
+- **Transkript:** Microsoft Teams (iş ya da okul hesabı) ve Zoom (ücretli plan) konuşmacı adlarıyla bir dosya verir. Google Meet'in kendi transkripti henüz Türkçe çıkarmıyor ([Google'ın yardım sayfası](https://support.google.com/meet/answer/12849897)); Türkçe için [Tactiq](https://tactiq.io) kullanıp (ilk 10 transkript her ay ücretsiz; transkripti Tactiq saklar) TXT dosyasını buraya aktarabilirsiniz, rehber nasıl yapılacağını anlatır. Diğer durumlar için rehber, görüşmeyi adayın onayıyla kaydedip bilgisayarınızda yazıya dökmeyi anlatır.
 - **AI için** aşağıdaki iki yoldan biri. AI olmadan da uygulamanın geri kalanı çalışır.
 
 ## AI'yi kullanmanın iki yolu
@@ -106,7 +106,7 @@ Bunlar plandır, söz değildir. Gerekçeler ve kaynaklar [docs/research/what-co
 
 **Daha çok iş ister**
 
-- Bir ses kaydını bilgisayarda yazıya dökme: ses bilgisayardan çıkmaz. Türkçedeki başarısı henüz denenmedi.
+- Görüşmeyi uygulamanın içinde kaydetme ve Türkçe yazıya dökme: ek yazılım olmadan, ses bilgisayardan çıkmadan.
 - Transkriptleri Teams ya da Zoom'dan kendiliğinden çekme: her şirketin ayrı bir onay süreci var.
 - Google Takvim ile canlı eşitleme: Google'ın doğrulama süreci gerekir; takvim dosyası faydanın çoğunu verir.
 - Bir ekibin aynı adaylar üzerinde birlikte çalışması: hesapları ve yetkileri olan gerçek bir sunucu gerekir.
