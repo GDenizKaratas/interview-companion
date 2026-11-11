@@ -11,7 +11,7 @@ export function briefPrompt(candidate: string, { canSave }: { canSave: boolean }
   const name = JSON.stringify(candidate);
   const intro = canSave
     ? `Prepare the Candidate ${name} in Interview Companion: write and save AI Notes and Asked Questions for their Interviews, write and save Suggested Questions, then write and save a Candidate Brief.`
-    : `Write a Candidate Brief about the Candidate ${name} from Interview Companion's data. Saving from the AI client is off in the app, under “Use with MCP”, so only read: write the brief in the chat and save nothing. At the start of your answer, tell the Interviewer that with saving turned on there, the same command also saves AI Notes, Asked Questions, Suggested Questions, and the brief in the app.`;
+    : `Write a Candidate Brief about the Candidate ${name} from Interview Companion's data. Saving from the AI client is off in the app, under “Use with MCP” (in Turkish “MCP ile kullan”), so only read: write the brief in the chat and save nothing. At the start of your answer, tell the Interviewer that with saving turned on there, the same command also saves AI Notes, Asked Questions, Suggested Questions, and the brief in the app.`;
 
   return `${intro}
 
@@ -58,7 +58,7 @@ const savingSteps = `${findCandidate}
 9. Write the brief in the chat.
 10. Save it with save_candidate_brief: the whole brief as text, and one evidence entry per number in square brackets, with the exact quote and its source (a CV page, or an Interview id and segment number).
 
-If a save is refused because saving from the AI client is off in the app, under “Use with MCP”, tell the Interviewer, save nothing more, and still write the brief in the chat.`;
+If a save is refused because saving from the AI client is off in the app, under “Use with MCP” (in Turkish “MCP ile kullan”), tell the Interviewer, save nothing more, and still write the brief in the chat.`;
 
 const rules = `- Every statement about the Candidate cites Evidence with a number in square brackets, such as [1]. Evidence is only an exact excerpt from the CV or a Transcript: a search_evidence result or a quote of an AI Note. Write no statement you cannot cite.
 - Copy every quote word for word from the tool result, in its original language. Do not translate, shorten, or fix a quote.

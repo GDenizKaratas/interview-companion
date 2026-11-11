@@ -232,6 +232,9 @@ export function openDatabase(path: string): { db: DatabaseSync; created: boolean
   // connection waits up to five seconds for another one to finish instead of failing at once.
   const db = new DatabaseSync(path, { timeout: 5000 });
   db.exec("PRAGMA foreign_keys = ON;");
+  // What is deleted is overwritten in the file, not only marked free, so a removed API key or a
+  // deleted Candidate cannot be read back from the file afterwards.
+  db.exec("PRAGMA secure_delete = ON;");
   const created = schemaVersion(db) === 0;
   migrate(db);
   return { db, created };

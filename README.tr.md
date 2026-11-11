@@ -38,11 +38,13 @@ Uygulamadaki **?** düğmesi aynı altı adımı gösterir.
 | | API anahtarıyla | Claude Desktop ya da Claude Code ile (MCP) |
 |---|---|---|
 | Ne gerekir | Anthropic'ten alınan bir API anahtarı (kullandıkça ücretlidir); uygulamaya bir kez kaydedilir | Bilgisayarınızda Claude Desktop ya da Claude Code; uygulamaya bir kez bağlanır. API anahtarı gerekmez |
-| Nasıl kullanılır | Çalışma alanında düğmeye basarsınız | Claude'da adayı adıyla sorarsınız: "Selin Öztürk Terraform hakkında ne dedi?" |
+| Nasıl kullanılır | Çalışma alanında düğmeye basarsınız | Claude'da sohbeti başlatıp adayı adıyla sorarsınız: "Interview Companion'ı başlat ve Selin Öztürk Terraform hakkında ne dedi, söyle." |
 | Bilgisayarınızdan ne çıkar | Düğmeye bastığınızda, düğmenin yanında yazan veri Anthropic'e gider | Claude'un okuduğu veri, Claude'un kullandığı modele gider |
 | Sonuç nerede görünür | Çalışma alanındaki Görüşme notları kartında | Claude sohbetinde; **Buraya kaydetmeye izin ver** açıksa notlar, sorular ve Aday Özeti uygulamada da görünür |
 
-MCP ile bağlandığında Claude uygulamadaki veriyi doğrudan okur; siz bir şey kopyalamazsınız. Cevap, alıntısıyla ve alıntının nerede geçtiğiyle gelir: CV'de mi, hangi görüşmede mi. Bir şey CV'de yazıp görüşmede konuşulmadıysa ya da hiç geçmiyorsa bunu söyler. Claude okuyabilir ve izin verirseniz yalnızca kendi yazdıklarını kaydedebilir; adayları, görüşmeleri, CV'leri, transkriptleri ve sizin notlarınızı silemez, değiştiremez. Bağlamak için uygulamada **MCP ile kullan** düğmesine basın; ayrıntılar [docs/mcp.md](docs/mcp.md) dosyasında (İngilizce).
+**Yalnızca başlattığınız sohbette çalışır.** Bir sohbette "Interview Companion'ı başlat" yazın ve Claude izin isteyince onaylayın; Claude Code'da hazır komut da var. Başlatmadığınız bir sohbette, adı geçen biri adayınız olsa bile, Claude uygulamanın verisine erişemez: uygulama ona hiçbir şey vermez.
+
+Başlattığınızda Claude uygulamadaki veriyi doğrudan okur; siz bir şey kopyalamazsınız. Cevap, alıntısıyla ve alıntının nerede geçtiğiyle gelir: CV'de mi, hangi görüşmede mi. Bir şey CV'de yazıp görüşmede konuşulmadıysa ya da hiç geçmiyorsa bunu söyler. Claude okuyabilir ve izin verirseniz yalnızca kendi yazdıklarını kaydedebilir; adayları, görüşmeleri, CV'leri, transkriptleri ve sizin notlarınızı silemez, değiştiremez. Bağlamak için uygulamada **MCP ile kullan** düğmesine basın; ayrıntılar [docs/mcp.md](docs/mcp.md) dosyasında (İngilizce).
 
 ## Başka neler var
 

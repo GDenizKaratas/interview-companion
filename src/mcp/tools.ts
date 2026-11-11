@@ -1,7 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { briefPrompt } from "./brief-prompt.ts";
+import { candidatePrompt } from "./candidate-prompt.ts";
 import { serverInstructions } from "./server-instructions.ts";
+import { createStartKeys, notStartedMessage, startKeySentence } from "./start-key.ts";
 import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, writingRulesInOneSentence, type AiClientCore } from "../core/index.ts";
 
 // Bounds on what the AI client can save in one call, so a runaway client cannot flood the
@@ -28,6 +31,15 @@ const transcriptQuote = {
   quote: z.string().max(textLimits.long).describe("Words copied exactly from that segment."),
 };
 
+// The start key every tool but start_interview_companion takes. A missing or non-text value becomes
+// "", which no key equals, so the tool answers with the one refusal rather than a validation error.
+// The listed schema still shows it as a required string.
+const startKey = z
+  .preprocess((value) => (typeof value === "string" ? value : ""), z.string())
+  .describe("The start key from start_interview_companion in this conversation.");
+
+type ToolResult = ReturnType<typeof toolResult>;
+
 // Builds the MCP server and its tools. It gets core's read operations and only the writes
 // the AI client may make, which go through the same checks as the app's own AI and are refused
 // while the Interviewer has not turned them on. No tool can change anything else. Transport
@@ -35,8 +47,40 @@ const transcriptQuote = {
 export function createMcpServer(core: AiClientCore): McpServer {
   const server = new McpServer({ name: "interview-companion", version: "0.1.0" }, { instructions: serverInstructions });
   const readOnly = { readOnlyHint: true, openWorldHint: false };
+  const startKeys = createStartKeys();
+  // Every tool's description starts with the app's name, so a model does not pick it for a
+  // general question (the standing instructions say when the tools apply). Every tool registered
+  // here takes the start key and answers only the refusal without a key this process gave.
+  const registerTool = <Shape extends z.ZodRawShape = Record<never, never>>(
+    name: string,
+    config: { description: string; inputSchema?: Shape; annotations: ToolAnnotations },
+    callback: (args: z.output<z.ZodObject<Shape>>) => ToolResult,
+  ) =>
+    server.registerTool(
+      name,
+      {
+        ...config,
+        description: `Interview Companion: Requires the start key from start_interview_companion. ${config.description}`,
+        inputSchema: { ...config.inputSchema, startKey },
+      },
+      ({ startKey, ...args }: { startKey: string }) =>
+        startKeys.isValid(startKey) ? callback(args as z.output<z.ZodObject<Shape>>) : errorResult(notStartedMessage),
+    );
 
   server.registerTool(
+    "start_interview_companion",
+    {
+      description:
+        "Interview Companion: call this only when the user has explicitly asked, in this conversation, to use " +
+        "Interview Companion. It returns the start key this conversation needs for every other Interview Companion tool.",
+      annotations: readOnly,
+      // Claude Code asks the user on every call of a tool with this flag, so the model cannot start
+      // Interview Companion on its own.
+      _meta: { "anthropic/requiresUserInteraction": true },
+    },
+    () => ({ content: [{ type: "text" as const, text: startKeySentence(startKeys.issue()) }] }),
+  );
+  registerTool(
     "list_candidates",
     { description: "List every Candidate with their role and number of Interviews.", annotations: readOnly },
     () =>
@@ -46,7 +90,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
           .map((candidate) => ({ ...candidate, interviewCount: core.listInterviews(candidate.id).length })),
       ),
   );
-  server.registerTool(
+  registerTool(
     "get_candidate",
     {
       description:
@@ -58,7 +102,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ candidateId }) => toolResult(() => core.getCandidateOverview(candidateId)),
   );
-  server.registerTool(
+  registerTool(
     "get_interviewer_notes",
     {
       description:
@@ -78,7 +122,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ candidateId, interviewId }) => toolResult(() => core.listInterviewerNotes(candidateId, { interviewId })),
   );
-  server.registerTool(
+  registerTool(
     "get_saved_questions",
     {
       description:
@@ -91,7 +135,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ candidateId }) => toolResult(() => core.listSavedQuestions(candidateId)),
   );
-  server.registerTool(
+  registerTool(
     "get_ai_notes",
     {
       description:
@@ -109,7 +153,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ interviewId }) => toolResult(() => core.listAiNotes(interviewId)),
   );
-  server.registerTool(
+  registerTool(
     "get_asked_questions",
     {
       description:
@@ -126,7 +170,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ interviewId }) => toolResult(() => core.listAskedQuestions(interviewId)),
   );
-  server.registerTool(
+  registerTool(
     "get_saved_question_checks",
     {
       description:
@@ -140,7 +184,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ candidateId }) => toolResult(() => core.listSavedQuestionChecks(candidateId)),
   );
-  server.registerTool(
+  registerTool(
     "get_transcript",
     {
       description:
@@ -175,7 +219,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         };
       }),
   );
-  server.registerTool(
+  registerTool(
     "get_cv",
     {
       description:
@@ -192,7 +236,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         return cv ? { fileName: cv.fileName, pages: cv.pages.map((page) => ({ number: page.number, text: page.text })) } : null;
       }),
   );
-  server.registerTool(
+  registerTool(
     "save_ai_notes",
     {
       description:
@@ -202,7 +246,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "checks every quote: a note with any quote that is not found word for word in a Candidate segment is " +
         "dropped, and the answer says how many. Saved notes are Unreviewed and replace the earlier Unreviewed " +
         "ones; notes the Interviewer reviewed stay. Refused until the Speaker Mapping is confirmed, and while " +
-        "saving from the AI client is off in the app, under “Use with MCP”. " +
+        "saving from the AI client is off in the app, under “Use with MCP” (in Turkish “MCP ile kullan”). " +
         writingRulesInOneSentence,
       inputSchema: {
         interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate."),
@@ -228,7 +272,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ interviewId, notes }) => toolResult(() => core.saveAiNotesFromClient(interviewId, notes)),
   );
-  server.registerTool(
+  registerTool(
     "save_asked_questions",
     {
       description:
@@ -239,7 +283,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "savedQuestionId to the id of the Saved Question it asks (see get_saved_questions), or null. The app " +
         "checks every quote and drops a question that fails, and the answer says how many. Saving replaces the " +
         "Interview's earlier Asked Questions. Refused until the Speaker Mapping is confirmed, and while saving " +
-        "from the AI client is off in the app, under “Use with MCP”. An Answer Summary is your paraphrase, not " +
+        "from the AI client is off in the app, under “Use with MCP” (in Turkish “MCP ile kullan”). An Answer Summary is your paraphrase, not " +
         "the Candidate's words. " +
         writingRulesInOneSentence +
         " A question that touched on such a matter is still listed: its question quote stays word for word, and its " +
@@ -274,7 +318,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ interviewId, askedQuestions }) => toolResult(() => core.saveAskedQuestionsFromClient(interviewId, askedQuestions)),
   );
-  server.registerTool(
+  registerTool(
     "save_suggested_questions",
     {
       description:
@@ -284,7 +328,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "quotes is saved as a general question. The app checks every quote; a suggestion with a quote that is not " +
         "found, or that comes from a Transcript whose Speaker Mapping is not confirmed, is dropped, and the answer " +
         "says how many. Saving replaces the earlier suggestions that were not accepted. Refused while saving from " +
-        "the AI client is off in the app, under “Use with MCP”. A reason names what was or was not talked about " +
+        "the AI client is off in the app, under “Use with MCP” (in Turkish “MCP ile kullan”). A reason names what was or was not talked about " +
         "and never doubts the Candidate. " +
         writingRulesInOneSentence,
       inputSchema: {
@@ -306,7 +350,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ candidateId, suggestions }) => toolResult(() => core.saveSuggestedQuestionsFromClient(candidateId, suggestions)),
   );
-  server.registerTool(
+  registerTool(
     "save_candidate_brief",
     {
       description:
@@ -316,7 +360,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "(see get_cv) or a Transcript segment (see get_transcript). The app does not check your statements, but it " +
         "checks every quote against the CV and Transcripts each time the brief is read, and shows the Interviewer " +
         "which ones are not found word for word. Saving replaces the Candidate's earlier brief. Refused while " +
-        "saving from the AI client is off in the app, under “Use with MCP”.",
+        "saving from the AI client is off in the app, under “Use with MCP” (in Turkish “MCP ile kullan”).",
       inputSchema: {
         candidateId,
         text: z.string().max(textLimits.brief).describe("The whole brief, as Markdown, in the Interviewer's language."),
@@ -334,7 +378,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ candidateId, text, evidence }) => toolResult(() => core.saveCandidateBriefFromClient(candidateId, { text, evidence })),
   );
-  server.registerTool(
+  registerTool(
     "get_candidate_brief",
     {
       description:
@@ -345,7 +389,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     },
     ({ candidateId }) => toolResult(() => core.getCandidateBrief(candidateId)),
   );
-  server.registerTool(
+  registerTool(
     "search_evidence",
     {
       description:
@@ -381,7 +425,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     {
       title: "Brief",
       description:
-        "Prepare one Candidate: when saving from the AI client is on, write and save AI Notes, Asked Questions, " +
+        "Interview Companion: prepare one Candidate: when saving from the AI client is on, write and save AI Notes, Asked Questions, " +
         "and Suggested Questions, then write a Candidate Brief and save it in the app. When saving is off, only read and write " +
         "the brief in the chat. In the brief every statement cites Evidence, with no judgments, and the reasons " +
         "and quotes are listed at the end.",
@@ -394,11 +438,34 @@ export function createMcpServer(core: AiClientCore): McpServer {
       messages: [
         {
           role: "user",
-          content: { type: "text", text: briefPrompt(candidate, { canSave: core.aiClientWritesAllowed() }) },
+          content: {
+            type: "text",
+            text: withStartKey(briefPrompt(candidate, { canSave: core.aiClientWritesAllowed() })),
+          },
         },
       ],
     }),
   );
+  server.registerPrompt(
+    "candidate",
+    {
+      title: "Ask about a Candidate",
+      description:
+        "Interview Companion: start a conversation about a Candidate in the app, so the answers come from its data " +
+        "with quotes and their places. Give the Candidate's name, or its first word.",
+      argsSchema: {
+        candidate: z.string().optional().describe("Optional. The Candidate's name, or the first word of it."),
+      },
+    },
+    ({ candidate }) => ({
+      messages: [{ role: "user", content: { type: "text", text: withStartKey(candidatePrompt(candidate)) } }],
+    }),
+  );
+  // Running a prompt is the user's own act, so its text starts Interview Companion: it carries a
+  // fresh key, and the model needs no start call.
+  function withStartKey(text: string): string {
+    return `${startKeySentence(startKeys.issue())}\n\n${text}`;
+  }
   return server;
 }
 

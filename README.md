@@ -38,11 +38,13 @@ The **?** button in the app shows the same six steps.
 | | With an API key | With Claude Desktop or Claude Code (MCP) |
 |---|---|---|
 | What you need | An API key from Anthropic (paid by use), saved in the app once | Claude Desktop or Claude Code on your computer, connected to the app once. No API key |
-| How you use it | You press a button in the Workspace | You ask in Claude about a Candidate by name: "What did Selin Öztürk say about Terraform?" |
+| How you use it | You press a button in the Workspace | You start it in a Claude chat and ask about a Candidate by name: "Start Interview Companion and tell me what Selin Öztürk said about Terraform." |
 | What leaves your computer | When you press the button, the data named beside the button goes to Anthropic | What Claude reads goes to the model Claude uses |
 | Where the result appears | In the Interview notes card of the Workspace | In the Claude chat; with **Allow saving here** on, the notes, questions, and Candidate Brief also appear in the app |
 
-Connected over MCP, Claude reads the app's data directly; you copy nothing. The answer comes with its quote and where the quote is from: the CV, or which Interview. It says so when something is written in the CV but was not talked about in an Interview, or is not there at all. Claude can read, and with your permission save only what it wrote itself; it cannot delete or change Candidates, Interviews, CVs, Transcripts, or your notes. To connect, press **Use with MCP** in the app; details are in [docs/mcp.md](docs/mcp.md).
+**It works only in a chat where you start it.** Write "Start Interview Companion" in a chat and approve when Claude asks; Claude Code also has a ready command. In a chat where you did not start it, even if someone named there is one of your Candidates, Claude cannot reach the app's data: the app gives it nothing.
+
+Once started, Claude reads the app's data directly; you copy nothing. The answer comes with its quote and where the quote is from: the CV, or which Interview. It says so when something is written in the CV but was not talked about in an Interview, or is not there at all. Claude can read, and with your permission save only what it wrote itself; it cannot delete or change Candidates, Interviews, CVs, Transcripts, or your notes. To connect, press **Use with MCP** in the app; details are in [docs/mcp.md](docs/mcp.md).
 
 ## What else is there
 

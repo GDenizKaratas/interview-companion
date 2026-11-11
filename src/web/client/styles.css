@@ -497,27 +497,161 @@ button.link-button:hover:not(:disabled) {
   text-align: left;
 }
 
-/* A setting a step decides, such as letting the AI client save here, at the foot of its box. */
-.step .settings-check.step-check {
+/* The switch that lets the AI client save here, at the foot of its step's box. Its state is
+   written out under it, and the whole box takes the accent colour while it is on. */
+.step .save-switch {
   margin-top: auto;
   padding-top: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.step .save-switch button[role="switch"] {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.55rem 0.3rem 0.35rem;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--navy);
+  background: var(--surface);
+  border-color: var(--line-strong);
+  white-space: normal;
+  text-align: left;
 }
 
-/* Short sentences to try, under a step's hint. */
+.step .save-switch-track {
+  flex: none;
+  position: relative;
+  width: 2.1rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  background: var(--line-strong);
+  transition: background 0.15s;
+}
+
+.step .save-switch-thumb {
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: transform 0.15s;
+}
+
+.step .save-switch.on button[role="switch"] {
+  color: #ffffff;
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.step .save-switch.on .save-switch-track {
+  background: rgb(255 255 255 / 0.35);
+}
+
+.step .save-switch.on .save-switch-thumb {
+  transform: translateX(0.9rem);
+}
+
+.step .save-switch-state {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.step .save-switch.on .save-switch-state {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+/* Short sentences to try, under a step's hint: each copies itself when clicked. */
 .step ul.step-examples {
   margin: 0.2rem 0 0;
   padding: 0;
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+button.example-chip {
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.3;
+  padding: 0.15rem 0.5rem;
+  color: var(--accent-strong);
+  background: var(--accent-tint);
+  border-color: transparent;
+  border-radius: 999px;
+  white-space: normal;
+  text-align: left;
+}
+
+button.example-chip:hover:not(:disabled) {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+button.example-chip.command-chip {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+}
+
+/* Step 1 of "Use with MCP": the choice of AI application, then the one-click connect for
+   Claude Desktop and what it found or did. */
+.step .guide-apps {
+  margin-top: 0.3rem;
+}
+
+.step .step-hint.step-app-hint {
+  margin-top: 0.45rem;
+}
+
+/* "Use with MCP" holds steps, the connection, and the safety line; it is given more height than
+   other large dialogs, so it does not scroll on a laptop screen. */
+.confirm-dialog.wide.large > .confirm-dialog-subject:has(> .mcp-guide) {
+  max-height: min(40rem, 78vh);
+}
+
+.confirm-dialog-subject p.guide-note.guide-when {
+  margin: 0.8rem 0 0.6rem;
+}
+
+.step .desktop-connect {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.desktop-state {
   font-size: 0.8rem;
-  font-style: italic;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.desktop-state.ok {
+  font-weight: 600;
   color: var(--navy);
 }
 
-.step ul.step-examples li + li {
-  margin-top: 0.15rem;
+/* The text to add by hand, folded under the one-click connect. */
+details.guide-manual > summary {
+  margin-bottom: 0.35rem;
+  font-size: 0.84rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+code.guide-path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
 }
 
 .confirm-dialog-subject p.guide-connect-hint {
