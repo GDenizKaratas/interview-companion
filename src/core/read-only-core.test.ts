@@ -40,6 +40,7 @@ describe("Read-only view of core", () => {
       "listInterviewerNotes",
       "listInterviews",
       "listSavedQuestionChecks",
+      "listSavedQuestionStates",
       "listSavedQuestions",
       "listTranscriptFormats",
       "searchEvidence",

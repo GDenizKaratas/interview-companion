@@ -197,6 +197,7 @@ const readOperations = [
   "listAiNotes",
   "listAskedQuestions",
   "listSavedQuestionChecks",
+  "listSavedQuestionStates",
   "searchEvidence",
   "getCandidateBrief",
   "aiClientWritesAllowed",

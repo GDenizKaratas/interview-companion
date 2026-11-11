@@ -263,7 +263,42 @@ describe("MCP server", () => {
     const second = core.addSavedQuestion({ candidateId: candidate.id, text: "How did you make it idempotent?" });
     core.moveSavedQuestion(second.id, 0);
 
-    expect(await call("get_saved_questions", { candidateId: candidate.id })).toEqual([second, first]);
+    const untouched = { state: "planned", decidedBy: "transcripts", transcriptState: "planned", differsFromTranscripts: false };
+    expect(await call("get_saved_questions", { candidateId: candidate.id })).toEqual([
+      { ...second, ...untouched },
+      { ...first, ...untouched },
+    ]);
+  });
+
+  it("get_saved_questions gives core's one state for each question, so the AI client merges nothing", async () => {
+    const interview = readyInterview();
+    const found = core.addSavedQuestion({ candidateId: candidate.id, text: "Which queue?" });
+    const markedByHand = core.addSavedQuestion({ candidateId: candidate.id, text: "Which database?" });
+    core.saveAskedQuestionsFromClient(interview.id, [
+      {
+        question: "Which queue",
+        questionEvidence: { segmentNumber: 1, quote: "Which queue did you use?" },
+        savedQuestionId: found.id,
+        answerSummary: "Said they used Redis with BullMQ.",
+        answerEvidence: [{ segmentNumber: 2, quote: "Redis with BullMQ" }],
+      },
+    ]);
+    // The Transcript says the second was not asked; the Interviewer says it was, and their mark decides.
+    core.setSavedQuestionAsked(markedByHand.id, true);
+
+    const questions = (await call("get_saved_questions", { candidateId: candidate.id })) as { id: string }[];
+
+    expect(questions).toEqual([
+      expect.objectContaining({ id: found.id, state: "asked", decidedBy: "transcripts", differsFromTranscripts: false }),
+      expect.objectContaining({
+        id: markedByHand.id,
+        mark: "asked",
+        state: "asked",
+        decidedBy: "interviewer",
+        transcriptState: "notFound",
+        differsFromTranscripts: true,
+      }),
+    ]);
   });
 
   it("get_saved_questions refuses an unknown Candidate", async () => {
