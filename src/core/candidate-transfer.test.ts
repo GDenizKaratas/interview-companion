@@ -436,6 +436,19 @@ describe("Checks on import", () => {
     expect(target.listAiNotes(target.listInterviews(imported.candidate.id)[0]!.id)).toHaveLength(5);
   });
 
+  it("imports a Transcript whose exported Speaker Mapping core now refuses, reports it, and leaves the speakers unconfirmed", async () => {
+    const candidate = await elif();
+    const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);
+    // An export made before a mapping needed an Interviewer: every speaker but the Candidate is Other.
+    const older = JSON.parse(JSON.stringify(manifest).replaceAll('"role":"interviewer"', '"role":"other"'));
+
+    const imported = await target.importCandidate(repack(files, older));
+
+    expect(imported.problems[0]).toEqual({ kind: "speakerMapping", interviewNumber: 1, text: "transcript-elif-kaya.vtt" });
+    const [interview] = target.listInterviews(imported.candidate.id);
+    expect(target.getTranscript(interview!.id)?.speakerMappingConfirmedAt).toBeNull();
+  });
+
   it("reads each Transcript again like an upload, and reports one that is refused, with its AI work", async () => {
     const candidate = await elif();
     const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);

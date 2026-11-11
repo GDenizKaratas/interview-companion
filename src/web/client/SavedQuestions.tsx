@@ -492,8 +492,14 @@ function QuestionItem({ question, interviews, checks, state: questionState, onOp
                 title={check.stale ? text.panels.askedQuestions.stale : undefined}
               >
                 {ownDecision && state !== "asked" ? fill(t.aiFoundAskedIn, { interview: name }) : name}
-                <button type="button" className="review-button" title={t.reviewHint} onClick={() => onOpenExchange(check.askedQuestion!)}>
-                  {t.review}
+                {/* The button carries the stale reason too, so the keyboard reaches it. */}
+                <button
+                  type="button"
+                  className="review-button"
+                  title={check.stale ? text.panels.askedQuestions.stale : t.viewHint}
+                  onClick={() => onOpenExchange(check.askedQuestion!)}
+                >
+                  {t.view}
                 </button>
               </span>
             ) : (

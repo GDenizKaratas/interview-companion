@@ -122,6 +122,9 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   async function handleInterviewDeleted() {
     setHighlight(undefined);
     setDeletedInterviews((count) => count + 1);
+    // A card filtered to the deleted Interview goes back to all of them.
+    setQuestionsInterviewId(null);
+    setNotesInterviewId(null);
     // The new list and the new selection are set together, so no card ever sees the deleted id
     // as selected without its Interview in the list.
     try {

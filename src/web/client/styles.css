@@ -3614,12 +3614,6 @@ button.icon-button.wrong-mark-button:hover:not(:disabled) {
   margin: 0;
 }
 
-.ai-next-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
 /* What goes to the model and what stays, as two short rows. */
 .ai-sent {
   display: grid;
