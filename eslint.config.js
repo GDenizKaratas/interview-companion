@@ -34,6 +34,24 @@ export default tseslint.config(
     },
   },
   {
+    // The evaluation is a hand-run tool. Like the tests and demo/make-cv.ts it may use core's
+    // testing helpers, but never core's other files.
+    files: ["src/evaluation/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "/core/(?!index\\.ts$|testing/)",
+              message: "Import core only through src/core/index.ts (or its testing helpers).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // The browser cannot open the database. It talks to the local server over /api.
     // Type-only imports from core's public interface are allowed; they are erased.
     files: ["src/web/client/**/*.{ts,tsx}"],

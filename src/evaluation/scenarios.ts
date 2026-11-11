@@ -20,7 +20,7 @@ const judgingWordsEn = [
   "confident",
   "competent",
 ];
-const judgingWordsTr = ["güçlü", "zayıf", "mükemmel", "başarılı", "yetersiz", "öneri", "işe alın", "uygun aday", "eksik", "deneyimsiz"];
+const judgingWordsTr = ["güçlü", "zayıf", "mükemmel", "başarılı", "yetersiz", "öneri", "işe alın", "uygun aday", "deneyimsiz"];
 
 export const scenarios: Scenario[] = [
   {
@@ -130,5 +130,33 @@ export const scenarios: Scenario[] = [
     ],
     interviewerNotes: ["Seemed nervous when the conversation moved to databases."],
     watchTerms: [...judgingWordsEn, "nervous"],
+  },
+  {
+    id: "suggested-questions-focus-tr",
+    title: "Odak verilmiş öneri soruları",
+    task: "suggestedQuestions",
+    language: "tr",
+    focus: "veritabanı",
+    lookFor:
+      "Sorular veritabanı odağında kalıyor, Türkçe yazılıyor, görüşmede konuşulmamış CV iddiasını (okuma replikası) soruyor ve zaten kayıtlı soruyu tekrarlamıyor.",
+    candidateLabel: "Ozan",
+    cvPages: [
+      [
+        "Ozan Demirtaş",
+        "Backend Geliştirici",
+        "Kurgu Bilet A.Ş., 2022 - 2025",
+        "PostgreSQL için bir okuma replikası kurup rapor sorgularını oraya taşıdım.",
+        "Bilet satış API'sini Node.js ile yazdım.",
+      ],
+    ],
+    transcript: [
+      "Zeynep: Bilet satış API'sinde en zor sorun neydi?",
+      "Ozan: Aynı koltuğun iki kez satılmasıydı. Satışta satırı SELECT FOR UPDATE ile kilitledik.",
+      "Zeynep: Kilit beklerken istekler zaman aşımına uğruyor muydu?",
+      "Ozan: Yoğun saatlerde evet, bu yüzden kilit bekleme süresini iki saniyeyle sınırladık.",
+    ],
+    interviewerNotes: ["Kilit konusunu iyi anlattı."],
+    savedQuestions: ["Kilit bekleme süresini neden iki saniye seçtiniz?"],
+    watchTerms: [...judgingWordsTr, "iyi anlattı"],
   },
 ];

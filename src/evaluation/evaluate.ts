@@ -20,9 +20,11 @@ export interface Scenario {
   transcript: string[];
   // The speaker label that is the Candidate. Every other speaker is an Interviewer.
   candidateLabel: string;
-  // Only for Suggested Questions: CV pages as lines of text, Interviewer Notes, and a focus.
+  // Only for Suggested Questions: CV pages as lines of text, Interviewer Notes, Saved Questions,
+  // and a focus.
   cvPages?: string[][];
   interviewerNotes?: string[];
+  savedQuestions?: string[];
   focus?: string;
   // Words that should not appear in what is saved, such as the Interviewer's own words or judging
   // words. A hit is a place for a person to read, not a failure by itself.
@@ -37,6 +39,12 @@ export interface EvaluatedItem {
   quotes: string[];
 }
 
+// A watched word found in a saved item, and the item's text.
+export interface WatchHit {
+  term: string;
+  text: string;
+}
+
 export interface ScenarioResult {
   scenarioId: string;
   // How many items the model proposed.
@@ -45,7 +53,7 @@ export interface ScenarioResult {
   saved: EvaluatedItem[];
   // What the model proposed and core did not save.
   dropped: EvaluatedItem[];
-  watchHits: { term: string; text: string }[];
+  watchHits: WatchHit[];
   // The message of a failed call, or null.
   error: string | null;
 }
@@ -69,12 +77,12 @@ async function runScenario(scenario: Scenario, providerFor: AiProviderFactory, a
     return {
       async proposeAiNotes(request) {
         const notes = await provider.proposeAiNotes(request);
-        proposals.push(...notes.map((n) => ({ text: n.statement, reason: null, quotes: n.evidence.map((e) => e.quote) })));
+        proposals.push(...notes.map((n) => noteItem(n.statement, n.evidence)));
         return notes;
       },
       async proposeQuestions(request) {
         const questions = await provider.proposeQuestions(request);
-        proposals.push(...questions.map((q) => ({ text: q.question, reason: q.reason, quotes: q.evidence.map((e) => e.quote) })));
+        proposals.push(...questions.map((q) => questionItem(q.question, q.reason, q.evidence)));
         return questions;
       },
       proposeAskedQuestions: (request) => provider.proposeAskedQuestions(request),
@@ -94,11 +102,12 @@ async function runScenario(scenario: Scenario, providerFor: AiProviderFactory, a
       error: null,
     };
   } catch (error) {
+    // Nothing was saved, and core did not drop anything: the run failed before or during saving.
     return {
       scenarioId: scenario.id,
       proposed: proposals.length,
       saved: [],
-      dropped: proposals,
+      dropped: [],
       watchHits: [],
       error: error instanceof Error ? error.message : String(error),
     };
@@ -126,7 +135,7 @@ async function generate(core: Core, scenario: Scenario, apiKey: string): Promise
   );
   if (scenario.task === "aiNotes") {
     const generation = await core.generateAiNotes(interview.id);
-    return generation.notes.map((n) => ({ text: n.statement, reason: null, quotes: n.evidence.map((e) => e.quote) }));
+    return generation.notes.map((n) => noteItem(n.statement, n.evidence));
   }
   if (scenario.cvPages) {
     await core.attachCv(candidate.id, {
@@ -137,8 +146,17 @@ async function generate(core: Core, scenario: Scenario, apiKey: string): Promise
   if (scenario.interviewerNotes?.length) {
     core.addInterviewerNotes({ candidateId: candidate.id, text: scenario.interviewerNotes.join("\n") });
   }
+  for (const text of scenario.savedQuestions ?? []) core.addSavedQuestion({ candidateId: candidate.id, text });
   const generation = await core.generateSuggestedQuestions(candidate.id, { focus: scenario.focus ?? null });
-  return generation.suggestions.map((s) => ({ text: s.text, reason: s.reason, quotes: s.evidence.map((e) => e.quote) }));
+  return generation.suggestions.map((s) => questionItem(s.text, s.reason, s.evidence));
+}
+
+function noteItem(statement: string, evidence: { quote: string }[]): EvaluatedItem {
+  return { text: statement, reason: null, quotes: evidence.map((e) => e.quote) };
+}
+
+function questionItem(question: string, reason: string, evidence: { quote: string }[]): EvaluatedItem {
+  return { text: question, reason, quotes: evidence.map((e) => e.quote) };
 }
 
 // The proposals with no saved item of the same text. Core saves an item's text as proposed, so
@@ -153,7 +171,7 @@ function notSaved(proposals: EvaluatedItem[], saved: EvaluatedItem[]): Evaluated
   });
 }
 
-function watchHits(scenario: Scenario, saved: EvaluatedItem[]): { term: string; text: string }[] {
+function watchHits(scenario: Scenario, saved: EvaluatedItem[]): WatchHit[] {
   const lower = (text: string) => text.toLocaleLowerCase(scenario.language);
   return saved.flatMap((item) =>
     scenario.watchTerms
@@ -182,6 +200,7 @@ export function renderReport(scenarios: Scenario[], results: ScenarioResult[], r
     "Run by hand with `npm run evaluate` on the fictional scenarios in `src/evaluation/scenarios.ts`.",
     "These results are not part of the automated tests, which use a fake provider.",
     "One run per scenario: the model's answers vary, so a second run can differ.",
+    "The model is the one the app asks for. If it declined for a safety reason, the API's fallback may have answered with another model.",
     "",
     "Proposed: items the model proposed. Saved: items that passed core's checks. Dropped: items core did not save.",
     "Watch hits: watched words found in saved items, each a place to read, not a failure by itself.",
