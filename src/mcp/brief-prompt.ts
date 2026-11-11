@@ -34,7 +34,8 @@ const findCandidate =
   "1. Call list_candidates and find the Candidate whose name or id matches, or whose name starts with the words given. If none or several match, stop and ask the Interviewer which one.";
 
 // Steps both lists share, word for word.
-const readOthers = "Call get_saved_questions and get_interviewer_notes.";
+const readOthers =
+  "Call get_saved_questions and get_interviewer_notes, and get_saved_question_checks to see which Saved Questions were asked in which Interview.";
 const readAiNotes = "Call get_ai_notes for each Interview that has a Transcript.";
 const search =
   "Call search_evidence for the topics of the Candidate's role and CV, and for each topic you are about to write about. Run several searches with different words, because it is a keyword search. To report what the Candidate said, search with candidateOnly set to true.";
@@ -62,9 +63,9 @@ If a save is refused because saving from the AI client is off in the app, under 
 const rules = `- Every statement about the Candidate cites Evidence with a number in square brackets, such as [1]. Evidence is only an exact excerpt from the CV or a Transcript: a search_evidence result or a quote of an AI Note. Write no statement you cannot cite.
 - Copy every quote word for word from the tool result, in its original language. Do not translate, shorten, or fix a quote.
 - Say that the Candidate said something only when the segment's speakerRole is candidate. A segment whose speakerRole is null is from an unconfirmed Speaker Mapping: say whose label it is and that the speaker is not confirmed.
-- No judgments: no hiring recommendation, no score or rating, no ranking or comparison with others. Describe what the Evidence says.
+- No judgments: no hiring recommendation, no score or rating, no ranking or comparison with others, and no words such as good or bad about the Candidate. Describe what the Evidence says.
 ${neutralityRules.join("\n")}
-- Write nothing about ${privateMatters}, even when it was talked about. If a question in an Interview touched on such a matter, say only that a personal matter was talked about.
+- Write nothing about ${privateMatters}, even when it was talked about. If a question in an Interview touched on such a matter, say only that a personal matter was talked about: that one statement needs no Evidence number, and you quote nothing from that part of the Interview.
 - When nothing is found, write "not found in the indexed sources". Never write that the Candidate lacks a skill.
 - Interviewer Notes are the Interviewer's opinion, never Evidence. Put them only in their own section, as the Interviewer's words, and never use them as the reason for a statement.
 - For AI Notes: use the correction instead of the statement when there is one. Leave out Dismissed and Stale notes. A Confirmed note reflects its Evidence; it does not mean the Candidate was right. Cite the note's quotes, not the note.
@@ -94,7 +95,7 @@ For each Interview in order, short statements of what the Candidate said, each w
 The Interviewer Notes, marked as the Interviewer's opinion and not Evidence. Write "None." if there are none.
 
 ## Open topics
-What has not been talked about yet: the Saved Questions, in the Interviewer's order, and topics you searched for and did not find, written as "not found in the indexed sources". This is a list for the next Interview, not a list of what the Candidate lacks.
+What has not been talked about yet: the Saved Questions that are not marked asked (see mark) and that no Asked Question matches, in the Interviewer's order, and topics you searched for and did not find, written as "not found in the indexed sources". This is a list for the next Interview, not a list of what the Candidate lacks.
 
 ## Reasons and Evidence
 One numbered entry per Evidence number used above:

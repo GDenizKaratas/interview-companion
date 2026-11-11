@@ -15,6 +15,6 @@ export const neutralityRules = [
 ];
 
 // The same rules in one sentence, for a tool's description.
-export const writingRulesInBrief =
+export const writingRulesInOneSentence =
   "Write no word that praises or faults the Candidate or an answer, infer nothing beyond the words said, keep the " +
   `Candidate's own hedges such as "I think" or "the team did", and write nothing about ${privateMatters}.`;
