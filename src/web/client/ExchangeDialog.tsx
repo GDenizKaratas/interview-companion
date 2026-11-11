@@ -68,7 +68,7 @@ export function ExchangeDialog({
           <div className={askedQuestion.markedWrong ? "exchange-summary wrong" : "exchange-summary"}>
             <div className="exchange-summary-head">
               <span className="exchange-summary-label">{t.answer}</span>
-              <WrongMark askedQuestion={askedQuestion} onChange={onMarkChange} />
+              <WrongMark askedQuestion={askedQuestion} onChange={onMarkChange} withWords />
             </div>
             <p className="exchange-summary-text">{askedQuestion.answerSummary}</p>
           </div>

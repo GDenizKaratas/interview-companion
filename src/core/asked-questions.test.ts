@@ -477,6 +477,23 @@ describe("Marking an Asked Question as wrong", () => {
     expect(() => core.markAskedQuestionWrong("no-such-asked-question", true)).toThrow(NotFoundError);
   });
 
+  it("lets the Interviewer's own word on a Saved Question stand, whatever is marked wrong", async () => {
+    ready();
+    const question = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    fake.askedQuestions = [{ ...payments, savedQuestionId: question.id }];
+    const [pay] = (await core.findAskedQuestions(interview.id)).askedQuestions;
+    const stateNow = () => core.listSavedQuestionStates(candidate.id)[0]!;
+
+    // The Interviewer says it was asked, although the summary that showed it is marked wrong.
+    core.markAskedQuestionWrong(pay!.id, true);
+    core.setSavedQuestionAsked(question.id, true);
+    expect(stateNow()).toMatchObject({ state: "asked", decidedBy: "interviewer", transcriptState: "notFound", differsFromTranscripts: true });
+
+    // With the mark on the summary taken back, the two agree again and the Interviewer's word still stands.
+    core.markAskedQuestionWrong(pay!.id, false);
+    expect(stateNow()).toMatchObject({ state: "asked", decidedBy: "interviewer", transcriptState: "asked", differsFromTranscripts: false });
+  });
+
   it("does not count an Asked Question marked wrong as asked: its Saved Question follows the other Interviews", async () => {
     ready();
     const question = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });

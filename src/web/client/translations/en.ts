@@ -529,9 +529,11 @@ const text = {
       fromAiClient: "From your AI client",
       loadFailed: "The questions asked could not be loaded.",
       // The Interviewer's mark that a summary is wrong. A question marked wrong does not count as asked.
-      markWrong: "Mark this as wrong",
-      markedWrong: "Marked wrong",
-      notWrong: "It is not wrong",
+      markWrong: "Mark the summary as wrong",
+      summaryIsWrong: "Summary is wrong",
+      markedWrong: "Summary marked wrong",
+      markedWrongHint: "Not counted as asked.",
+      notWrong: "Remove the mark",
       markFailed: "The mark could not be saved.",
       // {count} is replaced by a number.
       wrongCount: "{count} marked wrong",

@@ -3411,3 +3411,12 @@ button.icon-button.wrong-mark-button:hover:not(:disabled) {
   font-weight: 600;
   color: var(--muted);
 }
+
+/* Beside the summary in the exchange dialog, the wrong mark says what it does in words. */
+button.wrong-mark-button.with-words {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}

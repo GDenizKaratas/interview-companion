@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { generationErrorMessage } from "./AiNotesPanel.tsx";
 import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
 import { api, type AskedQuestion, type AskedQuestions, type Interview, type Transcript } from "./api.ts";
@@ -63,6 +63,7 @@ function InterviewAskedQuestions({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [open, setOpen] = useState<AskedQuestion | undefined>();
   const [showWrong, setShowWrong] = useState(false);
+  const wrongLineButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const loadKey = () => api.getApiKeyStatus().then((status) => setApiKeySaved(status.saved), () => setLoadFailed(true));
@@ -107,10 +108,13 @@ function InterviewAskedQuestions({
 
   // Core saved the mark; the list shows the question as core now gives it.
   function marked(updated: AskedQuestion) {
-    setAsked((current) =>
-      current && { ...current, askedQuestions: current.askedQuestions.map((question) => (question.id === updated.id ? updated : question)) },
-    );
+    const next = asked && { ...asked, askedQuestions: asked.askedQuestions.map((question) => (question.id === updated.id ? updated : question)) };
+    setAsked(next);
     setOpen((current) => (current?.id === updated.id ? updated : current));
+    // With no mark left there is nothing to show or hide, so the next mark hides its row again.
+    if (next && !next.askedQuestions.some((question) => question.markedWrong)) setShowWrong(false);
+    // A row that leaves the list takes the keyboard focus with it: it goes to the line that says where the row went.
+    if (updated.markedWrong && !showWrong) window.setTimeout(() => wrongLineButton.current?.focus());
     onFound();
   }
 
@@ -172,7 +176,7 @@ function InterviewAskedQuestions({
       {wrongCount > 0 && (
         <p className="asked-questions-wrong-line">
           {fill(t.wrongCount, { count: String(wrongCount) })} ·{" "}
-          <button type="button" className="link-button" onClick={() => setShowWrong(!showWrong)}>
+          <button ref={wrongLineButton} type="button" className="link-button" onClick={() => setShowWrong(!showWrong)}>
             {showWrong ? t.hideWrong : t.showWrong}
           </button>
         </p>
