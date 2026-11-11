@@ -194,7 +194,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "checks every quote: a note with any quote that is not found word for word in a Candidate segment is " +
         "dropped, and the answer says how many. Saved notes are Unreviewed and replace the earlier Unreviewed " +
         "ones; notes the Interviewer reviewed stay. Refused until the Speaker Mapping is confirmed, and while " +
-        "saving from the AI client is off in the app's AI Settings.",
+        "saving from the AI client is off in the app, under “Use with MCP”.",
       inputSchema: {
         interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate."),
         notes: z
@@ -230,7 +230,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "savedQuestionId to the id of the Saved Question it asks (see get_saved_questions), or null. The app " +
         "checks every quote and drops a question that fails, and the answer says how many. Saving replaces the " +
         "Interview's earlier Asked Questions. Refused until the Speaker Mapping is confirmed, and while saving " +
-        "from the AI client is off in the app's AI Settings.",
+        "from the AI client is off in the app, under “Use with MCP”.",
       inputSchema: {
         interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate."),
         askedQuestions: z
@@ -271,7 +271,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "quotes is saved as a general question. The app checks every quote; a suggestion with a quote that is not " +
         "found, or that comes from a Transcript whose Speaker Mapping is not confirmed, is dropped, and the answer " +
         "says how many. Saving replaces the earlier suggestions that were not accepted. Refused while saving from " +
-        "the AI client is off in the app's AI Settings.",
+        "the AI client is off in the app, under “Use with MCP”.",
       inputSchema: {
         candidateId,
         suggestions: z
@@ -301,7 +301,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "(see get_cv) or a Transcript segment (see get_transcript). The app does not check your statements, but it " +
         "checks every quote against the CV and Transcripts each time the brief is read, and shows the Interviewer " +
         "which ones are not found word for word. Saving replaces the Candidate's earlier brief. Refused while " +
-        "saving from the AI client is off in the app's AI Settings.",
+        "saving from the AI client is off in the app, under “Use with MCP”.",
       inputSchema: {
         candidateId,
         text: z.string().max(textLimits.brief).describe("The whole brief, as Markdown, in the Interviewer's language."),

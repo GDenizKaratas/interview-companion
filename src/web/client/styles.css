@@ -332,11 +332,149 @@ button.link-button:hover:not(:disabled) {
   color: var(--text);
 }
 
-.ai-settings-button {
+/* How it works: a round "?" at the start of the bar's buttons, which sit at its end. */
+.app-bar .bar-help {
   margin-left: auto;
+  width: 1.7rem;
+  padding-left: 0;
+  padding-right: 0;
+  border-radius: 50%;
+  font-weight: 700;
 }
 
-/* Home: the Candidates on the left, the calendar and the no-key guide on the right. */
+.app-bar .bar-button {
+  white-space: nowrap;
+}
+
+.bar-check {
+  margin-right: 0.35rem;
+  color: #7ee2a8;
+}
+
+@media (max-width: 900px) {
+  .tagline {
+    display: none;
+  }
+}
+
+/* Steps as numbered boxes joined by arrows. */
+.step-flow {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(var(--steps), minmax(0, 1fr));
+  gap: 0.6rem 1.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.65rem 0.7rem;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+/* The arrow to the next step, in the gap between the boxes. */
+.step:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  top: 50%;
+  right: -1.15rem;
+  transform: translateY(-50%);
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.step-flow.rows-of-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* No arrow at the end of a row: the next step is on the next line. */
+.step-flow.rows-of-three .step:nth-child(3n)::after {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .step-flow,
+  .step-flow.rows-of-three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .step::after {
+    display: none;
+  }
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--navy);
+  border-radius: 50%;
+}
+
+.step-title {
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.step-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.confirm-dialog.wide.large {
+  width: min(52rem, calc(100vw - 2rem));
+}
+
+.confirm-dialog.wide.large > .confirm-dialog-subject {
+  max-height: min(34rem, 75vh);
+}
+
+.settings-other-way {
+  margin: 0.75rem 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.confirm-dialog-subject p.guide-intro {
+  margin-bottom: 0.9rem;
+}
+
+.confirm-dialog-subject p.guide-label {
+  margin: 1rem 0 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.confirm-dialog-subject p.guide-note {
+  margin-top: 0.9rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Under the Candidate table: which page of rows is shown. */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* Home: the Candidates on the left, the calendar on the right. */
 .home {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 24rem;
@@ -888,8 +1026,9 @@ button.range-tab.chosen {
   padding: 0;
 }
 
+/* As tall as the window leaves under the calendar, so the page itself does not scroll. */
 .calendar:not(.expanded) .interview-list {
-  max-height: 17rem;
+  max-height: max(7rem, calc(100vh - 41rem));
   overflow: auto;
 }
 
@@ -954,44 +1093,7 @@ button.range-tab.chosen {
   color: var(--muted);
 }
 
-/* How to use AI without an API key. */
-.no-key-guide {
-  font-size: 0.85rem;
-}
-
-.no-key-card {
-  border-left: 3px solid var(--accent);
-}
-
-.no-key-guide h2 {
-  margin-bottom: 0.4rem;
-}
-
-.no-key-guide p {
-  margin: 0 0 0.45rem;
-}
-
-.no-key-step {
-  font-weight: 500;
-}
-
-.no-key-note {
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
-.no-key-guide p:last-child {
-  margin-bottom: 0;
-}
-
-.no-key-guide.compact {
-  margin-top: 1rem;
-  border-left: 3px solid var(--accent);
-  padding: 0.7rem 0.8rem;
-  background: var(--accent-tint);
-  border-radius: var(--radius);
-}
-
+/* A command to copy, in a dark box with its Copy button. */
 .command {
   display: flex;
   align-items: flex-start;
@@ -1718,7 +1820,7 @@ select.note-tag,
   }
 }
 
-/* The dialog that asks before anything is deleted, and the AI settings. */
+/* The dialog that asks before anything is deleted, and the API key dialog. */
 .confirm-dialog {
   width: min(26rem, calc(100vw - 2rem));
   box-sizing: border-box;
@@ -2032,7 +2134,7 @@ button.role-choice.chosen:hover:not(:disabled) {
   color: var(--muted);
 }
 
-/* AI settings */
+/* The API key dialog */
 .settings-dialog {
   width: min(34rem, calc(100vw - 2rem));
 }

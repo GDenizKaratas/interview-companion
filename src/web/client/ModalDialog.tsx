@@ -9,11 +9,13 @@ interface ModalDialogProps {
   onCancel: () => void;
   // Room for a form or a list, instead of the width of a short question.
   wide?: boolean;
+  // Room for a guide with steps side by side.
+  large?: boolean;
 }
 
 // The app's small modal dialog: the page behind it cannot be clicked, and Escape cancels only this
 // dialog, not one it was opened from. ConfirmDialog and the Candidate export and import use it.
-export function ModalDialog({ title, children, actions, onCancel, wide }: ModalDialogProps) {
+export function ModalDialog({ title, children, actions, onCancel, wide, large }: ModalDialogProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -24,7 +26,7 @@ export function ModalDialog({ title, children, actions, onCancel, wide }: ModalD
   return (
     <dialog
       ref={dialog}
-      className={wide ? "confirm-dialog wide" : "confirm-dialog"}
+      className={large ? "confirm-dialog wide large" : wide ? "confirm-dialog wide" : "confirm-dialog"}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
