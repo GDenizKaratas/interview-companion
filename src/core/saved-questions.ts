@@ -9,6 +9,10 @@ import { interviewFilterCondition, requireInterviewOf, type InterviewFilter } fr
 // or copied from a Role Question.
 export type QuestionOrigin = "written" | "suggestion" | "role";
 
+// The Interviewer's own word on whether a Saved Question was asked. It is set by hand and wins over
+// what was found in the Transcripts; AI never sets or changes it.
+export type QuestionMark = "asked" | "notAsked";
+
 export interface SavedQuestion {
   id: string;
   candidateId: string;
@@ -16,6 +20,8 @@ export interface SavedQuestion {
   interviewId: string | null;
   text: string;
   origin: QuestionOrigin;
+  // The Interviewer's mark, or null when they have not marked the question.
+  mark: QuestionMark | null;
   createdAt: string;
 }
 
@@ -34,10 +40,11 @@ interface SavedQuestionRow {
   // stored origin is written.
   origin: Exclude<QuestionOrigin, "role">;
   from_role: 0 | 1;
+  mark: QuestionMark | null;
   created_at: string;
 }
 
-const columns = "id, candidate_id, interview_id, text, origin, from_role, created_at";
+const columns = "id, candidate_id, interview_id, text, origin, from_role, mark, created_at";
 
 // Adds a hand-written question at the end of the Candidate's list.
 export function addSavedQuestion(db: DatabaseSync, input: NewSavedQuestion): SavedQuestion {
@@ -64,12 +71,13 @@ export function insertSavedQuestion(
     text: requireQuestionText(text),
     origin: origin === "role" ? "written" : origin,
     from_role: origin === "role" ? 1 : 0,
+    mark: null,
     created_at: createdAt,
   };
   db.prepare(
     `INSERT INTO saved_question (${columns}, position)
-     VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position) + 1, 0) FROM saved_question WHERE candidate_id = ?))`,
-  ).run(row.id, row.candidate_id, row.interview_id, row.text, row.origin, row.from_role, row.created_at, row.candidate_id);
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position) + 1, 0) FROM saved_question WHERE candidate_id = ?))`,
+  ).run(row.id, row.candidate_id, row.interview_id, row.text, row.origin, row.from_role, row.mark, row.created_at, row.candidate_id);
   return toSavedQuestion(row);
 }
 
@@ -99,6 +107,17 @@ export function tagSavedQuestion(db: DatabaseSync, id: string, interviewId: stri
   if (interviewId !== null) requireInterviewOf(db, question.candidateId, interviewId);
   db.prepare("UPDATE saved_question SET interview_id = ? WHERE id = ?").run(interviewId, id);
   return { ...question, interviewId };
+}
+
+// Sets the Interviewer's mark on one question, or removes it when mark is null. Everything else
+// about the question stays, and so does what was found in the Transcripts.
+export function markSavedQuestion(db: DatabaseSync, id: string, mark: QuestionMark | null): SavedQuestion {
+  const question = findSavedQuestion(db, id);
+  if (mark !== null && mark !== "asked" && mark !== "notAsked") {
+    throw new InvalidInputError("mark", "format", "A question is marked as asked, as not asked, or not at all.");
+  }
+  db.prepare("UPDATE saved_question SET mark = ? WHERE id = ?").run(mark, id);
+  return { ...question, mark };
 }
 
 export function deleteSavedQuestion(db: DatabaseSync, id: string): void {
@@ -139,7 +158,7 @@ export function moveInList(ids: string[], id: string, position: number): string[
   return moved;
 }
 
-function findSavedQuestion(db: DatabaseSync, id: string): SavedQuestion {
+export function findSavedQuestion(db: DatabaseSync, id: string): SavedQuestion {
   const row = db.prepare(`SELECT ${columns} FROM saved_question WHERE id = ?`).get(id);
   if (!row) {
     throw new NotFoundError("This question does not exist.");
@@ -164,6 +183,7 @@ function toSavedQuestion(row: SavedQuestionRow): SavedQuestion {
     interviewId: row.interview_id,
     text: row.text,
     origin: row.from_role === 1 ? "role" : row.origin,
+    mark: row.mark,
     createdAt: row.created_at,
   };
 }

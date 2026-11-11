@@ -514,6 +514,7 @@ const text = {
       // {asked} and {total} are replaced by numbers.
       askedCount: "{asked} of {total} asked",
       states: { asked: "Asked", notFound: "Looked for in a Transcript and not found", planned: "Planned" },
+      markedNotAsked: "Not asked",
       empty: "No questions saved.",
       placeholder: "Write a question, Enter to save…",
       newLabel: "New question",
@@ -537,8 +538,19 @@ const text = {
       showAll: "Show all questions",
       // {interview} is replaced by the Interview's name.
       askedIn: "Asked in {interview}",
+      aiFoundAskedIn: "AI found it in {interview}",
       notFoundIn: "Not found in the Transcript of {interview}",
       notFoundHint: "Not found in this Transcript. It may have been asked in other words.",
+      // The state mark of a row is a button. {state} is replaced by the row's state.
+      markAskedTitle: "Mark as asked",
+      markNotAskedTitle: "Mark as not asked",
+      markedByYou: "Your decision",
+      markedByYouHint: "The Transcripts say otherwise. Your decision is the one that counts.",
+      useFound: "Back to the AI's result",
+      confirmNotAsked: "Count as not asked?",
+      // {interviews} is replaced by a list of Interview names.
+      confirmNotAskedDetail: "AI found this question asked ({interviews}). Your decision is the one that counts.",
+      markNotAsked: "Count as not asked",
       suggestions: {
         open: "Suggest questions",
         label: "AI-generated",

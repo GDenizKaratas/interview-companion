@@ -9,7 +9,7 @@ import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { candidateOfInterview, listInterviews, requireInterview, type Today } from "./interviews.ts";
 import { containsQuote } from "./quotes.ts";
-import { listSavedQuestions } from "./saved-questions.ts";
+import { findSavedQuestion, listSavedQuestions, markSavedQuestion, type SavedQuestion } from "./saved-questions.ts";
 import {
   callModel,
   requireConfirmedTranscript,
@@ -312,20 +312,49 @@ export function listSavedQuestionChecks(db: DatabaseSync, today: Today, candidat
   );
 }
 
-// Where a Saved Question stands across all of the Candidate's Interviews: asked in at least one;
-// looked for in at least one Transcript and not found in any; or planned, when no Transcript has
-// been checked for it yet.
+// What the Transcripts say about a Saved Question across all of the Candidate's Interviews: asked
+// in at least one; looked for in at least one Transcript and not found in any; or planned, when no
+// Transcript has been checked for it yet.
+export type QuestionState = "asked" | "notFound" | "planned";
+
+// Where a Saved Question stands. The Interviewer's mark decides when there is one: asked, or
+// planned for a question marked as not asked. Without a mark the Transcripts decide.
 export interface SavedQuestionState {
   savedQuestionId: string;
-  state: "asked" | "notFound" | "planned";
+  state: QuestionState;
+  decidedBy: "interviewer" | "transcripts";
+  // What the Transcripts say, whoever decided.
+  transcriptState: QuestionState;
+  // True when the Interviewer's mark says the opposite of what a checked Transcript says.
+  differsFromTranscripts: boolean;
 }
 
 // One state for every Saved Question, in the Interviewer's order.
 export function listSavedQuestionStates(db: DatabaseSync, today: Today, candidateId: string): SavedQuestionState[] {
   const checks = listSavedQuestionChecks(db, today, candidateId);
-  return listSavedQuestions(db, candidateId).map((question) => {
+  return listSavedQuestions(db, candidateId).map((question): SavedQuestionState => {
     const own = checks.filter((check) => check.savedQuestionId === question.id);
-    const state = own.some((check) => check.askedQuestion !== null) ? "asked" : own.length > 0 ? "notFound" : "planned";
-    return { savedQuestionId: question.id, state };
+    const transcriptState = own.some((check) => check.askedQuestion !== null) ? "asked" : own.length > 0 ? "notFound" : "planned";
+    if (question.mark === null) {
+      return { savedQuestionId: question.id, state: transcriptState, decidedBy: "transcripts", transcriptState, differsFromTranscripts: false };
+    }
+    return {
+      savedQuestionId: question.id,
+      state: question.mark === "asked" ? "asked" : "planned",
+      decidedBy: "interviewer",
+      transcriptState,
+      // A Transcript that was never checked for the question says nothing, so nothing differs.
+      differsFromTranscripts: transcriptState !== "planned" && (question.mark === "asked") !== (transcriptState === "asked"),
+    };
   });
+}
+
+// Records the Interviewer's word on whether a Saved Question was asked. A mark is kept only when
+// it says something the Transcripts do not: saying what they already say removes the mark, so the
+// question follows the Transcripts again. Refuses an unknown question with NotFoundError.
+export function setSavedQuestionAsked(db: DatabaseSync, today: Today, id: string, asked: boolean): SavedQuestion {
+  const question = findSavedQuestion(db, id);
+  const { transcriptState } = listSavedQuestionStates(db, today, question.candidateId).find((state) => state.savedQuestionId === id)!;
+  const transcriptsSayAsked = transcriptState === "asked";
+  return markSavedQuestion(db, id, asked === transcriptsSayAsked ? null : asked ? "asked" : "notAsked");
 }

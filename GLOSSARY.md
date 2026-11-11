@@ -75,7 +75,7 @@ A question AI proposed on the Interviewer's request, with a reason and, when ava
 _Avoid_: Recommendation, generated question
 
 **Saved Question**:
-A question on the Interviewer's own list, either written by hand, copied from a Suggested Question on acceptance, or copied from a Role Question, optionally tied to one Interview. Regenerating suggestions never changes it.
+A question on the Interviewer's own list, either written by hand, copied from a Suggested Question on acceptance, or copied from a Role Question, optionally tied to one Interview. Regenerating suggestions never changes it. The Interviewer can mark it as asked or as not asked; the mark decides whether it counts as asked, over what was found in the Transcripts, and AI never sets or changes it.
 _Avoid_: Accepted question, follow-up
 
 **Role Question**:

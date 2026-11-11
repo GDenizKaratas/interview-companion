@@ -217,6 +217,9 @@ const migrations: string[] = [
   `ALTER TABLE transcript ADD COLUMN original BLOB;`,
   // The time of day an Interview starts, HH:MM, or NULL when none was given.
   `ALTER TABLE interview ADD COLUMN time TEXT;`,
+  // The Interviewer's own mark on a Saved Question, or NULL when they have not marked it. It is a
+  // column of the question, so nothing that happens to Asked Questions can change it.
+  `ALTER TABLE saved_question ADD COLUMN mark TEXT CHECK (mark IN ('asked', 'notAsked'));`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

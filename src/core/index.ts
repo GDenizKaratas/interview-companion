@@ -66,7 +66,7 @@ export {
 export type { InterviewerNote, NewInterviewerNotes } from "./interviewer-notes.ts";
 export type { Interview, InterviewFilter, InterviewTime, NewInterview } from "./interviews.ts";
 export type { NewRoleQuestion, RoleQuestion, RoleQuestionList } from "./role-questions.ts";
-export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
+export type { NewSavedQuestion, QuestionMark, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
 export type {
   QuestionFocus,
   SuggestedQuestion,
@@ -105,6 +105,8 @@ export interface Core {
   listSavedQuestions(candidateId: string, filter?: interviews.InterviewFilter): savedQuestions.SavedQuestion[];
   editSavedQuestion(id: string, text: string): savedQuestions.SavedQuestion;
   tagSavedQuestion(id: string, interviewId: string | null): savedQuestions.SavedQuestion;
+  markSavedQuestion(id: string, mark: savedQuestions.QuestionMark | null): savedQuestions.SavedQuestion;
+  setSavedQuestionAsked(id: string, asked: boolean): savedQuestions.SavedQuestion;
   deleteSavedQuestion(id: string): void;
   moveSavedQuestion(id: string, position: number, filter?: interviews.InterviewFilter): void;
   addRoleQuestion(input: roleQuestions.NewRoleQuestion): roleQuestions.RoleQuestion;
@@ -260,6 +262,8 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listSavedQuestions: (candidateId, filter) => savedQuestions.listSavedQuestions(db, candidateId, filter),
     editSavedQuestion: (id, text) => savedQuestions.editSavedQuestion(db, id, text),
     tagSavedQuestion: (id, interviewId) => savedQuestions.tagSavedQuestion(db, id, interviewId),
+    markSavedQuestion: (id, mark) => savedQuestions.markSavedQuestion(db, id, mark),
+    setSavedQuestionAsked: (id, asked) => askedQuestions.setSavedQuestionAsked(db, today, id, asked),
     deleteSavedQuestion: (id) => savedQuestions.deleteSavedQuestion(db, id),
     moveSavedQuestion: (id, position, filter) => savedQuestions.moveSavedQuestion(db, id, position, filter),
     addRoleQuestion: (input) => roleQuestions.addRoleQuestion(db, input),

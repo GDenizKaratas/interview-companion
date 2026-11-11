@@ -28,6 +28,7 @@ import type {
   NewInterview,
   NewInterviewerNotes,
   Precondition,
+  QuestionMark,
   RoleQuestion,
   RoleQuestionList,
   SavedQuestion,
@@ -41,7 +42,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, QuestionMark, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -178,6 +179,11 @@ export const api = {
     request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}`, sendJson("PUT", { text })),
   tagSavedQuestion: (id: string, interviewId: string | null) =>
     request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}/interview`, sendJson("PUT", { interviewId })),
+  // The Interviewer's own mark; null removes it, and the state follows the Transcripts again.
+  setSavedQuestionAsked: (id: string, asked: boolean) =>
+    request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}/asked`, sendJson("PUT", { asked })),
+  removeSavedQuestionMark: (id: string) =>
+    request<SavedQuestion>(`/saved-questions/${encodeURIComponent(id)}/mark`, { method: "DELETE" }),
   deleteSavedQuestion: (id: string) => request<void>(`/saved-questions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   // position is in the list as shown with the Interview filter interviewId.
   moveSavedQuestion: (id: string, position: number, interviewId: string | null) =>

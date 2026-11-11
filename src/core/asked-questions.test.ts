@@ -306,9 +306,9 @@ describe("Saved Questions in the Asked Questions", () => {
     const later = core.addSavedQuestion({ candidateId: candidate.id, text: "Kuyrukları nasıl izlediniz?" });
 
     expect(core.listSavedQuestionStates(candidate.id)).toEqual([
-      { savedQuestionId: asked.id, state: "asked" },
-      { savedQuestionId: notAsked.id, state: "notFound" },
-      { savedQuestionId: later.id, state: "planned" },
+      { savedQuestionId: asked.id, state: "asked", decidedBy: "transcripts", transcriptState: "asked", differsFromTranscripts: false },
+      { savedQuestionId: notAsked.id, state: "notFound", decidedBy: "transcripts", transcriptState: "notFound", differsFromTranscripts: false },
+      { savedQuestionId: later.id, state: "planned", decidedBy: "transcripts", transcriptState: "planned", differsFromTranscripts: false },
     ]);
   });
 
@@ -323,13 +323,134 @@ describe("Saved Questions in the Asked Questions", () => {
     confirmRoles(importTranscript());
     fake.askedQuestions = [backgroundJobs];
     await core.findAskedQuestions(interview.id);
-    expect(core.listSavedQuestionStates(candidate.id)).toEqual([{ savedQuestionId: question.id, state: "asked" }]);
+    expect(core.listSavedQuestionStates(candidate.id).map((s) => s.state)).toEqual(["asked"]);
 
     core.deleteInterview(first.id);
-    expect(core.listSavedQuestionStates(candidate.id)).toEqual([{ savedQuestionId: question.id, state: "notFound" }]);
+    expect(core.listSavedQuestionStates(candidate.id).map((s) => s.state)).toEqual(["notFound"]);
 
     core.deleteInterview(interview.id);
-    expect(core.listSavedQuestionStates(candidate.id)).toEqual([{ savedQuestionId: question.id, state: "planned" }]);
+    expect(core.listSavedQuestionStates(candidate.id).map((s) => s.state)).toEqual(["planned"]);
+  });
+});
+
+describe("The Interviewer's mark and the state of a Saved Question", () => {
+  it("follows the Interviewer's mark, and says who decided the state", () => {
+    const marked = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    const unmarked = core.addSavedQuestion({ candidateId: candidate.id, text: "Testleri nasıl yazdınız?" });
+
+    core.markSavedQuestion(marked.id, "asked");
+
+    expect(core.listSavedQuestionStates(candidate.id)).toEqual([
+      { savedQuestionId: marked.id, state: "asked", decidedBy: "interviewer", transcriptState: "planned", differsFromTranscripts: false },
+      { savedQuestionId: unmarked.id, state: "planned", decidedBy: "transcripts", transcriptState: "planned", differsFromTranscripts: false },
+    ]);
+  });
+
+  it("lets the Interviewer's mark win over the Transcripts, says when the two differ, and follows the Transcripts again without the mark", async () => {
+    ready();
+    const found = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    const notFound = core.addSavedQuestion({ candidateId: candidate.id, text: "Testleri nasıl yazdınız?" });
+    fake.askedQuestions = [{ ...payments, savedQuestionId: found.id }];
+    await core.findAskedQuestions(interview.id);
+
+    core.markSavedQuestion(found.id, "notAsked");
+    core.markSavedQuestion(notFound.id, "asked");
+    expect(core.listSavedQuestionStates(candidate.id)).toEqual([
+      { savedQuestionId: found.id, state: "planned", decidedBy: "interviewer", transcriptState: "asked", differsFromTranscripts: true },
+      { savedQuestionId: notFound.id, state: "asked", decidedBy: "interviewer", transcriptState: "notFound", differsFromTranscripts: true },
+    ]);
+
+    // A mark that agrees with the Transcripts is still the Interviewer's, with nothing to point out.
+    core.markSavedQuestion(found.id, "asked");
+    core.markSavedQuestion(notFound.id, "notAsked");
+    expect(core.listSavedQuestionStates(candidate.id)).toEqual([
+      { savedQuestionId: found.id, state: "asked", decidedBy: "interviewer", transcriptState: "asked", differsFromTranscripts: false },
+      { savedQuestionId: notFound.id, state: "planned", decidedBy: "interviewer", transcriptState: "notFound", differsFromTranscripts: false },
+    ]);
+
+    core.markSavedQuestion(found.id, null);
+    core.markSavedQuestion(notFound.id, null);
+    expect(core.listSavedQuestionStates(candidate.id).map((s) => [s.state, s.decidedBy])).toEqual([
+      ["asked", "transcripts"],
+      ["notFound", "transcripts"],
+    ]);
+  });
+
+  it("keeps the mark when Asked Questions are found again, a Transcript is replaced, or an Interview is deleted", async () => {
+    ready();
+    const markedAsked = core.addSavedQuestion({ candidateId: candidate.id, text: "Testleri nasıl yazdınız?" });
+    const markedNotAsked = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    core.markSavedQuestion(markedAsked.id, "asked");
+    core.markSavedQuestion(markedNotAsked.id, "notAsked");
+    const marks = () => core.listSavedQuestions(candidate.id).map((q) => q.mark);
+    const states = () => core.listSavedQuestionStates(candidate.id).map((s) => [s.state, s.decidedBy]);
+    const asMarked = [
+      ["asked", "interviewer"],
+      ["planned", "interviewer"],
+    ];
+
+    // The model matches the question marked as not asked, and not the one marked as asked.
+    fake.askedQuestions = [{ ...payments, savedQuestionId: markedNotAsked.id }];
+    await core.findAskedQuestions(interview.id);
+    await core.findAskedQuestions(interview.id);
+    expect(marks()).toEqual(["asked", "notAsked"]);
+    expect(states()).toEqual(asMarked);
+
+    confirmRoles(importTranscript());
+    expect(marks()).toEqual(["asked", "notAsked"]);
+    expect(states()).toEqual(asMarked);
+
+    core.deleteInterview(interview.id);
+    expect(marks()).toEqual(["asked", "notAsked"]);
+    expect(states()).toEqual(asMarked);
+  });
+
+  it("keeps the mark when the AI client saves Asked Questions", () => {
+    confirmRoles(importTranscript());
+    const question = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    core.markSavedQuestion(question.id, "notAsked");
+    core.allowAiClientWrites(true);
+
+    core.saveAskedQuestionsFromClient(interview.id, [{ ...payments, savedQuestionId: question.id }]);
+
+    expect(core.listSavedQuestions(candidate.id).map((q) => q.mark)).toEqual(["notAsked"]);
+    expect(core.listSavedQuestionStates(candidate.id)).toEqual([
+      { savedQuestionId: question.id, state: "planned", decidedBy: "interviewer", transcriptState: "asked", differsFromTranscripts: true },
+    ]);
+  });
+});
+
+describe("Saying by hand whether a Saved Question was asked", () => {
+  const stateOf = (id: string) => core.listSavedQuestionStates(candidate.id).find((s) => s.savedQuestionId === id)!;
+
+  it("keeps a mark only while it says something the Transcripts do not", async () => {
+    ready();
+    const found = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    const notFound = core.addSavedQuestion({ candidateId: candidate.id, text: "Testleri nasıl yazdınız?" });
+    fake.askedQuestions = [{ ...payments, savedQuestionId: found.id }];
+    await core.findAskedQuestions(interview.id);
+
+    // Against the Transcripts: the Interviewer's word is kept as a mark.
+    expect(core.setSavedQuestionAsked(found.id, false).mark).toBe("notAsked");
+    expect(stateOf(found.id)).toMatchObject({ state: "planned", decidedBy: "interviewer", differsFromTranscripts: true });
+    expect(core.setSavedQuestionAsked(notFound.id, true).mark).toBe("asked");
+    expect(stateOf(notFound.id)).toMatchObject({ state: "asked", decidedBy: "interviewer", differsFromTranscripts: true });
+
+    // Back to what the Transcripts say: no mark is needed, and none is left.
+    expect(core.setSavedQuestionAsked(found.id, true).mark).toBeNull();
+    expect(stateOf(found.id)).toMatchObject({ state: "asked", decidedBy: "transcripts" });
+    expect(core.setSavedQuestionAsked(notFound.id, false).mark).toBeNull();
+    expect(stateOf(notFound.id)).toMatchObject({ state: "notFound", decidedBy: "transcripts" });
+  });
+
+  it("marks a question no Transcript was checked for as asked, and takes the mark off again", () => {
+    const question = core.addSavedQuestion({ candidateId: candidate.id, text: "Kuyrukları nasıl izlediniz?" });
+
+    expect(core.setSavedQuestionAsked(question.id, true).mark).toBe("asked");
+    expect(stateOf(question.id)).toMatchObject({ state: "asked", decidedBy: "interviewer", differsFromTranscripts: false });
+    expect(core.setSavedQuestionAsked(question.id, false).mark).toBeNull();
+    expect(stateOf(question.id)).toMatchObject({ state: "planned", decidedBy: "transcripts" });
+    expect(() => core.setSavedQuestionAsked("no-such-question", true)).toThrow(NotFoundError);
   });
 });
 

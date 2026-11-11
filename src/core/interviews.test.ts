@@ -122,10 +122,13 @@ describe("Interviews", () => {
   it("keeps the Interviews of a database made before Interviews had a time", () => {
     const added = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
     core.close();
-    // Puts the file back to the schema before the time column: one version earlier, without it.
+    // Puts the file back to the schema before the time column: two versions earlier, without it
+    // and without the Saved Question mark that came after it.
     const file = new DatabaseSync(dbPath);
     const { user_version: version } = file.prepare("PRAGMA user_version").get() as { user_version: number };
-    file.exec(`ALTER TABLE interview DROP COLUMN time; PRAGMA user_version = ${version - 1};`);
+    file.exec(
+      `ALTER TABLE saved_question DROP COLUMN mark; ALTER TABLE interview DROP COLUMN time; PRAGMA user_version = ${version - 2};`,
+    );
     file.close();
 
     core = openCore(dbPath, { today: () => today });

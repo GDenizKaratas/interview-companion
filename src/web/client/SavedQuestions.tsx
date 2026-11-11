@@ -28,7 +28,8 @@ interface SavedQuestionsProps {
 }
 
 // The Questions card: the Interviewer's own question list for one Candidate, and the Suggested
-// Questions in a second tab. Each question shows whether it was asked, not found, or is planned. Core keeps the order; after every change the list is fetched again, so the screen
+// Questions in a second tab. Each question shows whether it was asked, not found, or is planned, on
+// a button that sets the Interviewer's own mark; core works out the state. Core keeps the order; after every change the list is fetched again, so the screen
 // always shows what core has saved. Core applies the header's Interview filter, as for My Notes.
 export function SavedQuestions({
   candidateId,
@@ -55,6 +56,8 @@ export function SavedQuestions({
   const [busy, setBusy] = useState(false);
   // The question waiting for the Interviewer to confirm its deletion.
   const [toDelete, setToDelete] = useState<SavedQuestion | undefined>();
+  // The question waiting for the Interviewer to confirm "not asked" against what the Transcripts say.
+  const [toMarkNotAsked, setToMarkNotAsked] = useState<SavedQuestion | undefined>();
   // The Interview new questions are tagged with. It follows the header's selection.
   const [tag, setTag] = useState<string | null>(selectedInterviewId);
   const [followedSelection, setFollowedSelection] = useState(selectedInterviewId);
@@ -169,7 +172,8 @@ export function SavedQuestions({
       ok = false;
       setChangeError(error);
     }
-    await reload(changed);
+    // The states are read before the buttons wake up, so the next click acts on what is saved.
+    await Promise.all([reload(changed), api.listSavedQuestionStates(candidateId).then(setStates, () => {})]);
     setChangeCount((count) => count + 1);
     setBusy(false);
     return ok;
@@ -185,8 +189,41 @@ export function SavedQuestions({
   const hiddenInterview = interviews.find((interview) => interview.id === hiddenInterviewId);
 
   // Counted over the questions on screen, so the line agrees with the list under it.
-  const stateOf = (question: SavedQuestion) => states.find((state) => state.savedQuestionId === question.id)?.state ?? "planned";
-  const askedCount = questions?.filter((question) => stateOf(question) === "asked").length ?? 0;
+  const stateOf = (question: SavedQuestion): SavedQuestionState =>
+    states.find((state) => state.savedQuestionId === question.id) ?? {
+      savedQuestionId: question.id,
+      state: "planned",
+      decidedBy: "transcripts",
+      transcriptState: "planned",
+      differsFromTranscripts: false,
+    };
+  const askedCount = questions?.filter((question) => stateOf(question).state === "asked").length ?? 0;
+
+  const setAsked = (question: SavedQuestion, asked: boolean) => change(() => api.setSavedQuestionAsked(question.id, asked)).then(() => {});
+
+  // One click on the state mark says the opposite of what the row shows: asked, or not asked.
+  // Core keeps that as a mark only when it differs from the Transcripts. Saying "not asked"
+  // against an Asked Question found in a Transcript is asked about first.
+  function toggleMark(question: SavedQuestion) {
+    const state = stateOf(question);
+    if (state.state !== "asked") void setAsked(question, true);
+    else if (state.transcriptState === "asked") setToMarkNotAsked(question);
+    else void setAsked(question, false);
+  }
+
+  function confirmNotAsked() {
+    if (!toMarkNotAsked) return;
+    const question = toMarkNotAsked;
+    setToMarkNotAsked(undefined);
+    void setAsked(question, false);
+  }
+
+  // The Interviews in which the question waiting for that confirmation was found asked.
+  const foundAskedIn = checks
+    .filter((check) => check.savedQuestionId === toMarkNotAsked?.id && check.askedQuestion !== null)
+    .flatMap((check) => interviews.find((interview) => interview.id === check.interviewId) ?? [])
+    .map((interview) => interviewName(text, interview))
+    .join(", ");
 
   return (
     <>
@@ -279,6 +316,8 @@ export function SavedQuestions({
               checks={checks.filter((check) => check.savedQuestionId === question.id)}
               state={stateOf(question)}
               onOpenExchange={setExchange}
+              onToggleMark={() => toggleMark(question)}
+              onUseFound={() => void change(() => api.removeSavedQuestionMark(question.id))}
               onMove={(position) => change(() => api.moveSavedQuestion(question.id, position, shownFilter)).then(() => {})}
               onEdit={(newText) => change(() => api.editSavedQuestion(question.id, newText))}
               onTag={(interviewId) => change(() => api.tagSavedQuestion(question.id, interviewId)).then(() => {})}
@@ -317,6 +356,18 @@ export function SavedQuestions({
           <p className="question-text">{toDelete.text}</p>
         </ConfirmDialog>
       )}
+      {toMarkNotAsked && (
+        <ConfirmDialog
+          title={t.confirmNotAsked}
+          confirmLabel={t.markNotAsked}
+          cancelLabel={t.cancel}
+          onConfirm={confirmNotAsked}
+          onCancel={() => setToMarkNotAsked(undefined)}
+        >
+          <p className="question-text">{toMarkNotAsked.text}</p>
+          <p className="hint">{fill(t.confirmNotAskedDetail, { interviews: foundAskedIn })}</p>
+        </ConfirmDialog>
+      )}
     </>
   );
 }
@@ -325,8 +376,12 @@ interface QuestionItemProps {
   question: SavedQuestion;
   interviews: Interview[];
   checks: SavedQuestionCheck[];
-  state: SavedQuestionState["state"];
+  state: SavedQuestionState;
   onOpenExchange: (askedQuestion: AskedQuestion) => void;
+  // Sets the Interviewer's mark to the opposite of the state shown.
+  onToggleMark: () => void;
+  // Removes the Interviewer's mark, so the state follows the Transcripts again.
+  onUseFound: () => void;
   position: number;
   isFirst: boolean;
   isLast: boolean;
@@ -337,16 +392,22 @@ interface QuestionItemProps {
   busy: boolean;
 }
 
-function QuestionItem({ question, interviews, checks, state, onOpenExchange, position, isFirst, isLast, onMove, onEdit, onTag, onDelete, busy }: QuestionItemProps) {
+function QuestionItem({ question, interviews, checks, state: questionState, onOpenExchange, onToggleMark, onUseFound, position, isFirst, isLast, onMove, onEdit, onTag, onDelete, busy }: QuestionItemProps) {
   const { text } = useText();
   const t = text.panels.questions;
   const [editing, setEditing] = useState<string | undefined>();
+  const { state } = questionState;
 
   async function save() {
     if (editing === undefined || busy) return;
     // Keep the box open if core refused the text, so the Interviewer can fix it.
     if (await onEdit(editing)) setEditing(undefined);
   }
+
+  // Core says who decided the state. A question the Interviewer decided was not asked says so,
+  // in those words, where an undecided one says "planned".
+  const ownDecision = questionState.decidedBy === "interviewer";
+  const stateLabel = ownDecision && state === "planned" ? t.markedNotAsked : t.states[state];
 
   function onEditKey(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Escape") setEditing(undefined);
@@ -355,9 +416,17 @@ function QuestionItem({ question, interviews, checks, state, onOpenExchange, pos
 
   return (
     <li className={`question ${state}`}>
-      <span className="question-state" title={t.states[state]} aria-label={t.states[state]}>
+      <button
+        type="button"
+        className="question-state"
+        aria-pressed={state === "asked"}
+        aria-label={`${stateLabel}. ${state === "asked" ? t.markNotAskedTitle : t.markAskedTitle}`}
+        title={state === "asked" ? t.markNotAskedTitle : t.markAskedTitle}
+        disabled={busy}
+        onClick={onToggleMark}
+      >
         <StateIcon state={state} />
-      </span>
+      </button>
       {editing === undefined ? (
         <span className="question-text">{question.text}</span>
       ) : (
@@ -381,17 +450,27 @@ function QuestionItem({ question, interviews, checks, state, onOpenExchange, pos
           </span>
         </span>
       )}
-      {state === "planned" && (
-        <span className="question-checks">
-          <span className="pill planned">{t.states.planned}</span>
-        </span>
-      )}
       <span className="question-meta">
         <InterviewTagSelect interviews={interviews} value={question.interviewId} onChange={onTag} />
         <span className="question-origin">{originLabel(t, question)}</span>
       </span>
-      {checks.length > 0 && (
+      {(state === "planned" || ownDecision || checks.length > 0) && (
         <span className="question-checks">
+          {state === "planned" && <span className="pill planned">{stateLabel}</span>}
+          {/* The Interviewer's own decision is named, with the way back when the Transcripts say otherwise. */}
+          {ownDecision && (
+            <span className="question-own-mark" title={questionState.differsFromTranscripts ? t.markedByYouHint : undefined}>
+              {t.markedByYou}
+              {questionState.differsFromTranscripts && (
+                <>
+                  {" · "}
+                  <button type="button" className="link-button" disabled={busy} onClick={onUseFound}>
+                    {t.useFound}
+                  </button>
+                </>
+              )}
+            </span>
+          )}
           {checks.map((check) => {
             const interview = interviews.find((i) => i.id === check.interviewId);
             if (!interview) return null;
@@ -404,7 +483,7 @@ function QuestionItem({ question, interviews, checks, state, onOpenExchange, pos
                 title={check.stale ? text.panels.askedQuestions.stale : undefined}
                 onClick={() => onOpenExchange(check.askedQuestion!)}
               >
-                {fill(t.askedIn, { interview: name })}
+                {fill(ownDecision && state !== "asked" ? t.aiFoundAskedIn : t.askedIn, { interview: name })}
               </button>
             ) : (
               <span
