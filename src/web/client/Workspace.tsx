@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { AiNotesPanel } from "./AiNotesPanel.tsx";
+import { AiCard } from "./AiCard.tsx";
 import { CandidateBriefDialog } from "./CandidateBriefDialog.tsx";
 import { api, ApiError, type Candidate, type EvidenceResult, type Interview } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
@@ -13,7 +13,6 @@ import { MoreMenu } from "./MoreMenu.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, navigate } from "./navigation.ts";
 import { SavedQuestions } from "./SavedQuestions.tsx";
-import { AskedQuestionsPanel } from "./AskedQuestionsPanel.tsx";
 import { TranscriptPanel, type SegmentHighlight } from "./TranscriptPanel.tsx";
 import { useText } from "./text.tsx";
 
@@ -42,8 +41,6 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [sourcesTab, setSourcesTab] = useState<SourcesTab>("cv");
   // Counts changes to the selected Interview's Transcript, so the AI Notes panel loads again.
   const [transcriptVersion, setTranscriptVersion] = useState(0);
-  // Asked Questions come first in the AI panel: after an Interview they are what is needed most.
-  const [aiTab, setAiTab] = useState<"asked" | "notes">("asked");
   // Changes whenever Asked Questions are found, so the Saved Questions show where they were asked.
   const [askedVersion, setAskedVersion] = useState(0);
   // Counts CV uploads, so the Suggested Questions load again.
@@ -306,36 +303,15 @@ export function Workspace({ candidateId }: { candidateId: string }) {
               onShowAll={() => setInterviewId(null)}
             />
           </Panel>
-          <Panel area="ai" title={text.panels.ai.title} label={text.panels.aiNotes.label}>
-            <div className="card-tabs" role="group" aria-label={text.panels.ai.title}>
-              {(["asked", "notes"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  aria-pressed={aiTab === tab}
-                  className={aiTab === tab ? "ai-tab selected" : "ai-tab"}
-                  onClick={() => setAiTab(tab)}
-                >
-                  {tab === "asked" ? text.panels.ai.askedTab : text.panels.ai.notesTab}
-                </button>
-              ))}
-            </div>
-            {aiTab === "asked" ? (
-              <AskedQuestionsPanel
-                interviews={interviews}
-                selectedInterviewId={interviewId}
-                transcriptVersion={transcriptVersion}
-                onShowEvidence={showInTranscript}
-                onFound={() => setAskedVersion((version) => version + 1)}
-              />
-            ) : (
-              <AiNotesPanel
-                interviews={interviews}
-                selectedInterviewId={interviewId}
-                transcriptVersion={transcriptVersion}
-                onShowEvidence={showInTranscript}
-              />
-            )}
+          <Panel area="ai" title={text.panels.ai.title} label={text.panels.ai.label}>
+            <AiCard
+              interviews={interviews}
+              selectedInterviewId={interviewId}
+              transcriptVersion={transcriptVersion}
+              onShowEvidence={showInTranscript}
+              onFound={() => setAskedVersion((version) => version + 1)}
+              onGoToTranscript={() => showSource("transcript")}
+            />
           </Panel>
         </div>
       )}

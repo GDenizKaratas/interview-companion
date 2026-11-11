@@ -454,6 +454,53 @@ describe("Saying by hand whether a Saved Question was asked", () => {
   });
 });
 
+describe("The next step towards an Interview's AI output", () => {
+  it("names the Transcript first, then the speakers, then the AI connection, then running, then done", async () => {
+    expect(core.getInterviewAiStep(interview.id)).toBe("importTranscript");
+
+    const transcript = importTranscript();
+    expect(core.getInterviewAiStep(interview.id)).toBe("confirmSpeakers");
+
+    confirmRoles(transcript);
+    expect(core.getInterviewAiStep(interview.id)).toBe("connectAi");
+
+    core.saveApiKey("sk-ant-test-key");
+    expect(core.getInterviewAiStep(interview.id)).toBe("run");
+
+    fake.askedQuestions = [backgroundJobs];
+    await core.findAskedQuestions(interview.id);
+    expect(core.getInterviewAiStep(interview.id)).toBe("done");
+  });
+
+  it("asks for the Transcript and the speakers before the AI connection, with or without an API key", () => {
+    core.saveApiKey("sk-ant-test-key");
+    expect(core.getInterviewAiStep(interview.id)).toBe("importTranscript");
+
+    importTranscript();
+    expect(core.getInterviewAiStep(interview.id)).toBe("confirmSpeakers");
+  });
+
+  it("is done when the AI client saved the output, although the app has no API key", () => {
+    confirmRoles(importTranscript());
+    core.allowAiClientWrites(true);
+    core.saveAskedQuestionsFromClient(interview.id, [backgroundJobs]);
+
+    expect(core.getInterviewAiStep(interview.id)).toBe("done");
+  });
+
+  it("is done when there are AI Notes but the Asked Questions were never looked for", async () => {
+    ready();
+    fake.answer = [{ statement: "Redis ve BullMQ kullandı.", evidence: [{ segmentNumber: 2, quote: "Redis ile BullMQ" }] }];
+    await core.generateAiNotes(interview.id);
+
+    expect(core.getInterviewAiStep(interview.id)).toBe("done");
+  });
+
+  it("refuses an unknown Interview", () => {
+    expect(() => core.getInterviewAiStep("no-such-interview")).toThrow(NotFoundError);
+  });
+});
+
 describe("Asked Questions from the AI client", () => {
   it("saves them with the same quote check, marked as from the AI client, only while saving is allowed", () => {
     confirmRoles(importTranscript());

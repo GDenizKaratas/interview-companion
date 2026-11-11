@@ -79,6 +79,8 @@ export function ExpandableCard({
             aria-pressed={expanded}
             onClick={() => setExpanded(!expanded)}
           >
+            {/* The word joins the icon while the pointer is over the card, so the button is not missed. */}
+            {!expanded && <span className="panel-expand-word">{text.panels.expandWord}</span>}
             {expanded ? <CollapseIcon /> : <ExpandIcon />}
           </button>
         </header>

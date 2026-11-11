@@ -144,7 +144,10 @@ function InterviewAskedQuestions({
                   {question.savedQuestionId !== null && <span className="asked-question-saved">{t.savedQuestion}</span>}
                   {question.source === "aiClient" && <span className="source-tag">{t.fromAiClient}</span>}
                 </span>
-                <span className="asked-question-summary">{question.answerSummary}</span>
+                {/* Said to be the AI's summary, so it is never read as the Candidate's own words. */}
+                <span className="asked-question-summary">
+                  <span className="summary-label">{text.panels.ai.summaryLabel}</span> {question.answerSummary}
+                </span>
               </button>
             </li>
           ))}
