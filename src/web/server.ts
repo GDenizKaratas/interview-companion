@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
@@ -6,6 +7,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { defaultDatabasePath, openCore } from "../core/index.ts";
 import { createApi } from "./app.ts";
+import { claudeDesktopConfigPath } from "./claude-desktop.ts";
 
 const port = Number(process.env.PORT ?? 3000);
 const clientDir = fileURLToPath(new URL("../../dist/client", import.meta.url));
@@ -29,6 +31,11 @@ app.route(
   createApi(core, {
     mcpServerPath: fileURLToPath(new URL("../mcp/server.ts", import.meta.url)),
     dataDir: process.env.DATA_DIR ? resolve(process.env.DATA_DIR) : undefined,
+    // CLAUDE_DESKTOP_CONFIG points the one-click connect at another file, for trying it out
+    // without touching the real Claude Desktop configuration.
+    claudeDesktopConfigPath: process.env.CLAUDE_DESKTOP_CONFIG
+      ? resolve(process.env.CLAUDE_DESKTOP_CONFIG)
+      : claudeDesktopConfigPath({ platform: process.platform, home: homedir(), appData: process.env.APPDATA }),
   }),
 );
 

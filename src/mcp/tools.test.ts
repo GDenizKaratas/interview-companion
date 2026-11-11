@@ -5,6 +5,8 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { aiClientCore, openCore, writingRulesInOneSentence, type Candidate, type Core, type ProposedAiNote } from "../core/index.ts";
+import en from "../web/client/translations/en.ts";
+import tr from "../web/client/translations/tr.ts";
 import { createMcpServer } from "./tools.ts";
 
 let dir: string;
@@ -72,7 +74,8 @@ describe("MCP server", () => {
     ]);
     for (const tool of tools) {
       expect(tool.annotations?.readOnlyHint, tool.name).toBe(!tool.name.startsWith("save_"));
-      expect(tool.description, tool.name).toBeTruthy();
+      // Named first, so a model does not pick them for a general question.
+      expect(tool.description, tool.name).toMatch(/^Interview Companion: \S/);
     }
     expect(tools.filter((tool) => /delete|remove|edit|update/.test(tool.name))).toEqual([]);
   });
@@ -81,7 +84,7 @@ describe("MCP server", () => {
     const instructions = client.getInstructions() ?? "";
 
     // Look things up before answering, with the tools that hold the Candidate's data.
-    expect(instructions).toContain("Before you answer any question about a Candidate, look it up with the tools");
+    expect(instructions).toContain("Once the request is about Interview Companion, look the Candidate up with the tools before you answer");
     for (const tool of ["list_candidates", "search_evidence", "get_cv", "get_transcript", "get_interviewer_notes", "get_ai_notes", "get_asked_questions", "get_saved_questions"]) {
       expect(instructions, tool).toContain(tool);
     }
@@ -102,6 +105,44 @@ describe("MCP server", () => {
     // What the tools can and cannot change.
     expect(instructions).toContain("only when the Interviewer has allowed it");
     expect(instructions).toContain("Nothing can be deleted");
+  });
+
+  it("uses the tools only when the user asks about Interview Companion, never for a name on its own", () => {
+    const instructions = client.getInstructions() ?? "";
+
+    expect(instructions).toContain("only when the user asks about Interview Companion or its data");
+    expect(instructions).toContain("they name Interview Companion");
+    expect(instructions).toContain("they started this conversation with this server's candidate prompt");
+    expect(instructions).toContain("earlier in this conversation they already asked about Interview Companion");
+    expect(instructions).toContain(
+      "A person's name on its own, or any other question, is answered as usual: call no tool and do not mention Interview Companion.",
+    );
+    // Looking a name up is no longer the default for any name.
+    expect(instructions).not.toContain("call list_candidates first");
+    expect(instructions).not.toContain("Before you answer any question about a Candidate");
+  });
+
+  it("once the request is about the app, says what to do when a name is not a Candidate, or matches several", () => {
+    const instructions = client.getInstructions() ?? "";
+
+    expect(instructions).toContain("say that there is no Candidate of that name in Interview Companion");
+    expect(instructions).toContain("unless the user says they mean someone outside the app");
+    expect(instructions).toContain("If several Candidates match, ask which one");
+  });
+
+  it("gives the interface's own words, and where the saving switch is, in English and in Turkish", () => {
+    const instructions = client.getInstructions() ?? "";
+
+    expect(instructions).toContain("Answer in the user's language");
+    expect(instructions).toContain("görüşme (never mülakat), görüşmeci, aday");
+    expect(instructions).toContain(`"${tr.text.panels.ai.title}"`);
+    expect(instructions).toContain(`"${tr.text.brief.title}"`);
+    // The switch by the names the interface gives it, so the answer can point to it.
+    expect(instructions).toContain("If a save is refused because saving is off");
+    for (const text of [en.text, tr.text]) {
+      expect(instructions).toContain(`"${text.mcpGuide.open}"`);
+      expect(instructions).toContain(`"${text.mcpGuide.clientWrites}"`);
+    }
   });
 
   it("search_evidence says it is the tool for a free question about a Candidate", async () => {
@@ -349,10 +390,33 @@ describe("MCP server", () => {
   it("offers the brief prompt, which takes the Candidate's name or id", async () => {
     const { prompts } = await client.listPrompts();
 
-    expect(prompts.map((prompt) => prompt.name)).toEqual(["brief"]);
+    expect(prompts.map((prompt) => prompt.name)).toEqual(["brief", "candidate"]);
     expect(prompts[0]!.description).toBeTruthy();
     expect(prompts[0]!.arguments).toEqual([expect.objectContaining({ name: "candidate", required: true })]);
   });
+
+  it("offers a prompt that starts a conversation about Interview Companion's Candidates explicitly", async () => {
+    const { prompts } = await client.listPrompts();
+    const prompt = prompts.find((p) => p.name === "candidate")!;
+    expect(prompt.description).toMatch(/^Interview Companion: /);
+    // One optional argument: Claude Code splits what follows the command at spaces, one word per argument.
+    expect(prompt.arguments).toEqual([expect.objectContaining({ name: "candidate", required: false })]);
+
+    const text = await promptText({ candidate: "Ada" });
+    expect(text).toContain('"Ada"');
+    expect(text).toContain("This conversation is about Interview Companion");
+    expect(text).toContain("whose name matches or starts with");
+    for (const tool of ["list_candidates", "get_candidate", "search_evidence"]) expect(text, tool).toContain(tool);
+    expect(text).toContain("Follow Interview Companion's instructions");
+
+    expect(await promptText({})).toContain("ask me which Candidate");
+  });
+
+  async function promptText(args: Record<string, string>): Promise<string> {
+    const { messages } = await client.getPrompt({ name: "candidate", arguments: args });
+    expect(messages).toHaveLength(1);
+    return (messages[0]!.content as { type: string; text: string }).text;
+  }
 
   // The text of the brief prompt for one Candidate, as the AI client gets it now.
   async function fetchBriefPrompt(candidate = "Ada Demir"): Promise<string> {

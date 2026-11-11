@@ -1,5 +1,6 @@
 // The browser's only way to reach core: the local server's /api routes.
 // Only types come from core; they are erased before the code reaches the browser.
+import type { ClaudeDesktopState } from "../claude-desktop.ts";
 import type {
   AiFailure,
   AiNote,
@@ -109,7 +110,10 @@ export const api = {
     request<CandidateOverview[]>(`/candidate-overviews${order ? `?by=${order.by}${order.reversed ? "&reversed=true" : ""}` : ""}`),
   getCandidateOverview: (id: string) => request<CandidateOverview>(`/candidates/${encodeURIComponent(id)}/overview`),
   listDatedInterviews: () => request<DatedInterview[]>("/dated-interviews"),
-  getMcpSetup: () => request<{ command: string | null; desktopConfig: string | null }>("/mcp-setup"),
+  getMcpSetup: () => request<{ command: string | null; commandEveryFolder: string | null; desktopConfig: string | null }>("/mcp-setup"),
+  getClaudeDesktop: () => request<{ state: ClaudeDesktopState; configPath: string | null }>("/claude-desktop"),
+  connectClaudeDesktop: () =>
+    request<{ result: "added" | "updated" | "unchanged"; state: ClaudeDesktopState }>("/claude-desktop", sendJson("POST", {})),
   listCandidateRoles: () => request<string[]>("/candidate-roles"),
   listRolesInUse: () => request<RoleInUse[]>("/roles-in-use"),
   findRoleInUse: (role: string, signal?: AbortSignal) =>

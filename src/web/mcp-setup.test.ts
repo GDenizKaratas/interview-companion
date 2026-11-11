@@ -2,15 +2,15 @@ import { describe, expect, it } from "vitest";
 import { mcpSetup } from "./mcp-setup.ts";
 
 describe("The setup that connects an AI application to the MCP server", () => {
-  it("gives Claude Code one command for every folder", () => {
-    expect(mcpSetup({ serverPath: "/apps/ic/src/mcp/server.ts", nodePath: "/usr/local/bin/node" }).command).toBe(
-      "claude mcp add --scope user interview-companion -- node /apps/ic/src/mcp/server.ts",
-    );
+  it("gives Claude Code a command for the folder it is run in, and one for every folder", () => {
+    const setup = mcpSetup({ serverPath: "/apps/ic/src/mcp/server.ts", nodePath: "/usr/local/bin/node" });
+    expect(setup.command).toBe("claude mcp add --scope local interview-companion -- node /apps/ic/src/mcp/server.ts");
+    expect(setup.commandEveryFolder).toBe("claude mcp add --scope user interview-companion -- node /apps/ic/src/mcp/server.ts");
   });
 
   it("quotes a path with spaces in the command and passes a data folder on", () => {
     expect(mcpSetup({ serverPath: "/My Apps/ic/server.ts", nodePath: "/usr/bin/node", dataDir: "/data dir" }).command).toBe(
-      "claude mcp add --scope user interview-companion -e DATA_DIR='/data dir' -- node '/My Apps/ic/server.ts'",
+      "claude mcp add --scope local interview-companion -e DATA_DIR='/data dir' -- node '/My Apps/ic/server.ts'",
     );
   });
 
