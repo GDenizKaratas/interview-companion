@@ -81,7 +81,7 @@ const translation: TranslationFile = {
       routesLabel: "Toplantı aracınız",
       meetRoutes: {
         tactiqTitle: "Meet'te kalacaksanız: Tactiq",
-        tactiqLink: "tactiq.io",
+        tactiqAdd: "Tactiq'i Chrome'a ekle",
         otherTitle: "Başka bir araç kullanabiliyorsanız:",
         otherBetween: " (iş ya da okul hesabı) ve ",
         otherAfter: " (ücretli plan) Türkçe transkripti konuşmacı adlarıyla dosya olarak verir.",
@@ -111,9 +111,9 @@ const translation: TranslationFile = {
           name: "Google Meet",
           needs: "Meet'in kendi transkripti şimdilik Türkçe çıkarmıyor.",
           steps: [
-            { title: "Tactiq'i kurun", hint: "Chrome Web Store'dan, bir kez. Tactiq başka bir şirketin ürünüdür." },
-            { title: "Görüşmede yazsın", hint: "Tactiq, Meet görüşmesinde Türkçe transkripti konuşmacı adlarıyla yazar." },
-            { title: "TXT olarak alın, buraya aktarın", hint: "Görüşmeden sonra Tactiq'te Export > TXT. Sonra içe aktar düğmesiyle." },
+            { title: "Chrome'a ekleyin", hint: "Tactiq bir Chrome eklentisidir. Google hesabınızla girin." },
+            { title: "Görüşmede yazsın", hint: "Tactiq'te görüşme dilini Türkçe seçin." },
+            { title: "TXT indirin, buraya aktarın", hint: "Görüşmeden sonra transkripti Tactiq'te açın." },
           ],
           notes: ["Her ay ilk 10 transkript ücretsiz; sonrası ücretli. Transkript Tactiq'in sunucusunda tutulur: adaya söyleyin."],
         },

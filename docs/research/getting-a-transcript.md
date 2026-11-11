@@ -60,6 +60,7 @@ Re-read on 2026-11-11 for #93: https://support.google.com/meet/answer/12849897 s
 
 Checked for #105.
 
+- What it is: a Chrome extension; the guide links to its Chrome Web Store page [34].
 - Languages: Tactiq's help page lists "Turkish (Turkey)" among 63 languages for Google Meet [19].
 - Price: the Free plan has "10 transcripts / mo"; Pro is $8 a month per user, billed annually [30].
 - Security: the pricing page claims "ISO 27001 Certification", "SOC 2 Type II Attestation", and "GDPR Compliant" [30]. These are Tactiq's own claims, not checked here.
@@ -117,3 +118,4 @@ All read on 2026-11-11.
 31. https://help.tactiq.io/en/articles/9784666-how-to-export-your-tactiq-meeting-transcript
 32. https://tactiq.io/learn/how-to-separate-speakers-in-a-meeting-transcript
 33. https://support.google.com/meet/answer/15077804
+34. https://chromewebstore.google.com/detail/tactiq-ai-note-taker-for/fggkaccpbmombhnjkjokndojfgagejfb

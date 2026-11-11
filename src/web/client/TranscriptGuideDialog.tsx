@@ -12,6 +12,9 @@ export const openTranscriptGuide = "open-transcript-guide";
 const routeKeys = ["meet", "teams", "zoom", "local"] as const;
 type RouteKey = (typeof routeKeys)[number];
 
+// Tactiq's page in the Chrome Web Store, checked on 2026-11-11.
+const tactiqStorePage = "https://chromewebstore.google.com/detail/tactiq-ai-note-taker-for/fggkaccpbmombhnjkjokndojfgagejfb";
+
 // One small line drawing for each step of each route, in the order of its steps.
 const routeIcons: Record<RouteKey, string[][]> = {
   teams: [stepIcons.speech, stepIcons.pageDown, stepIcons.pageUp],
@@ -60,20 +63,19 @@ export function TranscriptGuideDialog({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       <p className="guide-route-needs">{route.needs}</p>
-      {chosen === "meet" && <h3 className="guide-route-title">{t.meetRoutes.tactiqTitle}</h3>}
+      {chosen === "meet" && (
+        <div className="guide-route-title">
+          <h3>{t.meetRoutes.tactiqTitle}</h3>
+          {/* Tactiq is another company's product; the app only names it and links to its store page. */}
+          <a className="link-as-button" href={tactiqStorePage} target="_blank" rel="noreferrer">
+            {t.meetRoutes.tactiqAdd}
+          </a>
+        </div>
+      )}
       {steps.length > 0 && <StepFlow steps={steps} label={route.name} />}
       {route.notes.map((note) => (
         <p key={note} className="guide-note">
           {note}
-          {chosen === "meet" && (
-            <>
-              {" "}
-              {/* Tactiq is another company's product; the app only names it and links to it. */}
-              <a href="https://tactiq.io" target="_blank" rel="noreferrer">
-                {t.meetRoutes.tactiqLink}
-              </a>
-            </>
-          )}
         </p>
       ))}
       {chosen === "meet" && (

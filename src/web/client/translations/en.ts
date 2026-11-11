@@ -83,7 +83,7 @@ const text = {
     routesLabel: "Your meeting tool",
     meetRoutes: {
       tactiqTitle: "If you stay on Meet: Tactiq",
-      tactiqLink: "tactiq.io",
+      tactiqAdd: "Add Tactiq to Chrome",
       otherTitle: "If you can use another tool:",
       otherBetween: " (work or school account) and ",
       otherAfter: " (paid plan) give the Turkish transcript as a file with speaker names.",
@@ -113,9 +113,9 @@ const text = {
         name: "Google Meet",
         needs: "Meet's own transcript does not come in Turkish yet.",
         steps: [
-          { title: "Install Tactiq", hint: "From the Chrome Web Store, once. Tactiq is another company's product." },
-          { title: "Let it write", hint: "In the Meet call, Tactiq writes the Turkish transcript with speaker names." },
-          { title: "Export as TXT, import it here", hint: "After the call, in Tactiq: Export > TXT." },
+          { title: "Add it to Chrome", hint: "Tactiq is a Chrome extension. Sign in with your Google account." },
+          { title: "Let it write in the call", hint: "In Tactiq, choose Turkish as the meeting language." },
+          { title: "Download TXT, import it here", hint: "After the call, open the transcript in Tactiq." },
         ],
         notes: ["The first 10 transcripts a month are free, then paid. Tactiq keeps the transcript on its servers: tell the Candidate."],
       },
