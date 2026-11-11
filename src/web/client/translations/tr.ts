@@ -528,6 +528,10 @@ const translation: TranslationFile = {
       required: "Aramak için bir kelime yazın.",
       failed: "Arama yapılamadı.",
     },
+    refusals: {
+      candidateExists: "Bu aday bu rolle zaten uygulamada.",
+      aiClientWritesOff: "AI uygulamanızdan kaydetme kapalı. “MCP ile kullan” bölümünden açın, sonra yeniden deneyin.",
+    },
     panels: {
       expand: "Tam ekran aç",
       expandWord: "Tam ekran",
