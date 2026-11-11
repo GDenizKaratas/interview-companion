@@ -8,8 +8,13 @@ const headingWords = new Set(["cv", "resume", "curriculum", "vitae", "ozgecmis"]
 // first page that is not a heading, or else a name made from the file name. Nothing is saved;
 // the Interviewer checks and corrects it.
 export async function guessCandidateName(file: CvFile): Promise<string> {
-  const fromText = largestText(await firstPageLines(file));
-  return fromText !== undefined && looksLikeName(fromText) ? fromText : nameFromFileName(file.fileName);
+  return guessNameFromLines(await firstPageLines(file), file.fileName);
+}
+
+// The same guess for a CV whose first page has already been read.
+export function guessNameFromLines(lines: PdfTextLine[], fileName: string): string {
+  const fromText = largestText(lines);
+  return fromText !== undefined && looksLikeName(fromText) ? fromText : nameFromFileName(fileName);
 }
 
 async function firstPageLines(file: CvFile): Promise<PdfTextLine[]> {

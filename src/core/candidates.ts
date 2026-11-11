@@ -121,11 +121,22 @@ export function roleSpelling(db: DatabaseSync, role: string): string {
 }
 
 // Two roles are the same if they differ only in letter case. One role can mix Turkish and
-// English ("SENIOR YAZILIM MÜHENDİSİ"), so the comparison goes letter by letter.
+// English ("SENIOR YAZILIM MÜHENDİSİ"), so the comparison goes letter by letter. Candidate names
+// are compared by the same rule.
 export function isSameRole(a: string, b: string): boolean {
   const left = [...a.normalize("NFC")];
   const right = [...b.normalize("NFC")];
   return left.length === right.length && left.every((letter, i) => sameLetter(letter, right[i]!));
+}
+
+// Whether a Candidate with this name and role is already in the app. Names are compared as roles
+// are: spaces trimmed and collapsed, and letter case ignored. An empty name or role matches no one.
+export function isCandidateAdded(db: DatabaseSync, name: string, role: string): boolean {
+  const cleanName = collapseSpaces(name.trim());
+  const cleanRole = collapseSpaces(role.trim());
+  if (cleanName === "" || cleanRole === "") return false;
+  const rows = db.prepare("SELECT name, role FROM candidate").all() as unknown as { name: string; role: string }[];
+  return rows.some((row) => isSameRole(row.role, cleanRole) && isSameRole(collapseSpaces(row.name), cleanName));
 }
 
 function collapseSpaces(value: string): string {
