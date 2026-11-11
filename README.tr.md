@@ -2,35 +2,35 @@
 
 [English](README.md)
 
-Interview Companion, bir adayla ilgili her şeyi tek yerde tutar: özgeçmişi, görüşmeleri, transkriptleri, sizin notlarınız ve sorularınız. Yapay zekâ isterseniz transkriptten sizin için not çıkarır. Her notun yanında adayın kendi sözleri durur, böylece notu tek tıkla kontrol edersiniz. Yapay zekâ sizin not tutanınızdır: kimseye puan vermez, kararı her zaman siz verirsiniz. Uygulama kendi bilgisayarınızda çalışır ve bütün verisi orada, tek bir klasörde kalır.
+Interview Companion, bir adayla ilgili her şeyi tek yerde tutar: CV'si, görüşmeleri, transkriptleri, sizin notlarınız ve sorularınız. Yapay zekâ isterseniz transkriptten sizin için not çıkarır. Her notun yanında adayın kendi sözleri durur, böylece notu tek tıkla kontrol edersiniz. Yapay zekâ sizin not tutanınızdır: kimseye puan vermez, kararı her zaman siz verirsiniz. Uygulama kendi bilgisayarınızda çalışır ve bütün verisi orada, tek bir klasörde kalır.
 
 ![Aday listesi ve görüşme takvimi](docs/images/home.png)
 *Aday listesi; bugünün ve bu haftanın görüşmeleri takvimde.*
 
-Bu depodaki ve ekran görüntülerindeki bütün isimler, özgeçmişler ve transkriptler kurmacadır. Kodda ve belgelerde kullanılan İngilizce terimler [GLOSSARY.md](GLOSSARY.md) dosyasında tanımlıdır.
+Bu depodaki ve ekran görüntülerindeki bütün isimler, CV'ler ve transkriptler kurmacadır. Kodda ve belgelerde kullanılan İngilizce terimler [GLOSSARY.md](GLOSSARY.md) dosyasında tanımlıdır.
 
 ## Bugün neler yapabilirsiniz
 
 ### Aday ekleyin, görüşme planlayın
 
-- Adayları tek tek ekleyin ya da birçok özgeçmişi (PDF) bir kerede bırakın. Uygulama her adayın adını özgeçmişten okur; kaydetmeden önce düzeltebilirsiniz.
+- Adayları tek tek ekleyin ya da birçok CV'yi (PDF) bir kerede bırakın. Uygulama her adayın adını CV'den okur; kaydetmeden önce düzeltebilirsiniz.
 - Her adaya bir rol verin. Bir rol için rol soruları tutun; o role eklenen her yeni aday bu soruların bir kopyasını alır.
 - Birden fazla adayla görüşmeyi bir kerede planlayın: bir gün ve ilk saati seçin, adayları işaretleyin.
 - Bugünün ve bu haftanın görüşmelerini takvimde görün. Aday listesini bir sütuna göre sıralayın, role göre süzün ya da yalnızca henüz görüşmesi olmayan adayları gösterin.
 
-![Birçok özgeçmişi bir kerede eklemek](docs/images/add-many.png)
-*Birçok özgeçmiş bir kerede: adlar özgeçmişlerden okunur.*
+![Birçok CV'yi bir kerede eklemek](docs/images/add-many.png)
+*Birçok CV bir kerede: adlar CV'lerden okunur.*
 
 ### Bir aday üzerinde çalışın
 
-- Her adayın tek bir ekranı vardır. Özgeçmiş, her görüşmenin transkripti, notlarınız ve sorularınız yan yana durur.
+- Her adayın tek bir ekranı vardır. CV, her görüşmenin transkripti, notlarınız ve sorularınız yan yana durur.
 - Transkripti WebVTT (`.vtt`; Teams ve Zoom bu dosyayı verir) ya da her satırı `Konuşan: metin` biçiminde düz metin olarak içe aktarın.
 - Kimin konuştuğunu siz onaylarsınız: bir aday ve en az bir görüşmeci. Siz onaylayana kadar yapay zekâ bekler.
 - Kendi notlarınızı ve sorularınızı yazın. Her soru için görüşmede sorulup sorulmadığı, arandığı hâlde bulunamadığı ya da planlandığı görünür. Bir soruyu siz işaretlerseniz sizin işaretiniz geçerlidir.
-- Özgeçmişte ve bütün transkriptlerde bir kelime arayın; isterseniz yalnızca adayın söylediklerinde. Her sonuç birebir bir alıntıdır ve tıklayınca geldiği yeri açar.
+- CV'de ve bütün transkriptlerde bir kelime arayın; isterseniz yalnızca adayın söylediklerinde. Her sonuç birebir bir alıntıdır ve tıklayınca geldiği yeri açar.
 
 ![Bir adayın çalışma ekranı](docs/images/workspace.png)
-*Bir adayın ekranı: özgeçmiş, transkript, notlar ve sorular bir arada.*
+*Bir adayın ekranı: CV, transkript, notlar ve sorular bir arada.*
 
 ### Notları yapay zekâya aldırın
 
@@ -51,9 +51,9 @@ Bu depodaki ve ekran görüntülerindeki bütün isimler, özgeçmişler ve tran
 ## Yapay zekâyı kullanmanın iki yolu
 
 1. **Anthropic API anahtarıyla.** Anahtarı uygulamaya kaydedin. Uygulama modeli yalnızca siz bir düğmeye bastığınızda çağırır ve önce neyi göndereceğini söyler.
-2. **Anahtarsız, Claude Desktop ya da Claude Code ile.** Bunu uygulamaya bir kez MCP ile bağlayın. MCP, bir yapay zekâ uygulamasının başka bir programın verisini kullanmasını sağlayan açık bir standarttır. Sonra yalnızca sorun, örneğin: "Selin Öztürk önbellek hakkında ne dedi?" Claude uygulamanın verisini bilgisayarınızda, o anki hâliyle okur; hiçbir şey yeniden kopyalanmaz ya da yüklenmez. İzin verirseniz Claude yazdığı notları uygulamaya kaydeder; uygulama bunları kendi notları gibi kontrol eder.
+2. **Anahtarsız, Claude Desktop ya da Claude Code ile.** Bunu uygulamaya bir kez MCP ile bağlayın. MCP, bir yapay zekâ uygulamasının başka bir programın verisini kullanmasını sağlayan açık bir standarttır. Sonra yalnızca sorun, örneğin: "Selin Öztürk Terraform hakkında ne dedi?" Claude uygulamanın verisini bilgisayarınızda, o anki hâliyle okur; hiçbir şey yeniden kopyalanmaz ya da yüklenmez. Cevap, dayandığı alıntıyla ve yeriyle gelir (CV mi, hangi görüşmenin transkripti mi); bir şey CV'de yazıp görüşmede konuşulmadıysa ya da hiç geçmiyorsa bunu da söyler. İzin verirseniz Claude yazdığı notları uygulamaya kaydeder; uygulama bunları kendi notları gibi kontrol eder.
 
-MCP üzerinden yapay zekâ uygulaması okuyabilir ve izninizle yalnızca kendi notlarını, sorularını ve Aday Özeti'ni kaydedebilir. Adayları, görüşmeleri, özgeçmişleri, transkriptleri ya da sizin notlarınızı silecek veya değiştirecek bir aracı yoktur. Kurulum birkaç dakika sürer: [docs/mcp.md](docs/mcp.md) (İngilizce).
+MCP üzerinden yapay zekâ uygulaması okuyabilir ve izninizle yalnızca kendi notlarını, sorularını ve Aday Özeti'ni kaydedebilir. Adayları, görüşmeleri, CV'leri, transkriptleri ya da sizin notlarınızı silecek veya değiştirecek bir aracı yoktur. Kurulum birkaç dakika sürer: [docs/mcp.md](docs/mcp.md) (İngilizce).
 
 ## Transkripti nereden alırsınız
 
@@ -80,7 +80,7 @@ npm start
 
 Ardından http://localhost:3000 adresini açın. Arayüz Türkçe açılır; sağ üstteki dil menüsünden İngilizceye geçebilirsiniz. `npm run demo` komutunu yeniden çalıştırmak örnek verileri tazeler, kendi adaylarınıza dokunmaz.
 
-Veriler proje klasörünün içindeki `data/` klasöründedir: bir SQLite dosyası ve özgeçmiş dosyaları. Başka bir klasör için `DATA_DIR` değişkenini ayarlayın. Uygulama yalnızca kendi bilgisayarınızdan (`127.0.0.1`) erişilir ve giriş ekranı yoktur.
+Veriler proje klasörünün içindeki `data/` klasöründedir: bir SQLite dosyası ve CV dosyaları. Başka bir klasör için `DATA_DIR` değişkenini ayarlayın. Uygulama yalnızca kendi bilgisayarınızdan (`127.0.0.1`) erişilir ve giriş ekranı yoktur.
 
 ## Bilerek yapmadıkları
 

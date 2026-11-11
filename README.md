@@ -51,7 +51,7 @@ All names, CVs, and Transcripts in this repository and its screenshots are ficti
 ## Two ways to use the AI
 
 1. **With an Anthropic API key.** Save the key in the app. The app calls the model only when you press a button, and it says beforehand what it will send.
-2. **Without a key, through Claude Desktop or Claude Code.** Connect it to the app once over MCP, an open standard that lets an AI application use another program's data. Then simply ask, for example: "What did Selin Öztürk say about caching?" Claude reads the app's data live, on your computer; nothing is copied or uploaded again. If you allow it, Claude saves the notes it writes into the app, where they are checked like the app's own.
+2. **Without a key, through Claude Desktop or Claude Code.** Connect it to the app once over MCP, an open standard that lets an AI application use another program's data. Then simply ask, for example: "What did Selin Öztürk say about Terraform?" Claude reads the app's data live, on your computer; nothing is copied or uploaded again. The answer comes with the quote it rests on and where it is from (the CV, or which Interview's Transcript), and it says so when something is written in the CV but was not talked about, or is not there at all. If you allow it, Claude saves the notes it writes into the app, where they are checked like the app's own.
 
 Over MCP, the AI application can read, and, with your permission, save its own notes, questions, and Candidate Brief. It has no tool to delete or change Candidates, Interviews, CVs, Transcripts, or your notes. Setup takes a few minutes: see [docs/mcp.md](docs/mcp.md).
 
