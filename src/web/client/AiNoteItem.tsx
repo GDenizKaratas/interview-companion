@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from "react";
 import { api, ApiError, type AiNote } from "./api.ts";
 import { fill, type Text } from "./languages.ts";
+import { refusalText } from "./refusal-text.ts";
 import { useText } from "./text.tsx";
 import { formatTime } from "./transcript-text.ts";
 
@@ -167,7 +168,6 @@ function reviewErrorMessage(text: Text, error: unknown): string {
   const t = text.panels.aiNotes;
   if (error instanceof ApiError) {
     if (error.field === "correction" && error.rule === "required") return t.correctionRequired;
-    if (error.reason === "noteCorrected" || error.reason === "noteDismissed") return t.errors.reasons[error.reason];
   }
-  return t.reviewFailed;
+  return refusalText(text, error, t.reviewFailed);
 }

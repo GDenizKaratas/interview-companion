@@ -5,6 +5,7 @@ import { api, ApiError, type Interview, type SuggestedQuestion, type SuggestionE
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill, type Text } from "./languages.ts";
+import { generationErrorMessage, refusalText } from "./refusal-text.ts";
 import { useText } from "./text.tsx";
 
 interface SuggestedQuestionsProps {
@@ -147,7 +148,7 @@ export function SuggestedQuestions({ candidateId, interviews, sourceVersion, onA
         </div>
       )}
       {generateError !== undefined && <p className="error">{generationErrorMessage(text, generateError)}</p>}
-      {changeError !== undefined && <p className="error">{changeErrorMessage(t, changeError)}</p>}
+      {changeError !== undefined && <p className="error">{changeErrorMessage(text, changeError)}</p>}
       {leftOutNames.length > 0 && <p className="hint">{fill(t.leftOut, { interviews: leftOutNames.join(", ") })}</p>}
       {dropped > 0 && <p className="hint">{fill(t.dropped, { count: String(dropped) })}</p>}
       {suggestions && suggestions.length === 0 && apiKeySaved && !generating && <p className="empty">{t.empty}</p>}
@@ -313,21 +314,11 @@ function evidenceLocation(text: Text, interviews: Interview[], evidence: Suggest
   });
 }
 
-// Generation failures use the same words as AI Notes: both say the data is unchanged.
-function generationErrorMessage(text: Text, error: unknown): string {
-  const t = text.panels.aiNotes.errors;
-  if (error instanceof ApiError) {
-    if (error.reason === "apiKeyMissing") return t.reasons.apiKeyMissing;
-    if (error.failure) return `${t.failed} ${t.failures[error.failure]}`;
-  }
-  return t.failed;
-}
-
-function changeErrorMessage(t: Text["panels"]["questions"]["suggestions"], error: unknown): string {
+function changeErrorMessage(text: Text, error: unknown): string {
+  const t = text.panels.questions.suggestions;
   if (error instanceof ApiError) {
     if (error.field === "text" && error.rule === "required") return t.required;
     if (error.status === 404) return t.gone;
-    if (error.reason === "suggestionAccepted" || error.reason === "suggestionDismissed") return t.reasons[error.reason];
   }
-  return t.changeFailed;
+  return refusalText(text, error, t.changeFailed);
 }

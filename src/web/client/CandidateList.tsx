@@ -8,6 +8,7 @@ import { ImportCandidate, type ImportCandidateHandle } from "./ImportCandidate.t
 import { InterviewCalendar } from "./InterviewCalendar.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
+import { matchesSearch } from "./list-search.ts";
 import { candidatePath, linkTo, navigate, readListQuery, showListQuery } from "./navigation.ts";
 import { isPdfFile, readDrop, type PickedFiles } from "./picked-files.ts";
 import { PlanInterviewsDialog } from "./PlanInterviewsDialog.tsx";
@@ -187,11 +188,11 @@ export function CandidateList() {
   };
   // Opens on who comes next; with nothing Planned, on everyone, so the page is never empty.
   const view = chosenView ?? (byView.planned.length > 0 ? "planned" : "all");
-  const needle = folded(search.trim());
+  const needle = search.trim();
   // A search looks through every Candidate of the chosen role, whichever view is chosen: someone
   // who is in the app is always found once the role filter is cleared.
-  const shown = (needle === "" ? byView[view] : everyone).filter(
-    ({ candidate }) => needle === "" || folded(candidate.name).includes(needle) || folded(candidate.role).includes(needle),
+  const shown = (needle === "" ? byView[view] : everyone).filter(({ candidate }) =>
+    matchesSearch(search, [candidate.name, candidate.role]),
   );
   // One page of rows fits the window, so the list never pushes the page down. A search or a
   // change of view or role starts again at the first page; loading the list does not, so a page
@@ -547,10 +548,4 @@ function openRow(event: MouseEvent, path: string) {
   if ((event.target as Element).closest("a, button") || window.getSelection()?.toString()) return;
   if (event.metaKey || event.ctrlKey) window.open(path, "_blank");
   else navigate(path);
-}
-
-// Text for the search, so that case and the dotted and dotless i do not matter: "elif" finds
-// "ELİF", and "ivan" finds "IVAN". Only for this search; the Evidence search has its own rule in core.
-function folded(value: string): string {
-  return value.toLocaleLowerCase("tr").replaceAll("ı", "i");
 }

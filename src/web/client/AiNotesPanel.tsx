@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { AiNoteItem } from "./AiNoteItem.tsx";
 import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
 import { ConnectAi } from "./ConnectAi.tsx";
-import { api, ApiError, type AiNote, type Interview, type Transcript } from "./api.ts";
+import { api, type AiNote, type Interview, type Transcript } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
-import { fill, type Text } from "./languages.ts";
+import { fill } from "./languages.ts";
 import { ModalDialog } from "./ModalDialog.tsx";
+import { generationErrorMessage } from "./refusal-text.ts";
 import { useText } from "./text.tsx";
 
 interface AiNotesPanelProps {
@@ -188,18 +189,6 @@ function InterviewAiNotes({
       {settingsOpen && <ApiKeyDialog onClose={() => setSettingsOpen(false)} />}
     </div>
   );
-}
-
-// What went wrong, in the Interviewer's language. Every failure says the data is unchanged,
-// because core saves nothing unless generation succeeds.
-export function generationErrorMessage(text: Text, error: unknown): string {
-  const t = text.panels.aiNotes.errors;
-  if (error instanceof ApiError) {
-    // Only the reasons generation can give; the others belong to review and to suggestions.
-    if (error.reason && error.reason in t.reasons) return t.reasons[error.reason as keyof typeof t.reasons];
-    if (error.failure) return `${t.failed} ${t.failures[error.failure]}`;
-  }
-  return t.failed;
 }
 
 // One AI Note as a short row: what it says in at most two lines, how many quotes it rests on, and
