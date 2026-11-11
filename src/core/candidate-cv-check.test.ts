@@ -64,6 +64,36 @@ describe("Checking a CV before a Candidate is added from it", () => {
     expect(check).toEqual({ name: "", refusal: null, alreadyAdded: false });
   });
 
+  it("reads the name from a profile export laid out in two columns, with contact details first", async () => {
+    // The shape of a profile saved as a PDF from a professional network: a side column of small
+    // text comes first in the file, and the name is the largest text in the main column.
+    const bytes = makePdf([
+      [
+        { text: "Contact", size: 13 },
+        { text: "ece.yalin@example.com", size: 10 },
+        { text: "Top Skills", size: 13 },
+        { text: "Node.js", size: 10 },
+        { text: "Ece Yalın", size: 26 },
+        { text: "Backend Engineer at Örnek Yazılım", size: 12 },
+        { text: "Experience", size: 16 },
+      ],
+    ]);
+
+    const check = await core.checkCandidateCv({ role, cv: { fileName: "Profile.pdf", bytes } });
+
+    expect(check.name).toBe("Ece Yalın");
+  });
+
+  it("reads a name that is followed by a note in brackets, such as pronouns, without the note", async () => {
+    for (const line of ["Ece Yalın (She/Her)", "Ece Yalın (O)", "Ece Yalın, PMP (2nd)"]) {
+      const bytes = makePdf([[{ text: line, size: 26 }, { text: "Backend Engineer", size: 12 }]]);
+
+      const check = await core.checkCandidateCv({ role, cv: { fileName: "Profile.pdf", bytes } });
+
+      expect(check.name, line).toBe(line.startsWith("Ece Yalın,") ? "Ece Yalın, PMP" : "Ece Yalın");
+    }
+  });
+
   it("never takes the name from the file name: a CV with no name in it gets an empty name", async () => {
     // The largest text is not a name, and the file is named like one.
     const bytes = makePdf([[{ text: "ornek@example.com | 2019 - 2025", size: 14 }]]);
