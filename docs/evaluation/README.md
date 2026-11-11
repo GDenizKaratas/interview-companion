@@ -34,4 +34,4 @@ If the model declines for a safety reason, the API's server-side fallback may an
 
 ## Runs
 
-No run has been recorded yet. Each run adds a file next to this one, and no number about the real model appears in the docs without such a file behind it.
+No run has been recorded yet; the first one is tracked in #62. Each run adds a file next to this one, and no number about the real model appears in the docs without such a file behind it.
