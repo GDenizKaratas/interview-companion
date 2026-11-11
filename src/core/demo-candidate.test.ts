@@ -30,7 +30,7 @@ function contentOf(candidateId: string) {
     role: candidate.role,
     interviews: interviews.map((i) => ({ number: i.number, date: i.date, planned: i.planned })),
     notes: core.listInterviewerNotes(candidateId).map((n) => ({ text: n.text, interview: numberOf(n.interviewId) })),
-    questions: core.listSavedQuestions(candidateId).map((q) => ({ text: q.text, origin: q.origin })),
+    questions: core.listSavedQuestions(candidateId).map((q) => ({ text: q.text, origin: q.origin, mark: q.mark })),
   };
 }
 
@@ -195,13 +195,12 @@ describe("Demo Candidate on the first start", () => {
 });
 
 describe("Demo set", () => {
-  it("loads five fictional Candidates with different roles, the demo Candidate among them", async () => {
+  it("loads eleven fictional Candidates, the demo Candidate among them", async () => {
     const own = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
 
     const demos = await core.loadDemoCandidates();
 
-    expect(demos).toHaveLength(5);
-    expect(new Set(demos.map((c) => c.role)).size).toBe(5);
+    expect(demos).toHaveLength(11);
     expect(demos.map((c) => c.name)).toContain("Deniz Yılmaz");
     expect(core.listCandidates().map((c) => c.id).sort()).toEqual([own.id, ...demos.map((c) => c.id)].sort());
   });
@@ -245,7 +244,7 @@ describe("Demo set", () => {
     const second = await core.loadDemoCandidates();
 
     expect(second.map((c) => contentOf(c.id))).toEqual(before);
-    expect(core.listCandidates()).toHaveLength(5);
+    expect(core.listCandidates()).toHaveLength(second.length);
     const cvCount = second.filter((c) => core.getCv(c.id) !== undefined).length;
     expect(readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((path) => path.endsWith(".pdf"))).toHaveLength(cvCount);
   });
@@ -283,5 +282,82 @@ describe("Demo set", () => {
     const checks = demos.flatMap((c) => core.listSavedQuestionChecks(c.id));
     expect(checks.filter((check) => check.askedQuestion !== null).length).toBeGreaterThanOrEqual(5);
     expect(checks.filter((check) => check.askedQuestion === null).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("has two roles with several Candidates each, some with a CV and some without", async () => {
+    const demos = await core.loadDemoCandidates();
+
+    const byRole = new Map<string, typeof demos>();
+    for (const c of demos) byRole.set(c.role, [...(byRole.get(c.role) ?? []), c]);
+    const sizes = [...byRole.values()].map((group) => group.length).sort((a, b) => b - a);
+    expect(sizes[0]).toBeGreaterThanOrEqual(4);
+    expect(sizes[1]).toBeGreaterThanOrEqual(3);
+    for (const group of [...byRole.values()].filter((g) => g.length >= 3)) {
+      expect(group.some((c) => core.getCv(c.id) !== undefined)).toBe(true);
+      expect(group.some((c) => core.getCv(c.id) === undefined)).toBe(true);
+    }
+  });
+
+  it("fills every view of the Candidate list: Planned, today, taken place, and no Interview yet", async () => {
+    const demos = await core.loadDemoCandidates();
+
+    const dated = core.listDatedInterviews();
+    expect(dated.some((entry) => entry.today)).toBe(true);
+    expect(dated.filter((entry) => entry.interview.planned).length).toBeGreaterThanOrEqual(3);
+    expect(dated.filter((entry) => entry.interview.date! < "2026-11-10").length).toBeGreaterThanOrEqual(3);
+    expect(demos.filter((c) => core.getCandidateOverview(c.id).noInterviewYet).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("gives one Candidate a Workspace that shows every kind of output and every state", async () => {
+    const demos = await core.loadDemoCandidates();
+    const selin = demos.find((c) => c.name === "Selin Öztürk")!;
+
+    expect(core.getCv(selin.id)).toBeDefined();
+    const interviews = core.listInterviews(selin.id);
+    expect(interviews.some((i) => i.planned && i.time !== null)).toBe(true);
+    const done = interviews.find((i) => core.getTranscript(i.id)?.speakerMappingConfirmedAt)!;
+    expect(done.planned).toBe(false);
+
+    const states = new Set(core.listAiNotes(done.id).map((note) => note.reviewState));
+    expect([...states].sort()).toEqual(["confirmed", "corrected", "dismissed", "unreviewed"]);
+    const asked = core.listAskedQuestions(done.id)!.askedQuestions;
+    expect(asked.filter((question) => question.markedWrong)).toHaveLength(1);
+
+    const questionStates = core.listSavedQuestionStates(selin.id);
+    expect(new Set(questionStates.map((s) => s.state))).toEqual(new Set(["asked", "notFound", "planned"]));
+    expect(questionStates.some((s) => s.decidedBy === "interviewer" && s.differsFromTranscripts)).toBe(true);
+    expect(core.listInterviewerNotes(selin.id).length).toBeGreaterThan(0);
+  });
+
+  it("keeps the speakers of the demo Candidate's First Interview for the Interviewer to confirm", async () => {
+    const demos = await core.loadDemoCandidates();
+    const deniz = demos.find((c) => c.name === "Deniz Yılmaz")!;
+
+    const [first] = core.listInterviews(deniz.id);
+    expect(core.getTranscript(first!.id)?.speakerMappingConfirmedAt).toBeNull();
+  });
+
+  it("gives the largest role Role Questions, copied to each demo Candidate of that role", async () => {
+    const demos = await core.loadDemoCandidates();
+
+    const role = core.listRolesInUse().toSorted((a, b) => b.candidateIds.length - a.candidateIds.length)[0]!.role;
+    const list = core.listRoleQuestions(role);
+    expect(list.questions.length).toBeGreaterThanOrEqual(3);
+    expect(list.candidatesMissingQuestions).toBe(0);
+    for (const candidate of demos.filter((c) => c.role === role)) {
+      const copies = core.listSavedQuestions(candidate.id).filter((q) => q.origin === "role");
+      expect(copies.map((q) => q.text)).toEqual(list.questions.map((q) => q.text));
+    }
+  });
+
+  it("does not add the Role Questions twice when loaded again, and keeps the Interviewer's own", async () => {
+    const first = await core.loadDemoCandidates();
+    const role = first[0]!.role;
+    const before = core.listRoleQuestions(role).questions.map((q) => q.text);
+    core.addRoleQuestion({ role, text: "My own role question?" });
+
+    await core.loadDemoCandidates();
+
+    expect(core.listRoleQuestions(role).questions.map((q) => q.text)).toEqual([...before, "My own role question?"]);
   });
 });
