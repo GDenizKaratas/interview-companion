@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { briefPrompt } from "./brief-prompt.ts";
+import { serverInstructions } from "./server-instructions.ts";
 import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, writingRulesInOneSentence, type AiClientCore } from "../core/index.ts";
 
 // Bounds on what the AI client can save in one call, so a runaway client cannot flood the
@@ -32,7 +33,7 @@ const transcriptQuote = {
 // while the Interviewer has not turned them on. No tool can change anything else. Transport
 // (stdio in server.ts, in-memory in tests) is attached by the caller.
 export function createMcpServer(core: AiClientCore): McpServer {
-  const server = new McpServer({ name: "interview-companion", version: "0.1.0" });
+  const server = new McpServer({ name: "interview-companion", version: "0.1.0" }, { instructions: serverInstructions });
   const readOnly = { readOnlyHint: true, openWorldHint: false };
 
   server.registerTool(
@@ -63,7 +64,8 @@ export function createMcpServer(core: AiClientCore): McpServer {
       description:
         "Get the notes the Interviewer wrote about a Candidate, newest save first. A note may be tagged " +
         "with one Interview. Give interviewId to get only that Interview's notes and the untagged ones. " +
-        "An Interviewer Note is the Interviewer's opinion, never Evidence of what the Candidate said.",
+        "An Interviewer Note is the Interviewer's opinion, never Evidence of what the Candidate said: in an " +
+        "answer, quote it as the Interviewer's words.",
       inputSchema: {
         candidateId,
         interviewId: z
@@ -145,7 +147,8 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "Get the whole Transcript of one Interview, segment by segment: its number, the speaker label, the " +
         "speaker's role (candidate, interviewer, or other; null while the Speaker Mapping is not confirmed), " +
         "times when the file had them, and the exact text. Null when the Interview has no Transcript. Use the " +
-        "segment numbers and exact text when you save AI Notes or Suggested Questions.",
+        "segment numbers and exact text when you save AI Notes or Suggested Questions, and to read the context " +
+        "around a search_evidence result before you answer a question about it.",
       inputSchema: { interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate.") },
       annotations: readOnly,
     },
@@ -177,7 +180,8 @@ export function createMcpServer(core: AiClientCore): McpServer {
     {
       description:
         "Get the text of a Candidate's CV, page by page, exactly as the app stores it. Null when there is no CV. " +
-        "Quotes from the CV in Suggested Questions must be copied from this text.",
+        "Quotes from the CV in Suggested Questions must be copied from this text. Use it to tell whether a " +
+        "subject is written in the CV, as well as or instead of talked about in an Interview.",
       inputSchema: { candidateId },
       annotations: readOnly,
     },
@@ -346,6 +350,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
     {
       description:
         "Search one Candidate's CV and Transcripts for a word or words, with the same search as the app. " +
+        "It is the first tool for a free question about a Candidate, such as whether they talked about a subject. " +
         "Each result is Evidence: an exact excerpt, a CV line with its page, or a whole Transcript segment with " +
         "its Interview, segment number, speaker label, and speakerRole from the Speaker Mapping (null while the " +
         "mapping is not confirmed: then no speaker is known to be the Candidate). Each search word matches the " +

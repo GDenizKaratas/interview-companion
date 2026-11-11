@@ -6,7 +6,7 @@ The question: the app reads a WebVTT file (`.vtt`) with speaker names, or plain 
 
 ## Short answer
 
-- **Google Meet does not transcribe Turkish on any plan.** "Download it from Google Meet" is not an answer for a Turkish Interview. See [google-meet-transcripts.md](google-meet-transcripts.md).
+- **Google Meet transcripts are offered in a short list of languages, and Turkish is not on it.** "Download it from Google Meet" is not an answer for a Turkish Interview today. See [google-meet-transcripts.md](google-meet-transcripts.md) and the check of 2026-11-11 below.
 - **Microsoft Teams on a work or school account, and Zoom on a paid plan, transcribe Turkish** and give a `.vtt` with speaker names.
 - **With no paid plan**, no meeting tool gives a transcript with speaker names. The realistic route is to record the call and transcribe the recording on one's own computer with a tool that labels speakers. A note-taker service that joins the call also works, but it sends the Candidate's voice to another company.
 
@@ -49,6 +49,10 @@ This is what the sources say. It is not legal advice.
 - Anthropic's Claude API takes text, images, and PDF files, and has no speech-to-text [28]. A separate component would be needed.
 - On the computer: whisper.cpp is open source; its large model takes about 3 GB on disk and about 4 GB of memory, and it has Node.js bindings [13]. It does not separate speakers; sherpa-onnx adds that, with Node.js packages [29]. Nothing leaves the computer. How well either does on Turkish interviews is untested here.
 - In a cloud: several speech services list Turkish with speaker separation [25][26][27]. In every case the Candidate's voice leaves the computer and, unless the service hosts in Türkiye, the country.
+
+## Check of Google Meet's languages, 2026-11-11
+
+Re-read on 2026-11-11 for #93: https://support.google.com/meet/answer/12849897 says "Meeting transcripts are available in: English, French, German, Italian, Japanese, Korean, Portuguese, Spanish". Turkish is not listed. Turkish appears in Meet only for translated captions and speech translation, which give no transcript file. The guide says this calmly: Google's help page lists eight languages for now, and Turkish is not on the list yet; use another route for a Turkish Interview.
 
 ## Could not be confirmed
 

@@ -109,7 +109,7 @@ export const api = {
     request<CandidateOverview[]>(`/candidate-overviews${order ? `?by=${order.by}${order.reversed ? "&reversed=true" : ""}` : ""}`),
   getCandidateOverview: (id: string) => request<CandidateOverview>(`/candidates/${encodeURIComponent(id)}/overview`),
   listDatedInterviews: () => request<DatedInterview[]>("/dated-interviews"),
-  getMcpSetup: () => request<{ command: string | null }>("/mcp-setup"),
+  getMcpSetup: () => request<{ command: string | null; desktopConfig: string | null }>("/mcp-setup"),
   listCandidateRoles: () => request<string[]>("/candidate-roles"),
   listRolesInUse: () => request<RoleInUse[]>("/roles-in-use"),
   findRoleInUse: (role: string, signal?: AbortSignal) =>
