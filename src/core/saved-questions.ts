@@ -3,6 +3,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { requireCandidate } from "./candidates.ts";
 import { inTransaction } from "./database.ts";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
+import type { Now } from "./interviewer-notes.ts";
 import { interviewFilterCondition, requireInterviewOf, type InterviewFilter } from "./interviews.ts";
 
 // Where a Saved Question came from: written by the Interviewer, copied from a Suggested Question,
@@ -47,11 +48,11 @@ interface SavedQuestionRow {
 const columns = "id, candidate_id, interview_id, text, origin, from_role, mark, created_at";
 
 // Adds a hand-written question at the end of the Candidate's list.
-export function addSavedQuestion(db: DatabaseSync, input: NewSavedQuestion): SavedQuestion {
+export function addSavedQuestion(db: DatabaseSync, now: Now, input: NewSavedQuestion): SavedQuestion {
   requireCandidate(db, input.candidateId);
   const interviewId = input.interviewId ?? null;
   if (interviewId !== null) requireInterviewOf(db, input.candidateId, interviewId);
-  return insertSavedQuestion(db, input.candidateId, input.text, "written", new Date().toISOString(), interviewId);
+  return insertSavedQuestion(db, input.candidateId, input.text, "written", now().toISOString(), interviewId);
 }
 
 // Adds a question at the end of the Candidate's list. Core uses it to copy an accepted

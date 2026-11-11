@@ -22,6 +22,15 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+describe("Adding a Saved Question", () => {
+  it("records the time from core's clock", () => {
+    core.close();
+    core = openCore(dbPath, { now: () => new Date("2026-11-10T09:30:00Z") });
+
+    expect(core.addSavedQuestion({ candidateId: candidate.id, text: "Which queue?" }).createdAt).toBe("2026-11-10T09:30:00.000Z");
+  });
+});
+
 function addAll(...questionTexts: string[]) {
   return questionTexts.map((text) => core.addSavedQuestion({ candidateId: candidate.id, text }));
 }
