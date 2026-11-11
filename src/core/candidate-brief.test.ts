@@ -120,10 +120,37 @@ describe("Reading a Candidate Brief", () => {
 
     expect(core.getCandidateBrief(candidate.id)?.evidence).toEqual([
       { ...evidence[0], found: true },
-      { ...evidence[1], found: true },
-      { ...evidence[2], found: false },
+      { ...evidence[1], found: true, speakerRole: null },
+      { ...evidence[2], found: false, speakerRole: null },
       { ...evidence[3], found: false },
-      { ...evidence[4], found: false },
+      { ...evidence[4], found: false, speakerRole: null },
+    ]);
+  });
+
+  it("says whose words a Transcript quote is, only once the Speaker Mapping is confirmed", async () => {
+    const interview = await withCvAndTranscript();
+    core.saveCandidateBriefFromClient(candidate.id, {
+      text: "Asked about background jobs [1]; used Redis [2].",
+      evidence: [
+        { number: 1, source: "transcript", interviewId: interview.id, segmentNumber: 1, quote: "Arka plan" },
+        { number: 2, source: "transcript", interviewId: interview.id, segmentNumber: 2, quote: "Redis ile BullMQ" },
+      ],
+    });
+    // Found is about the words only; before the mapping is confirmed nobody is known to have said them.
+    expect(core.getCandidateBrief(candidate.id)?.evidence.map((e) => [e.found, "speakerRole" in e && e.speakerRole])).toEqual([
+      [true, null],
+      [true, null],
+    ]);
+
+    const transcript = core.getTranscript(interview.id)!;
+    core.confirmSpeakerMapping(
+      interview.id,
+      Object.fromEntries(transcript.speakers.map((s) => [s.id, s.label === "Ece" ? "candidate" : "interviewer"] as const)),
+    );
+
+    expect(core.getCandidateBrief(candidate.id)?.evidence).toEqual([
+      expect.objectContaining({ number: 1, found: true, speakerRole: "interviewer" }),
+      expect.objectContaining({ number: 2, found: true, speakerRole: "candidate" }),
     ]);
   });
 

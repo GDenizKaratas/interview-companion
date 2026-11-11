@@ -655,7 +655,15 @@ describe("MCP server", () => {
       text: "# Candidate Brief: Ada Demir\n\n- Used Redis [1] and Kafka [2].",
       savedAt: "2026-11-10T09:30:00.000Z",
       evidence: [
-        { number: 1, source: "transcript", interviewId: interview.id, segmentNumber: 2, quote: "Redis with BullMQ", found: true },
+        {
+          number: 1,
+          source: "transcript",
+          interviewId: interview.id,
+          segmentNumber: 2,
+          quote: "Redis with BullMQ",
+          found: true,
+          speakerRole: "candidate",
+        },
         { number: 2, source: "cv", page: 1, quote: "Kafka", found: false },
       ],
     };

@@ -389,7 +389,9 @@ export function createMcpServer(core: AiClientCore): McpServer {
     {
       description:
         "Get the Candidate Brief saved for a Candidate by an AI client, or null when there is none. Each Evidence " +
-        "entry has found: whether its quote is, word for word, in that CV page or Transcript segment now.",
+        "entry has found: whether its quote is, word for word, in that CV page or Transcript segment now. A " +
+        "Transcript entry also has speakerRole, who said it in the confirmed Speaker Mapping (null while it is not " +
+        "confirmed): only a quote with the candidate role is what the Candidate said.",
       inputSchema: { candidateId },
       annotations: readOnly,
     },
