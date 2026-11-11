@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), Transcript import through adapters (plain text and WebVTT), the Speaker Mapping, Evidence search over the CV and Transcripts, AI Note generation with an API key (Claude behind a provider interface, every quote checked before saving), AI Note review (Review States and the Stale flag), Suggested Questions on request (accept, edit, dismiss, regenerate, every quote checked), the MCP tools (reads, and the checked saves of ADR 0005, including the Candidate Brief), the `brief` prompt, and exporting a Candidate as a zip and importing it back. Setup and an introduction to MCP are in [mcp.md](mcp.md).
+Status: **implemented**. This page describes the code as it is. The plan it started from is in [plan.md](plan.md); setup and an introduction to MCP are in [mcp.md](mcp.md).
 
 Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md). Reasons for each choice are in the [decision log](decisions.md).
 
@@ -62,14 +62,20 @@ erDiagram
     CANDIDATE ||--o{ INTERVIEWER_NOTE : has
     CANDIDATE ||--o{ SAVED_QUESTION : has
     CANDIDATE ||--o{ SUGGESTED_QUESTION : has
+    CANDIDATE ||--o| CANDIDATE_BRIEF : has
+    ROLE_QUESTION }o--o{ SAVED_QUESTION : "copied as"
     INTERVIEW ||--o| TRANSCRIPT : has
     INTERVIEW ||--o{ INTERVIEWER_NOTE : "optionally tags"
     TRANSCRIPT ||--|{ SEGMENT : contains
     TRANSCRIPT ||--|{ SPEAKER : "has labels"
     SPEAKER ||--o{ SEGMENT : speaks
     INTERVIEW ||--o{ AI_NOTE : has
+    INTERVIEW ||--o{ ASKED_QUESTION : has
+    ASKED_QUESTION }o--o| SAVED_QUESTION : "matches"
     AI_NOTE ||--|{ EVIDENCE : "backed by"
     SUGGESTED_QUESTION ||--o{ EVIDENCE : "may cite"
+    ASKED_QUESTION ||--|{ EVIDENCE : "backed by"
+    CANDIDATE_BRIEF ||--o{ EVIDENCE : "cites"
     EVIDENCE }o--o| SEGMENT : "quotes"
     EVIDENCE }o--o| CV : "quotes a page of"
 ```
@@ -103,15 +109,15 @@ Notes on the model:
 
 | Rule | Where it is enforced |
 |---|---|
-| A quote must exist word for word in its source. | Core, before an AI Note is saved. |
+| A quote must exist word for word in its source. | Core, before an AI Note or Asked Question is saved. |
 | No AI Notes before the Speaker Mapping is confirmed. | Core, at the start of generation. |
-| Changing a Speaker Mapping marks AI Notes Stale. | Core, in the mapping update. |
+| Changing a Speaker Mapping marks AI Notes and Asked Questions Stale. | Core, in the mapping update. |
 | AI never edits an Interviewer Note. | Core exposes no such operation to AI code. |
 | Regenerating suggestions never changes Saved Questions. | Saved Questions are copies in a separate table. |
 | A Suggested Question's quotes must exist word for word in the CV or a Transcript. | Core, before a suggestion is saved. |
 | Replacing a CV or Transcript removes the suggestions that quote it. | The database, through a foreign key and a trigger. |
 | No generation without a request. | Generation is only reachable from explicit actions. |
-| The MCP server can only read, except for checked AI work the Interviewer allowed. | The MCP server gets `aiClientCore(core)`, a view that holds core's reads and only `saveAiNotesFromClient`, `saveSuggestedQuestionsFromClient`, and `saveCandidateBriefFromClient`; all refuse while the setting is off. The first two run the same checks as in-app generation (ADR 0005). |
+| The MCP server can only read, except for checked AI work the Interviewer allowed. | The MCP server gets `aiClientCore(core)`, a view that holds core's reads and only `saveAiNotesFromClient`, `saveAskedQuestionsFromClient`, `saveSuggestedQuestionsFromClient`, and `saveCandidateBriefFromClient`; all refuse while the setting is off. The first three run the same checks as in-app generation (ADR 0005). |
 | A saved Candidate Brief's quotes are shown as found only when they are in this Candidate's CV or Transcripts now. | Core, every time the brief is read. |
 | An imported Candidate's files and AI work pass the same checks as new ones. | Core, which rebuilds the import through its own operations. |
 | Importing a Candidate already in the app never merges. | Core refuses until the Interviewer chooses Replace or Keep both. |
