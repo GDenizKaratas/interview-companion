@@ -601,17 +601,37 @@ button.example-chip.command-chip {
   font-size: 0.72rem;
 }
 
-/* The one-click connect for Claude Desktop, and what it found or did. */
-.desktop-connect {
+/* Step 1 of "Use with MCP": the choice of AI application, then the one-click connect for
+   Claude Desktop and what it found or did. */
+.step .guide-apps {
+  margin-top: 0.3rem;
+}
+
+.step .step-hint.step-app-hint {
+  margin-top: 0.45rem;
+}
+
+/* "Use with MCP" holds steps, the connection, and the safety line; it is given more height than
+   other large dialogs, so it does not scroll on a laptop screen. */
+.confirm-dialog.wide.large > .confirm-dialog-subject:has(> .mcp-guide) {
+  max-height: min(40rem, 78vh);
+}
+
+.confirm-dialog-subject p.guide-note.guide-when {
+  margin: 0.8rem 0 0.6rem;
+}
+
+.step .desktop-connect {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 0 0 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
 }
 
 .desktop-state {
-  font-size: 0.86rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
   color: var(--muted);
 }
 

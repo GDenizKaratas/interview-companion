@@ -47,11 +47,19 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     // Without the setup the guide still explains the steps; docs/mcp.md has the rest.
     api.getMcpSetup().then(
-      ({ command, commandEveryFolder, desktopConfig }) => setSetup({ desktop: desktopConfig, code: command, everyFolder: commandEveryFolder }),
+      ({ command, commandEveryFolder, desktopConfig }) =>
+        setSetup({
+          desktop: desktopConfig,
+          code: command,
+          everyFolder: commandEveryFolder,
+        }),
       () => {},
     );
     api.getClaudeDesktop().then(setDesktop, () => setDesktop(null));
-    api.getAiClientWrites().then((setting) => setClientWrites(setting.allowed), () => setError(true));
+    api.getAiClientWrites().then(
+      (setting) => setClientWrites(setting.allowed),
+      () => setError(true),
+    );
   }, []);
 
   const snippet = setup[app];
@@ -81,7 +89,10 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
     setConnect("busy");
     try {
       const { state } = await api.connectClaudeDesktop();
-      setDesktop((current) => ({ state, configPath: current?.configPath ?? null }));
+      setDesktop((current) => ({
+        state,
+        configPath: current?.configPath ?? null,
+      }));
       setConnect("done");
     } catch {
       // A refusal says why through the state, read again; anything else is a plain failure.
@@ -91,11 +102,62 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
     }
   }
 
+  const desktopState = desktop?.state;
+  const desktopMessage =
+    connect === "done"
+      ? t.desktop.done
+      : connect === "failed"
+        ? t.desktop.failed
+        : desktopState && desktopState !== "notConnected"
+          ? t.desktop[desktopState]
+          : null;
+  const canConnect = desktopState === "notConnected" || desktopState === "otherCopy";
+  const connectedNow = connect === "done" || desktopState === "connected";
+
+  // Step 1 holds the choice of application and, for Claude Desktop, the one-click connect.
+  const appChoice = (
+    <>
+      <div className="view-choice guide-apps" role="group" aria-label={t.connectLabel}>
+        {appKeys.map((key) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={app === key}
+            className={app === key ? "role-choice chosen" : "role-choice"}
+            onClick={() => {
+              setApp(key);
+              setCopied(null);
+            }}
+          >
+            {t.apps[key].name}
+          </button>
+        ))}
+      </div>
+      {app === "code" && <span className="step-hint step-app-hint">{t.apps.code.hint}</span>}
+      {app === "desktop" && desktop !== undefined && (canConnect || desktopMessage) && (
+        <div className="desktop-connect">
+          {canConnect && connect !== "done" && (
+            <button type="button" disabled={connect === "busy"} onClick={() => void connectDesktop()}>
+              {desktopState === "otherCopy" ? t.desktop.connectAgain : t.desktop.connect}
+            </button>
+          )}
+          {desktopMessage && (
+            <span className={connectedNow ? "desktop-state ok" : "desktop-state"} role="status">
+              {desktopMessage}
+            </span>
+          )}
+        </div>
+      )}
+    </>
+  );
+
   const steps = t.steps.map((step, index) => ({
     ...step,
     icon: icons[index] ?? [],
     extra:
-      index === askStep ? (
+      index === 0 ? (
+        appChoice
+      ) : index === askStep ? (
         <ul className="step-examples">
           {t.examples.map((example) => (
             <li key={example}>
@@ -126,29 +188,20 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
       ) : undefined,
   }));
 
-  const desktopState = desktop?.state;
-  const desktopMessage =
-    connect === "done"
-      ? t.desktop.done
-      : connect === "failed"
-        ? t.desktop.failed
-        : desktopState && desktopState !== "notConnected"
-          ? t.desktop[desktopState]
-          : null;
-  const canConnect = desktopState === "notConnected" || desktopState === "otherCopy";
-  const connectedNow = connect === "done" || desktopState === "connected";
-
+  // The text to paste: for Claude Desktop with where it goes; Claude Code's hint is in step 1.
   const manual = snippet && (
     <>
-      <p className="guide-connect-hint">
-        {t.apps[app].hint}
-        {app === "desktop" && desktop?.configPath && (
-          <>
-            {" "}
-            <code className="guide-path">{desktop.configPath}</code>
-          </>
-        )}
-      </p>
+      {app === "desktop" && (
+        <p className="guide-connect-hint">
+          {t.apps.desktop.hint}
+          {desktop?.configPath && (
+            <>
+              {" "}
+              <code className="guide-path">{desktop.configPath}</code>
+            </>
+          )}
+        </p>
+      )}
       <div className="command">
         <code>{snippet}</code>
         <button type="button" className="quiet" onClick={() => copy(snippet, "snippet")}>
@@ -170,73 +223,44 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
         </button>
       }
     >
-      <p className="guide-intro">{t.intro}</p>
-      <StepFlow steps={steps} label={t.title} />
-      <p className="guide-note guide-when">
-        {t.when}{" "}
-        <button type="button" className="example-chip command-chip" onClick={() => copy(t.askCommand, "askCommand")}>
-          {copied === "askCommand" ? t.exampleCopied : t.askCommand}
-        </button>
-      </p>
-      <p className="guide-label">{t.connectLabel}</p>
-      <div className="view-choice guide-routes" role="group" aria-label={t.connectLabel}>
-        {appKeys.map((key) => (
-          <button
-            key={key}
-            type="button"
-            aria-pressed={app === key}
-            className={app === key ? "role-choice chosen" : "role-choice"}
-            onClick={() => {
-              setApp(key);
-              setCopied(null);
-            }}
-          >
-            {t.apps[key].name}
+      <div className="mcp-guide">
+        <p className="guide-intro">{t.intro}</p>
+        <StepFlow steps={steps} label={t.title} />
+        <p className="guide-note guide-when">
+          {t.when}{" "}
+          <button type="button" className="example-chip command-chip" onClick={() => copy(t.askCommand, "askCommand")}>
+            {copied === "askCommand" ? t.exampleCopied : t.askCommand}
           </button>
-        ))}
+        </p>
+        {app === "desktop" ? (
+          <>
+            {manual && desktop !== undefined && (
+              // Open when the one-click connect cannot work here; folded otherwise.
+              <details className="guide-manual" open={desktop === null || cannotConnect.includes(desktop.state)}>
+                <summary>{t.desktop.manual}</summary>
+                {manual}
+              </details>
+            )}
+          </>
+        ) : (
+          <>
+            {manual}
+            {setup.everyFolder && (
+              <details className="guide-manual">
+                <summary>{t.everyFolder}</summary>
+                <div className="command">
+                  <code>{setup.everyFolder}</code>
+                  <button type="button" className="quiet" onClick={() => copy(setup.everyFolder, "everyFolder")}>
+                    {copied === "everyFolder" ? t.copied : t.copy}
+                  </button>
+                </div>
+              </details>
+            )}
+          </>
+        )}
+        {error && <p className="error">{t.saveFailed}</p>}
+        <p className="guide-note">{t.safety}</p>
       </div>
-      {app === "desktop" ? (
-        <>
-          {desktop !== undefined && (canConnect || desktopMessage) && (
-            <div className="desktop-connect">
-              {canConnect && connect !== "done" && (
-                <button type="button" disabled={connect === "busy"} onClick={() => void connectDesktop()}>
-                  {desktopState === "otherCopy" ? t.desktop.connectAgain : t.desktop.connect}
-                </button>
-              )}
-              {desktopMessage && (
-                <span className={connectedNow ? "desktop-state ok" : "desktop-state"} role="status">
-                  {desktopMessage}
-                </span>
-              )}
-            </div>
-          )}
-          {manual && desktop !== undefined && (
-            // Open when the one-click connect cannot work here; folded otherwise.
-            <details className="guide-manual" open={desktop === null || cannotConnect.includes(desktop.state)}>
-              <summary>{t.desktop.manual}</summary>
-              {manual}
-            </details>
-          )}
-        </>
-      ) : (
-        <>
-          {manual}
-          {setup.everyFolder && (
-            <details className="guide-manual">
-              <summary>{t.everyFolder}</summary>
-              <div className="command">
-                <code>{setup.everyFolder}</code>
-                <button type="button" className="quiet" onClick={() => copy(setup.everyFolder, "everyFolder")}>
-                  {copied === "everyFolder" ? t.copied : t.copy}
-                </button>
-              </div>
-            </details>
-          )}
-        </>
-      )}
-      {error && <p className="error">{t.saveFailed}</p>}
-      <p className="guide-note">{t.safety}</p>
     </ModalDialog>
   );
 }

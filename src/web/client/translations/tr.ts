@@ -52,7 +52,7 @@ const translation: TranslationFile = {
       title: "AI'yi API anahtarı olmadan kullan (MCP)",
       intro: "Claude Desktop ya da Claude Code'u bir kez bağlayın; sonra her yeni sohbette hazırdır. Bu uygulamadaki bilgileri doğrudan okur: bir şey kopyalamanız ya da yüklemeniz gerekmez.",
       steps: [
-        { title: "Bir kez bağlayın", hint: "Aşağıdan AI uygulamanızı seçin." },
+        { title: "Bir kez bağlayın", hint: "AI uygulamanızı seçin:" },
         { title: "Interview Companion'ı anarak sorun", hint: "Sohbete düz bir cümleyle yazın; komut gerekmez. Yanıt alıntısı ve kaynağıyla gelir. Kopyalamak için bir cümleye tıklayın:" },
         { title: "Burada görün", hint: "Kaydettikleri, sayfayı yeniden açınca burada görünür." },
       ],

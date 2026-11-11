@@ -53,7 +53,7 @@ const text = {
     title: "Use AI without an API key (MCP)",
     intro: "Connect Claude Desktop or Claude Code once; it is then ready in every new chat. It reads what is in this app directly: you copy or upload nothing.",
     steps: [
-      { title: "Connect once", hint: "Choose your AI application below." },
+      { title: "Connect once", hint: "Choose your AI application:" },
       { title: "Ask, naming Interview Companion", hint: "Write in plain words in the chat; no command is needed. The answer comes with its quote and source. Click a sentence to copy it:" },
       { title: "See it here", hint: "What it saves shows here when you open the page again." },
     ],
