@@ -2,112 +2,115 @@
 
 [English](README.md)
 
-Interview Companion, bir adayla ilgili her şeyi tek yerde tutar: CV'si, görüşmeleri, transkriptleri, sizin notlarınız ve sorularınız. Yapay zekâ isterseniz transkriptten sizin için not çıkarır. Her notun yanında adayın kendi sözleri durur, böylece notu tek tıkla kontrol edersiniz. Yapay zekâ sizin not tutanınızdır: kimseye puan vermez, kararı her zaman siz verirsiniz. Uygulama kendi bilgisayarınızda çalışır ve bütün verisi orada, tek bir klasörde kalır.
+**Görüşmeleriniz tek bir yerde.** Görüşme sırasında not yetiştirmeye çalışmayın, sonra da "aday bunu demiş miydi?" diye kayıtları aramayın. Interview Companion her adayın CV'sini, görüşmelerini, transkriptlerini, notlarınızı ve sorularınızı bir arada tutar; AI transkriptten sizin için not çıkarır.
 
-![Aday listesi ve görüşme takvimi](docs/images/home.png)
-*Aday listesi; bugünün ve bu haftanın görüşmeleri takvimde.*
+- **Her notun yanında adayın kendi sözü durur.** AI'nin yazdığı her satır transkriptten bir alıntıya dayanır; alıntı transkriptte kelimesi kelimesine yoksa uygulama o satırı kaydetmez. Alıntı, adayın bunu söylediğini gösterir; doğru söylediğini değil.
+- **Kararı siz verirsiniz.** AI not tutar. Kimseye puan vermez, kimseyi sıralamaz, karar vermez.
+- **Veriniz bilgisayarınızda kalır.** Hesap açılmaz, uygulamanın bir sunucusu yoktur. Ücretsiz ve açık kaynaktır.
 
-Bu depodaki ve ekran görüntülerindeki bütün isimler, CV'ler ve transkriptler kurmacadır. Kodda ve belgelerde kullanılan İngilizce terimler [GLOSSARY.md](GLOSSARY.md) dosyasında tanımlıdır.
+![Bir adayın çalışma alanı: solda transkript, ortada sorular, sağda notlar ve AI'nin görüşme notları](docs/images/workspace.png)
+*Bir adayın çalışma alanı: CV ve transkript, Sorularım, Notlarım ve AI'nin çıkardığı Görüşme notları tek ekranda.*
 
-## Bugün neler yapabilirsiniz
+Bu depodaki ve ekran görüntülerindeki bütün adlar, CV'ler ve transkriptler kurgudur.
 
-### Aday ekleyin, görüşme planlayın
+## Altı adımda kullanım
 
-- Adayları tek tek ekleyin ya da birçok CV'yi (PDF) bir kerede bırakın. Uygulama her adayın adını CV'den okur; kaydetmeden önce düzeltebilirsiniz.
-- Her adaya bir rol verin. Bir rol için rol soruları tutun; o role eklenen her yeni aday bu soruların bir kopyasını alır.
-- Birden fazla adayla görüşmeyi bir kerede planlayın: bir gün ve ilk saati seçin, adayları işaretleyin.
-- Bugünün ve bu haftanın görüşmelerini takvimde görün. Aday listesini bir sütuna göre sıralayın, role göre süzün ya da yalnızca henüz görüşmesi olmayan adayları gösterin.
+Uygulamadaki **?** düğmesi aynı altı adımı gösterir.
 
-![Birçok CV'yi bir kerede eklemek](docs/images/add-many.png)
-*Birçok CV bir kerede: adlar CV'lerden okunur.*
+1. **Aday ekle.** İsim ve rol yeter. Çok adayınız varsa CV'leri topluca bırakın; isimler CV'den okunur.
+2. **CV yükle.** Metin içeren bir PDF.
+3. **Görüşme ekle.** Tarihi ve saatiyle. Birkaç aday için tek seferde de planlayabilirsiniz; hepsi takvimde görünür.
+4. **Transkripti yükle.** Görüşmeden sonra, toplantının metni. Teams ve Zoom bu dosyayı verir; nasıl alınacağını uygulamadaki **Transkripti nasıl alırım?** rehberi anlatır.
+5. **Konuşmacıları onayla.** Aday hangisi, görüşmeci hangisi? Siz onaylamadan AI çalışmaz.
+6. **Notları kontrol et.** AI taslak çıkarır, alıntılarıyla. Uyuşanı onaylar, yanlışı düzeltir ya da gizlersiniz.
 
-### Bir aday üzerinde çalışın
+![Aday hakkında bir not ve dayandığı iki alıntı](docs/images/interview-notes.png)
+*Bir nota tıklayınca dayandığı alıntılar açılır; bir tıkla transkriptteki yerine gidersiniz.*
 
-- Her adayın tek bir ekranı vardır. CV, her görüşmenin transkripti, notlarınız ve sorularınız yan yana durur.
-- Transkripti WebVTT (`.vtt`; Teams ve Zoom bu dosyayı verir) ya da her satırı `Konuşan: metin` biçiminde düz metin olarak içe aktarın.
-- Kimin konuştuğunu siz onaylarsınız: bir aday ve en az bir görüşmeci. Siz onaylayana kadar yapay zekâ bekler.
-- Kendi notlarınızı ve sorularınızı yazın. Her soru için görüşmede sorulup sorulmadığı, arandığı hâlde bulunamadığı ya da planlandığı görünür. Bir soruyu siz işaretlerseniz sizin işaretiniz geçerlidir.
-- CV'de ve bütün transkriptlerde bir kelime arayın; isterseniz yalnızca adayın söylediklerinde. Her sonuç birebir bir alıntıdır ve tıklayınca geldiği yeri açar.
+## Neye ihtiyacınız var
 
-![Bir adayın çalışma ekranı](docs/images/workspace.png)
-*Bir adayın ekranı: CV, transkript, notlar ve sorular bir arada.*
+- **Kurulum:** bir kez, birkaç komutla yapılır ([aşağıda](#kurulum)). Terminal kullanmaya alışkın değilseniz teknik bir arkadaşınızdan isteyin. macOS'ta denendi; Windows ve Linux'ta denenmedi.
+- **Transkript:** Microsoft Teams (iş ya da okul hesabı) ve Zoom (ücretli plan) konuşmacı adlarıyla bir dosya verir. Google Meet transkripti şimdilik sınırlı sayıda dilde sunuyor ve 11 Kasım 2026'da Türkçe bu listede yoktu ([Google'ın yardım sayfası](https://support.google.com/meet/answer/12849897)). Diğer durumlar için rehber, görüşmeyi adayın onayıyla kaydedip bilgisayarınızda yazıya dökmeyi anlatır.
+- **AI için** aşağıdaki iki yoldan biri. AI olmadan da uygulamanın geri kalanı çalışır.
 
-### Notları yapay zekâya aldırın
+## AI'yi kullanmanın iki yolu
 
-- **Görüşme notları**, iki sekmede. **Sorular ve cevaplar** görüşmede sorulan soruları, her birinin cevabının kısa bir anlatımıyla listeler. **Aday hakkında notlar** kısa notları listeler. Her satır, yazıldığı alıntıları taşır; uygulama satırı ancak her alıntı transkriptte kelimesi kelimesine geçiyorsa kaydeder.
-- Her notu onaylar, düzeltir ya da kaldırırsınız; bir soruyu ve cevabını yanlış olarak işaretleyebilirsiniz.
-- Sonraki görüşme için önerilen sorular; istediğinizi kendi listenize alırsınız.
-- Aday Özeti: aday hakkında tek sayfa, her maddenin dayandığı alıntılarla.
+| | API anahtarıyla | Claude Desktop ya da Claude Code ile (MCP) |
+|---|---|---|
+| Ne gerekir | Anthropic'ten alınan bir API anahtarı (kullandıkça ücretlidir); uygulamaya bir kez kaydedilir | Bilgisayarınızda Claude Desktop ya da Claude Code; uygulamaya bir kez bağlanır. API anahtarı gerekmez |
+| Nasıl kullanılır | Çalışma alanında düğmeye basarsınız | Claude'da adayı adıyla sorarsınız: "Selin Öztürk Terraform hakkında ne dedi?" |
+| Bilgisayarınızdan ne çıkar | Düğmeye bastığınızda, düğmenin yanında yazan veri Anthropic'e gider | Claude'un okuduğu veri, Claude'un kullandığı modele gider |
+| Sonuç nerede görünür | Çalışma alanındaki Görüşme notları kartında | Claude sohbetinde; **Buraya kaydetmeye izin ver** açıksa notlar, sorular ve Aday Özeti uygulamada da görünür |
 
-![Yapay zekânın alıntılı görüşme notları](docs/images/interview-notes.png)
-*Görüşme notları: her satırın yanında adayın kendi sözleri, sizin kontrolünüzü bekliyor.*
+MCP ile bağlandığında Claude uygulamadaki veriyi doğrudan okur; siz bir şey kopyalamazsınız. Cevap, alıntısıyla ve alıntının nerede geçtiğiyle gelir: CV'de mi, hangi görüşmede mi. Bir şey CV'de yazıp görüşmede konuşulmadıysa ya da hiç geçmiyorsa bunu söyler. Claude okuyabilir ve izin verirseniz yalnızca kendi yazdıklarını kaydedebilir; adayları, görüşmeleri, CV'leri, transkriptleri ve sizin notlarınızı silemez, değiştiremez. Bağlamak için uygulamada **MCP ile kullan** düğmesine basın; ayrıntılar [docs/mcp.md](docs/mcp.md) dosyasında (İngilizce).
 
-### Diğerleri
+## Başka neler var
 
-- Bir adayı zip dosyası olarak dışa aktarın ve uygulamanın başka bir kopyasına alın.
-- Arayüz Türkçe ve İngilizcedir.
-- On bir kurmaca adaylık örnek veriyle her ekranı hiç uğraşmadan deneyebilirsiniz.
+- **Adaylar** listesinde rol süzgeci, tek tıkla sıralama, bugünün ve bu haftanın görüşmeleri, **Görüşme takvimi**.
+- Her rol için **Rol soruları**: o role eklenen her yeni aday bu soruların bir kopyasını alır.
+- **Sorularım**: her sorunun görüşmede sorulup sorulmadığı görünür; kendi işaretiniz AI'nin bulduğundan önce gelir.
+- CV'de ve bütün transkriptlerde arama; her sonuç bir alıntıdır ve yerine götürür.
+- AI'den sonraki görüşme için soru önerisi; beğendiğinizi Sorularım'a eklersiniz.
+- Bir adayı dosya olarak dışa aktarma ve uygulamanın başka bir kopyasına alma.
+- Türkçe ve İngilizce arayüz; denemek için on bir örnek aday.
 
-## Yapay zekâyı kullanmanın iki yolu
+<details>
+<summary>Daha fazla ekran görüntüsü</summary>
 
-1. **Anthropic API anahtarıyla.** Anahtarı uygulamaya kaydedin. Uygulama modeli yalnızca siz bir düğmeye bastığınızda çağırır ve önce neyi göndereceğini söyler.
-2. **Anahtarsız, Claude Desktop ya da Claude Code ile.** Bunu uygulamaya bir kez MCP ile bağlayın. MCP, bir yapay zekâ uygulamasının başka bir programın verisini kullanmasını sağlayan açık bir standarttır. Sonra yalnızca sorun, örneğin: "Selin Öztürk Terraform hakkında ne dedi?" Claude uygulamanın verisini bilgisayarınızda, o anki hâliyle okur; hiçbir şey yeniden kopyalanmaz ya da yüklenmez. Cevap, dayandığı alıntıyla ve yeriyle gelir (CV mi, hangi görüşmenin transkripti mi); bir şey CV'de yazıp görüşmede konuşulmadıysa ya da hiç geçmiyorsa bunu da söyler. İzin verirseniz Claude yazdığı notları uygulamaya kaydeder; uygulama bunları kendi notları gibi kontrol eder.
+![Adaylar listesi ve Görüşme takvimi](docs/images/home.png)
+*Adaylar ve Görüşme takvimi: bugün kiminle görüşeceğiniz ilk bakışta.*
 
-MCP üzerinden yapay zekâ uygulaması okuyabilir ve izninizle yalnızca kendi notlarını, sorularını ve Aday Özeti'ni kaydedebilir. Adayları, görüşmeleri, CV'leri, transkriptleri ya da sizin notlarınızı silecek veya değiştirecek bir aracı yoktur. Kurulum birkaç dakika sürer: [docs/mcp.md](docs/mcp.md) (İngilizce).
+![Toplu CV yükleme: yedi CV ve CV'lerden okunan isimler](docs/images/add-many.png)
+*Toplu CV yükle: isimleri tek tek yazmazsınız.*
 
-## Transkripti nereden alırsınız
+![Transkripti nasıl alırım? rehberi](docs/images/guide-transcript.png)
+*Transkripti nasıl alırım? rehberi: her toplantı aracı için yol ve kayıttan önce yapılacaklar.*
 
-- Microsoft Teams (iş ya da okul hesabı) ve Zoom (ücretli plan), konuşan adlarını içeren bir WebVTT dosyası verebilir; uygulama bunu içe aktarır.
-- Google Meet transkript çıkarmayı yalnızca birkaç dilde sunar; 11 Kasım 2026'da Türkçe bu listede yoktu ([Google'ın yardım sayfası](https://support.google.com/meet/answer/12849897)).
-- Diğer durumlarda, adayın onayıyla görüşmeyi kaydedin ve kaydı bilgisayarınızdaki bir konuşmadan metne aracıyla yazıya dökün.
+</details>
 
-Uygulamada bunun için bir rehber var: transkript içe aktarma düğmesinin yanındaki **Transkripti nasıl alırım?** Bilgiler ve kaynakları [docs/research/getting-a-transcript.md](docs/research/getting-a-transcript.md) dosyasında.
+## Bilerek yapmadıkları
 
-![Transkript rehberi](docs/images/guide-transcript.png)
-*Uygulamadaki rehber: her toplantı aracı için transkripti almanın yolu.*
+- Adaylara puan vermez, onları sıralamaz ya da karşılaştırmaz.
+- AI hiçbir şeye karar vermez.
+- Toplantıya katılmaz, kayıt almaz. Transkripti siz getirirsiniz.
+- Bulut hesabı yoktur. AI yalnızca siz istediğinizde, sizin anahtarınızla ya da sizin Claude uygulamanızla çalışır.
 
-## Çalıştırma
+## Gerçek veri girmeden önce
 
-[Node.js](https://nodejs.org) 24 veya üstü ve git gerekir. API anahtarı gerekmez.
+Görüşme verisi kişisel veridir. Gerçek bir aday eklemeden önce üç şeyden emin olun: aday kayda ve verisinin AI ile işlenmesine onay verdi; kurumunuz bu verinin bilgisayarınızda durmasına izin veriyor; kullandığınız AI sağlayıcısı bu veri için onaylı. Uygulama veri klasörünü şifrelemez: şifreli bir disk kullanın ve işiniz biten adayı silin. Türkiye'de 6698 sayılı Kişisel Verilerin Korunması Kanunu geçerlidir. Bu bir hukuki görüş değildir; kurumunuzda kişisel verilerden sorumlu kişiye danışın.
+
+## Kurulum
+
+[Node.js](https://nodejs.org) 24 ya da daha yenisi ve git gerekir.
 
 ```sh
 git clone https://github.com/GDenizKaratas/interview-companion.git
 cd interview-companion
 npm install
-npm run demo     # isteğe bağlı: on bir kurmaca örnek adayı yükler
+npm run demo     # isteğe bağlı: on bir örnek adayı yükler
 npm start
 ```
 
-Ardından http://localhost:3000 adresini açın. Arayüz Türkçe açılır; sağ üstteki dil menüsünden İngilizceye geçebilirsiniz. `npm run demo` komutunu yeniden çalıştırmak örnek verileri tazeler, kendi adaylarınıza dokunmaz.
+Sonra tarayıcıda http://localhost:3000 adresini açın. Arayüz Türkçe açılır; dili sağ üstten değiştirirsiniz. `npm run demo` komutunu yeniden çalıştırmak örnek adayları tazeler, sizin adaylarınıza dokunmaz.
 
-Veriler proje klasörünün içindeki `data/` klasöründedir: bir SQLite dosyası ve CV dosyaları. Başka bir klasör için `DATA_DIR` değişkenini ayarlayın. Uygulama yalnızca kendi bilgisayarınızdan (`127.0.0.1`) erişilir ve giriş ekranı yoktur.
+## Gündemdeki özellikler
 
-## Bilerek yapmadıkları
+Bunlar plandır, söz değildir. Gerekçeler ve kaynaklar [docs/research/what-could-come-next.md](docs/research/what-could-come-next.md) dosyasında (İngilizce).
 
-- Adaylara puan vermez, onları sıralamaz ya da karşılaştırmaz.
-- Yapay zekâ hiçbir şeye karar vermez. Not yazar; alıntıları siz okur, değerlendirmeyi siz yaparsınız.
-- Bulut hesabı yoktur. Kayıt olunmaz, bize ait bir sunucu yoktur; model yalnızca siz istediğinizde, sizin anahtarınızla ya da sizin Claude uygulamanızla çağrılır.
-- Toplantıları kaydetmez, toplantılara katılmaz. Transkripti siz getirirsiniz.
+**Sırada**
 
-## Gerçek veri girmeden önce
+- Planlanan görüşmeler için takvim dosyası (`.ics`): tek içe aktarmayla Google Takvim'de ya da Outlook'ta görünür.
+- Transkripti yapıştırma, `.srt` ve `.docx` dosyalarını okuma.
+- Aday Özeti'ni yazdırma ya da PDF olarak alma.
+- Adayları bir tablodan (CSV) içe aktarma.
 
-Görüşme verisi kişisel veridir. Gerçek bir aday eklemeden önce adayın kayda ve yapay zekâyla işlenmeye onay verdiğinden, kurumunuzun bu verinin sizin bilgisayarınızda tutulmasına izin verdiğinden ve yapay zekâ sağlayıcınızın bu veri için onaylı olduğundan emin olun. API anahtarıyla veri Anthropic'e gider; MCP ile Claude uygulamanızın kullandığı modele gider. Uygulama veri klasörünü şifrelemez; şifreli bir disk kullanın ve artık gerekmeyen adayı silin. Türkiye'de 6698 sayılı Kişisel Verilerin Korunması Kanunu geçerlidir; uygulamadaki transkript rehberi bununla ilgili kısa bir hatırlatma içerir, hukuki görüş değildir.
+**Daha çok iş ister**
 
-## İleride neler eklenebilir
-
-Bunlar fikirdir, söz değildir. Gerekçeler ve kaynaklar [docs/research/what-could-come-next.md](docs/research/what-could-come-next.md) dosyasında (İngilizce).
-
-| Fikir | Ne kazandırır | Ne gerektirir |
-|---|---|---|
-| Planlanan görüşmeler için takvim dosyası (`.ics`) | Planlanan görüşmeler tek içe aktarmayla Google Takvim'de ya da Outlook'ta | Bir dosya dışa aktarımı; hesap ya da izin gerekmez |
-| Transkripti yapıştırma; `.srt` ve `.docx` okuma | Toplantı aracından ya da konuşmadan metne aracından daha az adım | İki yeni okuyucu ve bir metin kutusu |
-| Bir kaydı bilgisayarda yazıya dökme | Hiçbir toplantı aracı transkript vermediğinde de bir transkript; ses bilgisayardan çıkmaz | Whisper gibi yerel bir model ve konuşanları ayırmanın bir yolu; Türkçedeki başarısı denenmedi |
-| Aday Özeti'ni yazdırma ya da PDF | Toplantıya götürülecek bir özet | Bir baskı düzeni |
-| Adayları CSV'den içe aktarma | Bir tablodan ya da aday takip sisteminden çok sayıda aday | Sütun eşleştirme ve kontroller |
-| Ağır: transkriptleri Google Meet, Teams ya da Zoom'dan otomatik çekme | İndirilecek dosya kalmaz | Meet Türkçe transkript çıkarmıyor. Başkalarının bağlanabilmesi için her şirketin kendi incelemesi var: Google'ın hassas veri doğrulaması, Microsoft'ta bir yöneticinin izni, Zoom Marketplace incelemesi. "Transkript hazır" bildirimleri bilgisayarınızdaki bir uygulama için değil, internetteki bir sunucu için tasarlanmıştır. |
-| Ağır: Google Takvim ile canlı eşitleme | Görüşmeler kendiliğinden görünür ve güncellenir | Aynı Google doğrulaması; `.ics` dosyası faydanın çoğunu verir |
-| Ağır: bir ağ sürücüsünde birkaç kişinin ortak kullandığı veritabanı | Bir ekibin aynı adaylar üzerinde çalışması | SQLite, veritabanı dosyasının ağ sürücüsünde kullanılmasını önermez; hesapları ve yetkileri olan gerçek bir sunucu gerekir |
+- Bir ses kaydını bilgisayarda yazıya dökme: ses bilgisayardan çıkmaz. Türkçedeki başarısı henüz denenmedi.
+- Transkriptleri Teams ya da Zoom'dan kendiliğinden çekme: her şirketin ayrı bir onay süreci var.
+- Google Takvim ile canlı eşitleme: Google'ın doğrulama süreci gerekir; takvim dosyası faydanın çoğunu verir.
+- Bir ekibin aynı adaylar üzerinde birlikte çalışması: hesapları ve yetkileri olan gerçek bir sunucu gerekir.
 
 ## Geliştiriciler için
 
-Üç modüllü tek bir TypeScript projesi: `core` bütün kuralları ve veri erişimini tutar; `web` (yerel sunucu ve tarayıcı arayüzü) ve `mcp` (MCP sunucusu) yalnızca `core`'u çağırır. `npm test`, `npm run typecheck` ve `npm run lint` komutlarını çalıştırın. Ayrıntılar [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/adr](docs/adr), [docs/mcp.md](docs/mcp.md) ve [CONTRIBUTING.md](CONTRIBUTING.md) dosyalarında (İngilizce). Lisans: [MIT](LICENSE).
+Üç modüllü tek bir TypeScript projesi: `core` bütün kuralları ve veri erişimini tutar; `web` (yerel sunucu ve tarayıcı arayüzü) ve `mcp` (MCP sunucusu) yalnızca `core`'u çağırır. Veriler proje klasöründeki `data/` altında durur (bir SQLite dosyası ve CV dosyaları); başka bir klasör için `DATA_DIR`, başka bir kapı için `PORT` ayarlanır. Uygulamaya yalnızca kendi bilgisayarınızdan (`127.0.0.1`) erişilir. `npm test`, `npm run typecheck` ve `npm run lint` çalıştırılır. Kodda ve belgelerde geçen terimler [GLOSSARY.md](GLOSSARY.md) dosyasında; ayrıntılar [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/adr](docs/adr), [docs/mcp.md](docs/mcp.md) ve [CONTRIBUTING.md](CONTRIBUTING.md) dosyalarında (İngilizce). Lisans: [MIT](LICENSE).
