@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { InvalidInputError, NotFoundError, openCore, type Candidate, type Core } from "./index.ts";
 
@@ -14,7 +15,7 @@ let candidate: Candidate;
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "interview-companion-"));
   dbPath = join(dir, "test.sqlite");
-  core = openCore(dbPath, { today: () => today });
+  core = openCore(dbPath, { today: () => today, timeOfDay: () => "12:00" });
   candidate = core.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
 });
 
@@ -116,6 +117,21 @@ describe("Interviews", () => {
     const added = core.addInterview({ candidateId: candidate.id, date: "2028-02-29" });
 
     expect(added.date).toBe("2028-02-29");
+  });
+
+  it("keeps the Interviews of a database made before Interviews had a time", () => {
+    const added = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    core.close();
+    // Puts the file back to the schema before the time column: one version earlier, without it.
+    const file = new DatabaseSync(dbPath);
+    const { user_version: version } = file.prepare("PRAGMA user_version").get() as { user_version: number };
+    file.exec(`ALTER TABLE interview DROP COLUMN time; PRAGMA user_version = ${version - 1};`);
+    file.close();
+
+    core = openCore(dbPath, { today: () => today });
+
+    expect(core.listInterviews(candidate.id)).toEqual([added]);
+    expect(core.rescheduleInterview(added.id, { date: "2026-11-03", time: "10:00" }).time).toBe("10:00");
   });
 
   it("keeps the time of day of an Interview", () => {
@@ -233,8 +249,35 @@ describe("Interviews", () => {
 
     expect(core.getTranscript(withTranscript.id)).toBeUndefined();
     expect(() => core.listAiNotes(withTranscript.id)).toThrow(NotFoundError);
+    expect(() => core.listAskedQuestions(withTranscript.id)).toThrow(NotFoundError);
     expect(core.getCandidateOverview(elif.id).interviews.map((i) => i.id)).not.toContain(withTranscript.id);
     expect(candidates.filter((c) => c.id !== elif.id).map((c) => core.getCandidateOverview(c.id))).toEqual(others);
+  });
+
+  it("deletes the Suggested Questions that quote a deleted Interview, and shows a Candidate Brief quote from it as not found", () => {
+    const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    const transcript = core.importTranscript(interview.id, {
+      fileName: "t.txt",
+      bytes: new TextEncoder().encode("Ayşe: Arka plan işlerini nasıl çalıştırdınız?\nAda: Redis ile BullMQ kullandık."),
+    });
+    core.confirmSpeakerMapping(
+      interview.id,
+      Object.fromEntries(transcript.speakers.map((s) => [s.id, s.label === "Ada" ? "candidate" : "interviewer"] as const)),
+    );
+    core.allowAiClientWrites(true);
+    const quote = { source: "transcript" as const, interviewId: interview.id, segmentNumber: 2, quote: "BullMQ" };
+    core.saveSuggestedQuestionsFromClient(candidate.id, [
+      { question: "Ekibin nasıl çalışıyordu?", reason: "Genel bir başlangıç.", evidence: [] },
+      { question: "BullMQ işleri neden yeniden deneniyordu?", reason: "Transcript'te geçiyor.", evidence: [quote] },
+    ]);
+    core.saveCandidateBriefFromClient(candidate.id, { text: "BullMQ kullandı [1].", evidence: [{ number: 1, ...quote }] });
+    expect(core.listSuggestedQuestions(candidate.id)).toHaveLength(2);
+    expect(core.getCandidateBrief(candidate.id)!.evidence.map((e) => e.found)).toEqual([true]);
+
+    core.deleteInterview(interview.id);
+
+    expect(core.listSuggestedQuestions(candidate.id).map((s) => s.text)).toEqual(["Ekibin nasıl çalışıyordu?"]);
+    expect(core.getCandidateBrief(candidate.id)!.evidence.map((e) => e.found)).toEqual([false]);
   });
 
   describe("the default Interview of a Candidate", () => {

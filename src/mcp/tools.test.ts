@@ -88,7 +88,8 @@ describe("MCP server", () => {
   });
 
   it("get_candidate gives one Candidate's overview", async () => {
-    const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03", time: "14:30" });
+    expect(interview.time).toBe("14:30");
     core.addSavedQuestion({ candidateId: candidate.id, text: "How did you make the payment job idempotent?" });
 
     expect(await call("get_candidate", { candidateId: candidate.id })).toEqual({

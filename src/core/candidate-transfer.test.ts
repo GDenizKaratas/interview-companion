@@ -285,6 +285,20 @@ describe("Checks on import", () => {
     ]);
   });
 
+  it("refuses an export whose Interview has a time that is not real, or a time without a date, and saves nothing", async () => {
+    const candidate = source.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+    source.addInterview({ candidateId: candidate.id, date: "2026-11-03", time: "14:30" });
+    const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);
+    const [interview] = manifest.interviews as object[];
+
+    for (const change of [{ time: "25:00" }, { date: null }]) {
+      const interviews = [{ ...interview, ...change }];
+      await expect(target.importCandidate(repack(files, { ...manifest, interviews }))).rejects.toThrow(InvalidInputError);
+    }
+
+    expect(target.listCandidates()).toEqual([]);
+  });
+
   it("imports an export made before Interviews had a time", async () => {
     const candidate = source.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
     source.addInterview({ candidateId: candidate.id, date: "2026-11-03", time: "14:30" });

@@ -22,10 +22,14 @@ export interface Interview {
   createdAt: string;
 }
 
-export interface NewInterview {
-  candidateId: string;
+// When an Interview is. A date or time that is left out, null, or blank means there is none.
+export interface InterviewTime {
   date?: string | null;
   time?: string | null;
+}
+
+export interface NewInterview extends InterviewTime {
+  candidateId: string;
 }
 
 interface InterviewRow {
@@ -76,13 +80,9 @@ export function listInterviews(db: DatabaseSync, today: Today, candidateId: stri
   return rows.map((row, index) => toInterview(row, index + 1, now));
 }
 
-// Changes when the Interview is. A date or time left out is removed, as a blank one is.
-export function rescheduleInterview(
-  db: DatabaseSync,
-  today: Today,
-  interviewId: string,
-  input: { date?: string | null; time?: string | null },
-): Interview {
+// Sets when the Interview is. Both parts are replaced: a date or time left out is removed, as
+// a blank one is, so the caller always gives the whole new date and time.
+export function rescheduleInterview(db: DatabaseSync, today: Today, interviewId: string, input: InterviewTime): Interview {
   const candidateId = candidateOfInterview(db, interviewId);
   const { date, time } = dateAndTime(input);
   db.prepare("UPDATE interview SET date = ?, time = ? WHERE id = ?").run(date, time, interviewId);
@@ -100,6 +100,8 @@ export function deleteInterview(db: DatabaseSync, interviewId: string): void {
 
 // The Interview the Workspace opens on: the latest one that has taken place; when none has, the
 // earliest Planned one; when none is dated, the first one. null when the Candidate has none.
+// "Latest" follows the order of listInterviews, so on one day an Interview without a time
+// counts as later than the timed ones.
 export function getDefaultInterview(db: DatabaseSync, today: Today, candidateId: string): Interview | null {
   const interviews = listInterviews(db, today, candidateId);
   const takenPlace = interviews.filter((interview) => interview.date !== null && !interview.planned);
@@ -178,7 +180,7 @@ function optionalTime(value: string | null | undefined): string | null {
 
 // The date and time of an Interview as given. A time is refused without a date, because it
 // would say nothing about when the Interview is.
-function dateAndTime(input: { date?: string | null; time?: string | null }): { date: string | null; time: string | null } {
+function dateAndTime(input: InterviewTime): { date: string | null; time: string | null } {
   const date = optionalDate(input.date);
   const time = optionalTime(input.time);
   if (time !== null && date === null) {
@@ -187,8 +189,8 @@ function dateAndTime(input: { date?: string | null; time?: string | null }): { d
   return { date, time };
 }
 
-// Days written as YYYY-MM-DD, and times written as HH:MM, sort like text, so a plain comparison
-// tells which is later.
+// Marks the row as Planned or not. Days written as YYYY-MM-DD, and times written as HH:MM, sort
+// like text, so a plain comparison tells which is later.
 function toInterview(row: InterviewRow, number: number, now: { day: string; time: string }): Interview {
   return {
     id: row.id,

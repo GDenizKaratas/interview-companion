@@ -63,7 +63,7 @@ export {
   type Precondition,
 } from "./errors.ts";
 export type { InterviewerNote, NewInterviewerNotes } from "./interviewer-notes.ts";
-export type { Interview, InterviewFilter, NewInterview } from "./interviews.ts";
+export type { Interview, InterviewFilter, InterviewTime, NewInterview } from "./interviews.ts";
 export type { NewRoleQuestion, RoleQuestion, RoleQuestionList } from "./role-questions.ts";
 export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
 export type {
@@ -89,7 +89,7 @@ export interface Core {
   listCandidateRoles(): string[];
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
-  rescheduleInterview(id: string, input: { date?: string | null; time?: string | null }): interviews.Interview;
+  rescheduleInterview(id: string, input: interviews.InterviewTime): interviews.Interview;
   deleteInterview(id: string): void;
   getDefaultInterview(candidateId: string): interviews.Interview | null;
   addInterviewerNotes(input: interviewerNotes.NewInterviewerNotes): interviewerNotes.InterviewerNote[];
@@ -218,9 +218,11 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
   mkdirSync(dirname(dbPath), { recursive: true });
   const { db, created } = openDatabase(dbPath);
   if (created) demoCandidate.markDemoPending(db);
-  const day = options.today ?? localToday;
-  const timeOfDay = options.timeOfDay ?? localTimeOfDay;
-  const today: interviews.Today = () => ({ day: day(), time: timeOfDay() });
+  // The day and the time come from one reading of the clock, so they cannot disagree at midnight.
+  const today: interviews.Today = () => {
+    const local = localDayAndTime();
+    return { day: options.today?.() ?? local.day, time: options.timeOfDay?.() ?? local.time };
+  };
   const now = options.now ?? (() => new Date());
   const aiProvider = options.aiProvider ?? claudeProvider;
   // CV files live in a folder next to the database file.
@@ -306,17 +308,14 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
   };
 }
 
-// The Interviewer's own calendar day: the app runs on their machine, in their time zone.
-function localToday(): string {
+// The Interviewer's own calendar day and time: the app runs on their machine, in their time zone.
+function localDayAndTime(): { day: string; time: string } {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
-
-function localTimeOfDay(): string {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  return {
+    day: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+    time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+  };
 }
 
 // The database the app uses: data/interview-companion.sqlite in the project folder,
