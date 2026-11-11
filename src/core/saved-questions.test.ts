@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { InvalidInputError, NotFoundError, openCore, type Candidate, type Core } from "./index.ts";
 
@@ -262,6 +263,21 @@ describe("The Interviewer's mark on a Saved Question", () => {
 
     core = openCore(dbPath);
     expect(core.listSavedQuestions(candidate.id).map((q) => q.mark)).toEqual(["asked", "notAsked", null]);
+  });
+
+  it("keeps the Saved Questions of a database made before they had a mark", () => {
+    const [question] = addAll("A?");
+    core.close();
+    // Puts the file back to the schema before the mark column: one version earlier, without it.
+    const file = new DatabaseSync(dbPath);
+    const { user_version: version } = file.prepare("PRAGMA user_version").get() as { user_version: number };
+    file.exec(`ALTER TABLE saved_question DROP COLUMN mark; PRAGMA user_version = ${version - 1};`);
+    file.close();
+
+    core = openCore(dbPath);
+
+    expect(core.listSavedQuestions(candidate.id)).toEqual([question]);
+    expect(core.markSavedQuestion(question!.id, "asked").mark).toBe("asked");
   });
 
   it("refuses a mark that is not one of the two, or an unknown question, and changes nothing", () => {

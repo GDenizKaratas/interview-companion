@@ -486,6 +486,15 @@ const translation: TranslationFile = {
         askedIn: "Soruldu: {interview}",
         notFoundIn: "{interview} transkriptinde bulunamadı",
         notFoundHint: "Bu transkriptte bulunamadı. Başka sözcüklerle sorulmuş olabilir.",
+        markAskedTitle: "{state}. Soruldu olarak işaretlemek için tıklayın.",
+        markNotAskedTitle: "Soruldu. Sorulmadı olarak işaretlemek için tıklayın.",
+        markedByYou: "Siz işaretlediniz",
+        markedByYouHint: "İşaretiniz transkriptlerde bulunandan farklı. Geçerli olan sizin işaretiniz.",
+        useFound: "Bulunanı kullan",
+        confirmNotAsked: "Sorulmadı olarak işaretlensin mi?",
+        confirmNotAskedDetail:
+          "AI bu soruyu şu görüşmede sorulmuş buldu: {interviews}. Geçerli olan sizin işaretiniz; AI'ın bulduğu görünmeye devam eder.",
+        markNotAsked: "Sorulmadı olarak işaretle",
         suggestions: {
           open: "Soru öner",
           label: "AI tarafından üretildi",

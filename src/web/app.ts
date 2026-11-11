@@ -7,6 +7,7 @@ import {
   type Core,
   type CvFile,
   type EvidenceSources,
+  type QuestionMark,
   type SpeakerRole,
 } from "../core/index.ts";
 
@@ -324,6 +325,13 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
     return respondOrRefuse(c, () =>
       c.json(core.tagSavedQuestion(c.req.param("id"), idField(fields, "interviewId"))),
     );
+  });
+
+  // The Interviewer's mark on a question: "asked", "notAsked", or null, which removes it. Core
+  // refuses anything else.
+  api.put("/saved-questions/:id/mark", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => c.json(core.markSavedQuestion(c.req.param("id"), (fields.mark ?? null) as QuestionMark | null)));
   });
 
   api.delete("/saved-questions/:id", (c) =>

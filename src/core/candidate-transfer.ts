@@ -15,7 +15,7 @@ import { inTransaction } from "./database.ts";
 import { InvalidInputError, PreconditionError } from "./errors.ts";
 import { addInterviewerNotes, listInterviewerNotes, type Now } from "./interviewer-notes.ts";
 import { addInterview, listInterviews, type Today } from "./interviews.ts";
-import { insertSavedQuestion, listSavedQuestions } from "./saved-questions.ts";
+import { insertSavedQuestion, listSavedQuestions, markSavedQuestion } from "./saved-questions.ts";
 import { recordRoleQuestionCopies } from "./role-questions.ts";
 import {
   acceptedTimesOf,
@@ -132,6 +132,8 @@ const manifestSchema = z.object({
       interviewId: z.string().nullable(),
       text: z.string(),
       origin: z.enum(["written", "suggestion", "role"]),
+      // Absent in an export made before Saved Questions had the Interviewer's mark.
+      mark: z.enum(["asked", "notAsked"]).nullable().optional(),
       createdAt: time,
     }),
   ),
@@ -226,6 +228,7 @@ export function exportCandidate(db: DatabaseSync, folder: string, today: Today, 
       interviewId: question.interviewId,
       text: question.text,
       origin: question.origin,
+      mark: question.mark,
       createdAt: question.createdAt,
     })),
     suggestedQuestions: listSuggestedQuestions(db, candidateId).map((suggestion) => ({
@@ -403,6 +406,7 @@ function rebuild(
   const savedIds = new Map<string, string>();
   for (const question of manifest.savedQuestions) {
     const saved = insertSavedQuestion(db, candidateId, question.text, question.origin, question.createdAt, newInterview(question.interviewId));
+    if (question.mark) markSavedQuestion(db, saved.id, question.mark);
     savedIds.set(question.id, saved.id);
   }
   // The role's questions the Candidate brought copies of count as copied, so they are not offered again.

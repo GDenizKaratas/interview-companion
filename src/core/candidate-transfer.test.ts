@@ -98,7 +98,8 @@ function contentOf(core: Core, candidateId: string) {
       };
     }),
     notes: core.listInterviewerNotes(candidateId).map((n) => ({ text: n.text, savedAt: n.savedAt, interview: numberOf(n.interviewId) })),
-    savedQuestions: saved.map((q) => ({ text: q.text, origin: q.origin, createdAt: q.createdAt, interview: numberOf(q.interviewId) })),
+    savedQuestions: saved.map((q) => ({ text: q.text, origin: q.origin, mark: q.mark, createdAt: q.createdAt, interview: numberOf(q.interviewId) })),
+    states: core.listSavedQuestionStates(candidateId).map((state) => without(state, "savedQuestionId")),
     checks: core.listSavedQuestionChecks(candidateId).map((check) => ({
       savedQuestion: placeOf(check.savedQuestionId),
       interview: numberOf(check.interviewId),
@@ -126,6 +127,10 @@ async function fullElif() {
   source.dismissAiNote(notes[3]!.id);
   source.addSavedQuestion({ candidateId: candidate.id, interviewId: first!.id, text: "Sonradan yazılan soru?" });
   source.addInterviewerNotes({ candidateId: candidate.id, text: "Birinci satır\nİkinci satır" });
+  // One mark against what the Transcript says for the question, and one where it says nothing.
+  const states = source.listSavedQuestionStates(candidate.id);
+  source.markSavedQuestion(states.find((state) => state.transcriptState === "asked")!.savedQuestionId, "notAsked");
+  source.markSavedQuestion(states.find((state) => state.transcriptState === "planned")!.savedQuestionId, "asked");
 
   const transcript = source.getTranscript(first!.id)!;
   const candidateSpeaker = transcript.speakers.find((s) => s.role === "candidate")!;
@@ -308,6 +313,44 @@ describe("Checks on import", () => {
     const imported = await target.importCandidate(repack(files, { ...manifest, interviews }));
 
     expect(target.listInterviews(imported.candidate.id).map((i) => [i.date, i.time])).toEqual([["2026-11-03", null]]);
+  });
+
+  it("carries the Interviewer's mark on each Saved Question", async () => {
+    const candidate = source.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+    const [asked, notAsked] = ["A?", "B?", "C?"].map((text) => source.addSavedQuestion({ candidateId: candidate.id, text }));
+    source.markSavedQuestion(asked!.id, "asked");
+    source.markSavedQuestion(notAsked!.id, "notAsked");
+
+    const imported = await target.importCandidate(source.exportCandidate(candidate.id).bytes);
+
+    expect(target.listSavedQuestions(imported.candidate.id).map((q) => [q.text, q.mark])).toEqual([
+      ["A?", "asked"],
+      ["B?", "notAsked"],
+      ["C?", null],
+    ]);
+  });
+
+  it("imports an export made before Saved Questions had a mark", async () => {
+    const candidate = source.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+    const question = source.addSavedQuestion({ candidateId: candidate.id, text: "A?" });
+    source.markSavedQuestion(question.id, "asked");
+    const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);
+    const savedQuestions = (manifest.savedQuestions as { mark?: string }[]).map((saved) => without(saved, "mark"));
+
+    const imported = await target.importCandidate(repack(files, { ...manifest, savedQuestions }));
+
+    expect(target.listSavedQuestions(imported.candidate.id).map((q) => [q.text, q.mark])).toEqual([["A?", null]]);
+  });
+
+  it("refuses an export whose Saved Question has a mark that is not one of the two, and saves nothing", async () => {
+    const candidate = source.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+    source.addSavedQuestion({ candidateId: candidate.id, text: "A?" });
+    const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);
+    const savedQuestions = (manifest.savedQuestions as object[]).map((saved) => ({ ...saved, mark: "maybe" }));
+
+    await expect(target.importCandidate(repack(files, { ...manifest, savedQuestions }))).rejects.toThrow(InvalidInputError);
+
+    expect(target.listCandidates()).toEqual([]);
   });
 
   it("refuses a zip with a file its JSON does not list", async () => {

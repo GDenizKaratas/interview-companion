@@ -516,6 +516,16 @@ const text = {
       askedIn: "Asked in {interview}",
       notFoundIn: "Not found in the Transcript of {interview}",
       notFoundHint: "Not found in this Transcript. It may have been asked in other words.",
+      // The state mark of a row is a button. {state} is replaced by the row's state.
+      markAskedTitle: "{state}. Click to mark it as asked.",
+      markNotAskedTitle: "Asked. Click to mark it as not asked.",
+      markedByYou: "Marked by you",
+      markedByYouHint: "Your mark differs from what was found in the Transcripts. Your mark decides.",
+      useFound: "Use what was found",
+      confirmNotAsked: "Mark as not asked?",
+      // {interviews} is replaced by a list of Interview names.
+      confirmNotAskedDetail: "AI found this question asked in {interviews}. Your mark decides; what AI found stays visible.",
+      markNotAsked: "Mark as not asked",
       suggestions: {
         open: "Suggest questions",
         label: "AI-generated",

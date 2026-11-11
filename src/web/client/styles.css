@@ -1572,6 +1572,31 @@ select.note-tag,
   color: var(--accent-strong);
 }
 
+/* The state mark is a button that sets the Interviewer's own mark; it looks like the mark alone. */
+button.question-state {
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+button.question-state:hover:not(:disabled) {
+  background: none;
+  color: var(--accent);
+}
+
+/* It waits while another change is saved, without dimming every row. */
+button.question-state:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+/* Said when the Interviewer's mark differs from the Transcripts, with the way back next to it. */
+.question-own-mark {
+  color: var(--muted);
+}
+
 .question-state svg {
   width: 1.05rem;
   height: 1.05rem;

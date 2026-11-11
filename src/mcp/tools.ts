@@ -82,7 +82,8 @@ export function createMcpServer(core: AiClientCore): McpServer {
       description:
         "Get the Interviewer's own list of questions for a Candidate, in the order the Interviewer arranged them. " +
         "origin says where each came from: written by the Interviewer, copied from a suggestion, or copied from the " +
-        "questions the Interviewer keeps for the Candidate's role.",
+        "questions the Interviewer keeps for the Candidate's role. mark is the Interviewer's own word on whether " +
+        "the question was asked: asked, notAsked, or null when they have not marked it.",
       inputSchema: { candidateId },
       annotations: readOnly,
     },
@@ -128,7 +129,9 @@ export function createMcpServer(core: AiClientCore): McpServer {
       description:
         "For one Candidate, where each Saved Question stands in each Interview whose Asked Questions were found: " +
         "askedQuestion is the Asked Question it matched, or null when it was not found in that Transcript. A " +
-        "Saved Question with no entry for an Interview was not checked there.",
+        "Saved Question with no entry for an Interview was not checked there. This is what was found in the " +
+        "Transcripts; when the Interviewer marked a question as asked or not asked by hand (mark in " +
+        "get_saved_questions), their mark decides.",
       inputSchema: { candidateId },
       annotations: readOnly,
     },

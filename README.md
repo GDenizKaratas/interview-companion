@@ -57,7 +57,7 @@ The interface is in Turkish by default. Switch to English with the language menu
 2. Mark Deniz as **Candidate** and Ayşe as **Interviewer**, then **Confirm speakers**.
 3. Type `Redis` in the search box, tick **Only what the Candidate said**, and search. You get the CV lines and Deniz's segment, and nothing Ayşe said.
 4. Open **Elif Kaya** and choose **First Interview**. The AI panel shows the Asked Questions with their Answer Summaries; the **AI Notes** tab shows notes with their quotes. Confirm, correct, or dismiss one.
-5. In the Questions panel, a Saved Question that was asked shows where; one that was not shows "Not found".
+5. In the Questions panel, a Saved Question that was asked shows where; one that was not shows "Not found". Click the mark at the left of a question to say yourself that it was asked, or not asked; your mark decides, and what AI found stays visible.
 
 ![Confirming who is speaking in a Transcript](docs/images/speaker-mapping.png)
 
