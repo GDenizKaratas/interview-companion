@@ -1,13 +1,16 @@
 import { useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
+import { useAddManyCandidates } from "./AddManyCandidates.tsx";
 import { api, ApiError } from "./api.ts";
+import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { cvRefusalMessage } from "./cv-refusal.ts";
 import type { Text } from "./languages.ts";
 import { ModalDialog } from "./ModalDialog.tsx";
 import { useText } from "./text.tsx";
 
-// The form that adds a Candidate, over the Candidate list: name, role, and an optional CV.
-// It also offers importing a Candidate export instead. It closes once the Candidate is saved.
+// The dialog that adds Candidates, over the Candidate list, in one of two ways: one Candidate
+// (name, role, and an optional CV), or many from their CVs with one role. The first also offers
+// importing a Candidate export instead. It closes once the Candidates are saved.
 export function AddCandidateDialog({
   roles,
   onAdded,
@@ -25,6 +28,7 @@ export function AddCandidateDialog({
   const rolesId = useId();
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
+  const [way, setWay] = useState<"one" | "many">("one");
   const [saveError, setSaveError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
   // The optional CV. Choosing one fills the name box with core's guess.
@@ -34,6 +38,20 @@ export function AddCandidateDialog({
   const lastGuess = useRef("");
   // Only the guess for the most recently chosen file may fill the box.
   const guessFor = useRef<File | undefined>(undefined);
+
+  const roleField = (
+    <label>
+      {text.candidates.roleLabel}
+      <input value={role} onChange={(e) => setRole(e.target.value)} list={rolesId} autoComplete="off" />
+      <datalist id={rolesId}>
+        {roles.map((knownRole) => (
+          <option key={knownRole} value={knownRole} />
+        ))}
+      </datalist>
+    </label>
+  );
+
+  const many = useAddManyCandidates({ role, roleField, onAdded, onClose });
 
   function handleCvChosen(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -70,6 +88,45 @@ export function AddCandidateDialog({
     }
   }
 
+  const wayChoice = (
+    <div className="view-choice add-way-choice" role="group" aria-label={text.candidates.ways.label}>
+      {(["one", "many"] as const).map((key) => (
+        <button
+          key={key}
+          type="button"
+          aria-pressed={way === key}
+          className={way === key ? "role-choice chosen" : "role-choice"}
+          disabled={many.busy}
+          onClick={() => setWay(key)}
+        >
+          {text.candidates.ways[key]}
+        </button>
+      ))}
+    </div>
+  );
+
+  const confirmClose = many.confirmingClose && (
+    <ConfirmDialog
+      title={text.candidates.many.confirmClose.title}
+      confirmLabel={text.candidates.many.confirmClose.stop}
+      cancelLabel={text.candidates.many.confirmClose.keepGoing}
+      onConfirm={many.confirmClose}
+      onCancel={many.cancelClose}
+    >
+      <p>{text.candidates.many.confirmClose.detail}</p>
+    </ConfirmDialog>
+  );
+
+  if (way === "many") {
+    return (
+      <ModalDialog title={text.candidates.addTitle} kind="form" wide large onCancel={many.requestClose} actions={many.actions}>
+        {wayChoice}
+        {many.content}
+        {confirmClose}
+      </ModalDialog>
+    );
+  }
+
   return (
     <ModalDialog
       title={text.candidates.addTitle}
@@ -87,20 +144,13 @@ export function AddCandidateDialog({
         </>
       }
     >
+      {wayChoice}
       <form id={formId} className="candidate-form" onSubmit={handleSubmit}>
         <label>
           {text.candidates.nameLabel}
           <input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
         </label>
-        <label>
-          {text.candidates.roleLabel}
-          <input value={role} onChange={(e) => setRole(e.target.value)} list={rolesId} autoComplete="off" />
-          <datalist id={rolesId}>
-            {roles.map((knownRole) => (
-              <option key={knownRole} value={knownRole} />
-            ))}
-          </datalist>
-        </label>
+        {roleField}
         {/* The browser's own file box speaks the system's language, so it stays hidden behind a button. */}
         <div className="cv-choice">
           <span>{text.candidates.cvLabel}</span>
