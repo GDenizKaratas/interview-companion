@@ -96,7 +96,8 @@ export async function acceptCv(file: CvFile): Promise<AcceptedCv> {
 // Candidate, replacing any earlier CV, all in one transaction. The new file is written first
 // under a new name; only after the database has switched to it are the replaced files removed
 // (the Candidate's earlier CV, and any listed in replacedFiles). If anything fails, the new
-// file is removed and nothing else changes.
+// file is removed and nothing else changes. afterStored, if given, runs in the same transaction
+// once the CV is stored, for changes that need it, such as checking quotes from it.
 export function storeCv<T extends { id: string }>(
   db: DatabaseSync,
   folder: string,
@@ -104,6 +105,7 @@ export function storeCv<T extends { id: string }>(
   cv: AcceptedCv,
   change: () => T,
   replacedFiles: string[] = [],
+  afterStored?: (owner: T) => void,
 ): T {
   // The file gets a name made by core, so a name chosen by the Interviewer never becomes a path.
   const storedName = `${randomUUID()}.pdf`;
@@ -125,6 +127,7 @@ export function storeCv<T extends { id: string }>(
       for (const [i, page] of cv.pages.entries()) {
         insertPage.run(owner.id, i + 1, page.text);
       }
+      afterStored?.(owner);
       return { owner, previous };
     });
   } catch (error) {

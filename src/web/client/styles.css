@@ -1254,6 +1254,38 @@ select.note-tag,
   padding: 0.4rem 0.9rem;
 }
 
+/* Exporting and importing a Candidate: the dialogs ask and report in a few short paragraphs. */
+.confirm-dialog-subject p + p,
+.confirm-dialog-subject p + ul {
+  margin-top: 0.6rem;
+}
+
+.personal-data-warning {
+  font-weight: 600;
+}
+
+.import-problems {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.import-problems li {
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.import-problem-kind {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.import-problem-text {
+  overflow-wrap: anywhere;
+}
+
 /* CV: the file name and Replace button stay above the page; the page fills the panel's width. */
 .cv-empty {
   display: flex;

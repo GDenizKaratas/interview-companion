@@ -4,8 +4,13 @@ import { fill, type Text } from "./languages.ts";
 
 // "First Interview", "Interview 11".
 export function interviewName(text: Text, interview: Interview): string {
+  return interviewNameOf(text, interview.number);
+}
+
+// The same name from the Interview's number alone.
+export function interviewNameOf(text: Text, number: number): string {
   const ordinals: Record<string, string> = text.interviews.ordinal;
-  return ordinals[String(interview.number)] ?? fill(text.interviews.numbered, { number: String(interview.number) });
+  return ordinals[String(number)] ?? fill(text.interviews.numbered, { number: String(number) });
 }
 
 // "First interview · 2026-11-20 · planned", "Second interview · no date".

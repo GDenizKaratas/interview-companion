@@ -41,6 +41,12 @@ export function saveCandidateBriefFromClient(
   brief: NewCandidateBrief,
 ): CandidateBrief {
   requireAiClientWrites(db);
+  return saveCandidateBrief(db, now, candidateId, brief);
+}
+
+// Saves the brief, replacing the Candidate's earlier one, without checking the AI client switch.
+// Also used for an imported Candidate.
+export function saveCandidateBrief(db: DatabaseSync, now: Now, candidateId: string, brief: NewCandidateBrief): CandidateBrief {
   requireCandidate(db, candidateId);
   const text = brief.text.trim();
   if (text === "") throw new InvalidInputError("text", "required", "A Candidate Brief needs text.");

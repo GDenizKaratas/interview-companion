@@ -90,9 +90,22 @@ export function saveSuggestedQuestionsFromClient(
   proposed: ProposedQuestion[],
 ): SuggestedQuestionGeneration {
   requireAiClientWrites(db);
+  return saveCheckedSuggestedQuestions(db, today, now, candidateId, proposed, "aiClient");
+}
+
+// Saves Suggested Questions written elsewhere, such as an imported Candidate's, with the same
+// checks as the AI client's. It does not check the AI client switch.
+export function saveCheckedSuggestedQuestions(
+  db: DatabaseSync,
+  today: Today,
+  now: Now,
+  candidateId: string,
+  proposed: ProposedQuestion[],
+  source: AiSource,
+): SuggestedQuestionGeneration {
   requireCandidate(db, candidateId);
   const { sent, leftOut } = buildRequest(db, today, candidateId, null);
-  return acceptSuggestions(db, now, candidateId, proposed, sent, currentStamps(db, candidateId), leftOut, "aiClient");
+  return acceptSuggestions(db, now, candidateId, proposed, sent, currentStamps(db, candidateId), leftOut, source);
 }
 
 function acceptSuggestions(
@@ -275,6 +288,12 @@ export function acceptSuggestedQuestion(db: DatabaseSync, now: Now, id: string):
     db.prepare("UPDATE suggested_question SET accepted_at = ? WHERE id = ?").run(acceptedAt, id);
     return insertSavedQuestion(db, suggestion.candidateId, suggestion.text, "suggestion", acceptedAt);
   });
+}
+
+// Marks a suggestion accepted at the given time without copying it, for an imported Candidate
+// whose copy is among their Saved Questions already.
+export function markSuggestionAccepted(db: DatabaseSync, id: string, acceptedAt: string): void {
+  db.prepare("UPDATE suggested_question SET accepted_at = ? WHERE id = ?").run(acceptedAt, id);
 }
 
 // Changes the question before it is accepted. The reason and Evidence stay as the AI gave them.

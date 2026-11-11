@@ -68,6 +68,49 @@ const translation: TranslationFile = {
       copyBriefCommandHint: "Claude Code komutunu kopyalar. Bu adayın özetini yazıp kaydetmek için oraya yapıştırın.",
       briefCommandCopied: "Kopyalandı",
       briefCommandCopyFailed: "Kopyalanamadı",
+      exportCandidate: "Dışa aktar",
+      exportCandidateHint: "Bu adayla ilgili her şeyi tek bir zip olarak indir",
+    },
+    exportCandidate: {
+      title: "Bu adayı dışa aktar",
+      contents:
+        "CV ve her Transkript özgün dosyalarıyla, geri kalan her şeyle birlikte tek bir zip dosyasında: mülakatlar, konuşmacı eşleştirmeleri, notlarınız ve sorularınız, incelemeleriyle AI Notları, sorulan sorular, önerilen sorular ve Aday Özeti. Interview Companion'ın başka bir kopyasına içe aktarılabilir.",
+      personalData:
+        "Bu zip adayın kişisel verilerini içerir. Yalnızca adayın onayının izin verdiği yerlerde paylaşın ve artık gerekmeyen kopyaları silin.",
+      download: "Zip'i indir",
+      cancel: "Vazgeç",
+    },
+    importCandidate: {
+      open: "İçe aktar",
+      importing: "İçe aktarılıyor…",
+      notAnExport: "Bu dosya Interview Companion'dan dışa aktarılmış bir aday değil.",
+      newerVersion: "Bu dosya Interview Companion'ın daha yeni bir sürümüyle oluşturulmuş. İçe aktarmak için uygulamayı güncelleyin.",
+      failed: "Aday içe aktarılamadı.",
+      failedTitle: "İçe aktarılamadı",
+      close: "Kapat",
+      exists: {
+        title: "Bu aday zaten burada",
+        detail:
+          "Değiştir, buradaki adayı her şeyiyle siler ve yerine zip'tekini içe aktarır. İkisini de tut, zip'tekini ayrı bir aday olarak ekler. Hiçbir şey birleştirilmez.",
+        replace: "Değiştir",
+        keepBoth: "İkisini de tut",
+        cancel: "Vazgeç",
+      },
+      report: {
+        title: "İçe aktarıldı, bazı parçalar kaydedilmedi",
+        detail:
+          "Her alıntı içe aktarılan CV ve Transkriptlerle yeniden kontrol edildi. Bu parçalar kontrolden geçemediği için kaydedilmedi. Aday Özeti yazıldığı gibi kaydedilir; burada listelenen alıntıları bulunamadı olarak görünür.",
+        open: "Çalışma alanını aç",
+        kinds: {
+          cv: "CV dosyası okunamadı",
+          transcript: "Transkript okunamadı",
+          speakerMapping: "Konuşmacı eşleştirmesi onaylanmadı: konuşmacılar değişti",
+          aiNote: "AI Notu",
+          askedQuestion: "Sorulan soru",
+          suggestedQuestion: "Önerilen soru",
+          briefQuote: "Özetteki alıntı bulunamadı",
+        },
+      },
     },
     brief: {
       title: "Aday Özeti",

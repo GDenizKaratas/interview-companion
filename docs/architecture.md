@@ -1,6 +1,6 @@
 # Architecture
 
-Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), Transcript import through adapters (plain text and WebVTT), the Speaker Mapping, Evidence search over the CV and Transcripts, AI Note generation with an API key (Claude behind a provider interface, every quote checked before saving), AI Note review (Review States and the Stale flag), Suggested Questions on request (accept, edit, dismiss, regenerate, every quote checked), the MCP tools (reads, and the checked saves of ADR 0005, including the Candidate Brief) and the `brief` prompt. Setup and an introduction to MCP are in [mcp.md](mcp.md).
+Status: **planned**. Only the project skeleton is implemented: the three modules, the database, creating and listing Candidates, adding Interviews to a Candidate, the interface language, Saved Questions, the CV (upload, text per page, viewing, and the name guess), Transcript import through adapters (plain text and WebVTT), the Speaker Mapping, Evidence search over the CV and Transcripts, AI Note generation with an API key (Claude behind a provider interface, every quote checked before saving), AI Note review (Review States and the Stale flag), Suggested Questions on request (accept, edit, dismiss, regenerate, every quote checked), the MCP tools (reads, and the checked saves of ADR 0005, including the Candidate Brief), the `brief` prompt, and exporting a Candidate as a zip and importing it back. Setup and an introduction to MCP are in [mcp.md](mcp.md).
 
 Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md). Reasons for each choice are in the [decision log](decisions.md).
 
@@ -95,6 +95,8 @@ Notes on the model:
 
 **Candidate Brief (MCP mode).** The Interviewer copies the brief command from the Workspace bar and pastes it into the AI client, which fetches the MCP `brief` prompt: steps, rules, and a fixed template. The steps depend on whether saving from the AI client is on when the prompt is fetched. On, the client reads the data, saves AI Notes for Interviews that have none, saves Suggested Questions, writes the brief in its own chat, and saves it with `save_candidate_brief`. Off, it only reads and writes the brief in the chat. Core keeps one brief per Candidate and checks each of its quotes against the CV and Transcripts every time it is read. The Workspace opens it from the bar.
 
+**Export and import a Candidate.** Export writes one zip: the CV and each Transcript as their original files, and `candidate.json` with a format version, the list of files, and everything else about the Candidate. Import reads the zip and rebuilds the Candidate through core's own operations, in one transaction: the CV and Transcripts are read by the same code as an upload, the Speaker Mapping is confirmed again, and every AI quote is checked again. What fails is reported and not saved. A Candidate already in the app is replaced or kept next to the import only when the Interviewer chooses it.
+
 ## Rules enforced in code
 
 | Rule | Where it is enforced |
@@ -109,6 +111,8 @@ Notes on the model:
 | No generation without a request. | Generation is only reachable from explicit actions. |
 | The MCP server can only read, except for checked AI work the Interviewer allowed. | The MCP server gets `aiClientCore(core)`, a view that holds core's reads and only `saveAiNotesFromClient`, `saveSuggestedQuestionsFromClient`, and `saveCandidateBriefFromClient`; all refuse while the setting is off. The first two run the same checks as in-app generation (ADR 0005). |
 | A saved Candidate Brief's quotes are shown as found only when they are in this Candidate's CV or Transcripts now. | Core, every time the brief is read. |
+| An imported Candidate's files and AI work pass the same checks as new ones. | Core, which rebuilds the import through its own operations. |
+| Importing a Candidate already in the app never merges. | Core refuses until the Interviewer chooses Replace or Keep both. |
 
 Model output itself is not deterministic. These checks are.
 
