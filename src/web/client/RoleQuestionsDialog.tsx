@@ -1,21 +1,21 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { api, ApiError, type RoleQuestion, type RoleQuestionList } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { onEnter } from "./enter-key.ts";
 import { fill } from "./languages.ts";
 import { useText } from "./text.tsx";
 
 interface RoleQuestionsDialogProps {
   // The role shown first, such as the open Candidate's role. Empty to let the Interviewer choose.
   initialRole: string;
+  // Callers read their lists again here, since "Add to them" may have given Candidates new questions.
   onClose: () => void;
-  // Called after any change that may have given Candidates new Saved Questions.
-  onChanged?: () => void;
 }
 
 // The one place to manage each role's questions, opened as a modal from the Candidate list and
 // from the Questions panel. Core matches the role and keeps the order; after every change the
 // list is fetched again, so the dialog always shows what core has saved.
-export function RoleQuestionsDialog({ initialRole, onClose, onChanged }: RoleQuestionsDialogProps) {
+export function RoleQuestionsDialog({ initialRole, onClose }: RoleQuestionsDialogProps) {
   const { text } = useText();
   const t = text.roleQuestions;
   const dialog = useRef<HTMLDialogElement>(null);
@@ -92,7 +92,6 @@ export function RoleQuestionsDialog({ initialRole, onClose, onChanged }: RoleQue
     let count = 0;
     if (await change(async () => (count = (await api.addRoleQuestionsToCandidates(role)).candidates))) {
       setAddedTo(count);
-      onChanged?.();
     }
   }
 
@@ -125,7 +124,10 @@ export function RoleQuestionsDialog({ initialRole, onClose, onChanged }: RoleQue
           list="role-questions-roles"
           autoComplete="off"
           autoFocus={initialRole === ""}
-          onChange={(event) => setRole(event.target.value)}
+          onChange={(event) => {
+            setRole(event.target.value);
+            setAddedTo(undefined);
+          }}
         />
         <datalist id="role-questions-roles">
           {roles.map((knownRole) => (
@@ -282,14 +284,4 @@ function RoleQuestionItem({ question, position, isFirst, isLast, busy, onMove, o
       </span>
     </li>
   );
-}
-
-// Enter saves; Shift+Enter adds a line break. Enter while composing is left alone.
-function onEnter(run: () => void) {
-  return (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault();
-      run();
-    }
-  };
 }

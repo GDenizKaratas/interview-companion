@@ -330,7 +330,7 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   );
 
   api.post("/candidates/:id/missing-role-questions", (c) =>
-    respondOrRefuse(c, () => c.json(core.addMissingRoleQuestions(c.req.param("id")), 201)),
+    respondOrRefuse(c, () => c.json(core.addMissingRoleQuestions(c.req.param("id")))),
   );
 
   // The brief an AI client saved through MCP, with each quote checked now; null when there is none.

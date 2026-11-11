@@ -61,7 +61,7 @@ export function insertSavedQuestion(
     id: randomUUID(),
     candidate_id: candidateId,
     interview_id: interviewId,
-    text: requireText(text),
+    text: requireQuestionText(text),
     origin: origin === "role" ? "written" : origin,
     from_role: origin === "role" ? 1 : 0,
     created_at: createdAt,
@@ -87,7 +87,7 @@ export function listSavedQuestions(db: DatabaseSync, candidateId: string, filter
 // Changes only the text; the place in the list and the origin stay.
 export function editSavedQuestion(db: DatabaseSync, id: string, text: string): SavedQuestion {
   const question = findSavedQuestion(db, id);
-  const edited = { ...question, text: requireText(text) };
+  const edited = { ...question, text: requireQuestionText(text) };
   db.prepare("UPDATE saved_question SET text = ? WHERE id = ?").run(edited.text, id);
   return edited;
 }
@@ -112,16 +112,13 @@ export function deleteSavedQuestion(db: DatabaseSync, id: string): void {
 // right after the one before it at the end; questions the filter hides keep their places.
 export function moveSavedQuestion(db: DatabaseSync, id: string, position: number, filter: InterviewFilter = {}): void {
   const question = findSavedQuestion(db, id);
-  const shown = listSavedQuestions(db, question.candidateId, filter).map((q) => q.id);
+  let shown = listSavedQuestions(db, question.candidateId, filter).map((q) => q.id);
   if (!shown.includes(id)) {
     throw new InvalidInputError("position", "format", "A question hidden by the Interview filter cannot be moved.");
   }
-  if (!Number.isInteger(position) || position < 0 || position >= shown.length) {
-    throw new InvalidInputError("position", "format", "A question can only move to a place inside its list.");
-  }
-  if (shown.indexOf(id) === position) return;
-  shown.splice(shown.indexOf(id), 1);
-  shown.splice(position, 0, id);
+  const from = shown.indexOf(id);
+  shown = moveInList(shown, id, position);
+  if (from === position) return;
   const order = listSavedQuestions(db, question.candidateId).map((q) => q.id);
   order.splice(order.indexOf(id), 1);
   const next = shown[position + 1];
@@ -129,6 +126,17 @@ export function moveSavedQuestion(db: DatabaseSync, id: string, position: number
   order.splice(at, 0, id);
   const update = db.prepare("UPDATE saved_question SET position = ? WHERE id = ?");
   inTransaction(db, () => order.forEach((questionId, index) => update.run(index, questionId)));
+}
+
+// The ids with one moved to a new place, 0 being the top. Refuses a place outside the list.
+// Shared by every list of questions the Interviewer orders by hand.
+export function moveInList(ids: string[], id: string, position: number): string[] {
+  if (!Number.isInteger(position) || position < 0 || position >= ids.length) {
+    throw new InvalidInputError("position", "format", "A question can only move to a place inside its list.");
+  }
+  const moved = ids.filter((other) => other !== id);
+  moved.splice(position, 0, id);
+  return moved;
 }
 
 function findSavedQuestion(db: DatabaseSync, id: string): SavedQuestion {
@@ -139,8 +147,9 @@ function findSavedQuestion(db: DatabaseSync, id: string): SavedQuestion {
   return toSavedQuestion(row as unknown as SavedQuestionRow);
 }
 
-// Spaces and empty lines around the text are removed; line breaks inside it are kept.
-function requireText(text: string): string {
+// Spaces and empty lines around the text are removed; line breaks inside it are kept. Shared by
+// every question the Interviewer writes.
+export function requireQuestionText(text: string): string {
   const trimmed = text.trim();
   if (trimmed === "") {
     throw new InvalidInputError("text", "required", "A question needs text.");

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { api, ApiError, type AskedQuestion, type Interview, type SavedQuestion, type SavedQuestionCheck } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { onEnter } from "./enter-key.ts";
 import { ExchangeDialog } from "./ExchangeDialog.tsx";
 import { interviewName } from "./interview-names.ts";
 import { InterviewTagSelect } from "./InterviewTagSelect.tsx";
@@ -383,17 +384,6 @@ function QuestionItem({ question, interviews, checks, onOpenExchange, position, 
       )}
     </li>
   );
-}
-
-// Enter saves; Shift+Enter adds a line break. Enter while composing (for example with an
-// input method editor) is left alone.
-function onEnter(run: () => void) {
-  return (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault();
-      run();
-    }
-  };
 }
 
 function originLabel(t: Text["panels"]["questions"], question: SavedQuestion): string {

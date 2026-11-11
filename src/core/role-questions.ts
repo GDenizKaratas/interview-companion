@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
-import { listCandidates, requireCandidate, roleSpelling, type Candidate } from "./candidates.ts";
+import { isSameRole, listCandidates, requireCandidate, roleSpelling, type Candidate } from "./candidates.ts";
 import { inTransaction } from "./database.ts";
-import { InvalidInputError, NotFoundError } from "./errors.ts";
-import { insertSavedQuestion, type SavedQuestion } from "./saved-questions.ts";
+import { NotFoundError } from "./errors.ts";
+import { insertSavedQuestion, moveInList, requireQuestionText, type SavedQuestion } from "./saved-questions.ts";
 
 export interface RoleQuestion {
   id: string;
@@ -40,7 +40,7 @@ export function addRoleQuestion(db: DatabaseSync, input: NewRoleQuestion): RoleQ
   const row: RoleQuestionRow = {
     id: randomUUID(),
     role: roleSpelling(db, input.role),
-    text: requireText(input.text),
+    text: requireQuestionText(input.text),
     created_at: new Date().toISOString(),
   };
   db.prepare(
@@ -62,7 +62,7 @@ export function listRoleQuestions(db: DatabaseSync, role: string): RoleQuestionL
 // Changes only the text. Copies already given to Candidates stay as they are.
 export function editRoleQuestion(db: DatabaseSync, id: string, text: string): RoleQuestion {
   const question = findRoleQuestion(db, id);
-  const edited = { ...question, text: requireText(text) };
+  const edited = { ...question, text: requireQuestionText(text) };
   db.prepare("UPDATE role_question SET text = ? WHERE id = ?").run(edited.text, id);
   return edited;
 }
@@ -83,8 +83,9 @@ export function addRoleQuestionsToCandidates(db: DatabaseSync, role: string): nu
   return inTransaction(db, () => candidatesOf(db, spelling).filter((c) => copyRoleQuestions(db, c).length > 0).length);
 }
 
+// Compared by the role rule, not exact text, so a role saved before that rule existed still counts.
 function candidatesOf(db: DatabaseSync, role: string): Candidate[] {
-  return listCandidates(db).filter((candidate) => candidate.role === role);
+  return listCandidates(db).filter((candidate) => isSameRole(candidate.role, role));
 }
 
 function findRoleQuestion(db: DatabaseSync, id: string): RoleQuestion {
@@ -114,21 +115,15 @@ export function copyRoleQuestions(db: DatabaseSync, candidate: Candidate): Saved
 }
 
 function notCopiedTo(db: DatabaseSync, candidate: Candidate): RoleQuestion[] {
-  return questionsOf(db, candidate.role).filter(
-    (question) =>
-      db
-        .prepare("SELECT 1 FROM role_question_copy WHERE role_question_id = ? AND candidate_id = ?")
-        .get(question.id, candidate.id) === undefined,
-  );
-}
-
-// Spaces and empty lines around the text are removed; line breaks inside it are kept.
-function requireText(text: string): string {
-  const trimmed = text.trim();
-  if (trimmed === "") {
-    throw new InvalidInputError("text", "required", "A question needs text.");
-  }
-  return trimmed;
+  const rows = db
+    .prepare(
+      `SELECT ${columns} FROM role_question q
+       WHERE role = ? AND NOT EXISTS
+         (SELECT 1 FROM role_question_copy c WHERE c.role_question_id = q.id AND c.candidate_id = ?)
+       ORDER BY position`,
+    )
+    .all(roleSpelling(db, candidate.role), candidate.id);
+  return (rows as unknown as RoleQuestionRow[]).map(toRoleQuestion);
 }
 
 function toRoleQuestion(row: RoleQuestionRow): RoleQuestion {
@@ -138,12 +133,11 @@ function toRoleQuestion(row: RoleQuestionRow): RoleQuestion {
 // Moves a question to a new place in its role's list; position 0 is the top.
 export function moveRoleQuestion(db: DatabaseSync, id: string, position: number): void {
   const question = findRoleQuestion(db, id);
-  const order = questionsOf(db, question.role).map((q) => q.id);
-  if (!Number.isInteger(position) || position < 0 || position >= order.length) {
-    throw new InvalidInputError("position", "format", "A question can only move to a place inside its list.");
-  }
-  order.splice(order.indexOf(id), 1);
-  order.splice(position, 0, id);
+  const order = moveInList(
+    questionsOf(db, question.role).map((q) => q.id),
+    id,
+    position,
+  );
   const update = db.prepare("UPDATE role_question SET position = ? WHERE id = ?");
   inTransaction(db, () => order.forEach((questionId, index) => update.run(index, questionId)));
 }

@@ -174,4 +174,12 @@ describe("Role Questions", () => {
     expect(() => core.editRoleQuestion(question.id, "")).toThrow(InvalidInputError);
     expect(roleTexts()).toEqual(["A?"]);
   });
+
+  it("gives the demo Candidate the questions of their role too", async () => {
+    core.addRoleQuestion({ role, text: "A?" });
+
+    const demo = await core.loadDemoCandidate();
+
+    expect(core.listSavedQuestions(demo.id).filter((q) => q.origin === "role").map((q) => q.text)).toEqual(["A?"]);
+  });
 });

@@ -121,7 +121,7 @@ export function roleSpelling(db: DatabaseSync, role: string): string {
 
 // Two roles are the same if they differ only in letter case. One role can mix Turkish and
 // English ("SENIOR YAZILIM MÜHENDİSİ"), so the comparison goes letter by letter.
-function isSameRole(a: string, b: string): boolean {
+export function isSameRole(a: string, b: string): boolean {
   const left = [...a.normalize("NFC")];
   const right = [...b.normalize("NFC")];
   return left.length === right.length && left.every((letter, i) => sameLetter(letter, right[i]!));
