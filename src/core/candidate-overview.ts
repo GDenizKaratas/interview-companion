@@ -1,6 +1,7 @@
 import type { DatabaseSync } from "node:sqlite";
 import { listCandidates, requireCandidate, type Candidate } from "./candidates.ts";
 import { getCv } from "./cv.ts";
+import { InvalidInputError } from "./errors.ts";
 import { listInterviewerNotes } from "./interviewer-notes.ts";
 import { hasTakenPlace, listInterviews, type Interview, type Today } from "./interviews.ts";
 import { listSavedQuestions } from "./saved-questions.ts";
@@ -31,6 +32,50 @@ export interface InterviewOverview extends Interview {
     segmentCount: number;
     speakerMappingConfirmed: boolean;
   } | null;
+}
+
+// The columns of the Candidate list that it can be ordered by.
+export const candidateOrders = ["name", "interview", "cvAndQuestions"] as const;
+
+export interface CandidateOrder {
+  by: (typeof candidateOrders)[number];
+  // The other way round. A Candidate with no dated Interview stays last either way.
+  reversed?: boolean;
+}
+
+// Every Candidate's overview. With no order, the newest Candidate comes first, as in
+// listCandidates. With one, the whole list is ordered, so the order holds on every page of it:
+// - name: the Turkish alphabet, as the interface is used mostly in Turkish;
+// - interview: the Interview the row shows first (the next Planned one, or else the latest that
+//   has taken place), earliest first; a Candidate with no dated Interview comes last;
+// - cvAndQuestions: with a CV first, then the most Saved Questions.
+// Equal Candidates are ordered by name.
+export function listCandidateOverviews(db: DatabaseSync, today: Today, order?: CandidateOrder): CandidateOverview[] {
+  const overviews = listCandidates(db).map((candidate) => getCandidateOverview(db, today, candidate.id));
+  if (order === undefined) return overviews;
+  if (!candidateOrders.includes(order.by)) {
+    throw new InvalidInputError("by", "format", "The list can be ordered by name, interview, or cvAndQuestions.");
+  }
+  const alphabetical = new Intl.Collator("tr", { sensitivity: "accent" });
+  const byName = (a: CandidateOverview, b: CandidateOverview) => alphabetical.compare(a.candidate.name, b.candidate.name);
+  const direction = order.reversed ? -1 : 1;
+  const compare: Record<CandidateOrder["by"], (a: CandidateOverview, b: CandidateOverview) => number> = {
+    name: (a, b) => direction * byName(a, b),
+    interview: (a, b) => {
+      const [whenA, whenB] = [shownInterviewTime(a), shownInterviewTime(b)];
+      if (whenA === null || whenB === null) return whenA === whenB ? byName(a, b) : whenA === null ? 1 : -1;
+      return direction * whenA.localeCompare(whenB) || byName(a, b);
+    },
+    cvAndQuestions: (a, b) =>
+      direction * (Number(b.cv !== null) - Number(a.cv !== null) || b.savedQuestionCount - a.savedQuestionCount || byName(a, b)),
+  };
+  return overviews.sort(compare[order.by]);
+}
+
+// The day and time of the Interview a row of the list shows first, as text that sorts by time.
+function shownInterviewTime(overview: CandidateOverview): string | null {
+  const interview = overview.nextPlanned ?? overview.latestTakenPlace;
+  return interview?.date ? `${interview.date} ${interview.time ?? ""}` : null;
 }
 
 export function getCandidateOverview(db: DatabaseSync, today: Today, candidateId: string): CandidateOverview {

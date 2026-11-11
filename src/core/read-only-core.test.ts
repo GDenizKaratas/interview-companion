@@ -30,6 +30,7 @@ describe("Read-only view of core", () => {
       "getCandidate",
       "getCandidateBrief",
       "getCandidateOverview",
+      "listCandidateOverviews",
       "getCv",
       "getTranscript",
       "listAiNotes",

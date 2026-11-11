@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
 import { AddCandidateDialog } from "./AddCandidateDialog.tsx";
-import { api, type CandidateOverview, type DatedInterview, type Interview, type RoleInUse } from "./api.ts";
+import { api, type CandidateOrder, type CandidateOverview, type DatedInterview, type Interview, type RoleInUse } from "./api.ts";
 import { CvPreviewDialog } from "./CvPreviewDialog.tsx";
 import { localDay, shortDay } from "./dates.ts";
 import { ImportCandidate, type ImportCandidateHandle } from "./ImportCandidate.tsx";
@@ -19,14 +19,27 @@ type View = "planned" | "noInterview" | "all";
 // The views as they are written in the page's address.
 const viewInAddress: Record<View, string> = { planned: "planned", noInterview: "no-interview", all: "all" };
 
-// The role, view, and page kept in the address ("?role=…&view=…&page=3"), so going back to the
-// list from a Workspace returns to the same filtered list and page. A value the page does not know
-// is ignored. The page is counted from 1 in the address and from 0 here.
-function choicesInAddress(): { role: string; view: View | undefined; page: number } {
+// The columns the list can be ordered by, in the table's order, each with its name in the address.
+const orderColumns = [
+  { by: "name", column: "candidate" },
+  { by: "interview", column: "interview" },
+  { by: "cvAndQuestions", column: "shortcuts" },
+] as const;
+
+// The order as written in the address: the column, with "-" before it when reversed.
+function orderInAddress(value: string | null): CandidateOrder | undefined {
+  const by = orderColumns.find((column) => column.by === value?.replace(/^-/, ""))?.by;
+  return by && { by, reversed: value!.startsWith("-") };
+}
+
+// The role, view, order, and page kept in the address ("?role=…&view=…&sort=-name&page=3"), so
+// going back to the list from a Workspace returns to the same filtered list and page. A value the
+// page does not know is ignored. The page is counted from 1 in the address and from 0 here.
+function choicesInAddress(): { role: string; view: View | undefined; order: CandidateOrder | undefined; page: number } {
   const query = readListQuery();
   const view = (Object.keys(viewInAddress) as View[]).find((key) => viewInAddress[key] === query.get("view"));
   const page = Number(query.get("page"));
-  return { role: query.get("role") ?? "", view, page: Number.isInteger(page) && page > 1 ? page - 1 : 0 };
+  return { role: query.get("role") ?? "", view, order: orderInAddress(query.get("sort")), page: Number.isInteger(page) && page > 1 ? page - 1 : 0 };
 }
 
 // The home page: the Candidates the Interviewer meets next, or all of them, in one table, and
@@ -42,6 +55,10 @@ export function CandidateList() {
   const [chosenView, setChosenView] = useState<View | undefined>(() => choicesInAddress().view);
   // The role whose Candidates are shown, as core spells it, or "" for every role.
   const [chosenRole, setChosenRole] = useState(() => choicesInAddress().role);
+  // The column the Interviewer ordered the list by. Until they click one, each view has its own order.
+  const [order, setOrder] = useState(() => choicesInAddress().order);
+  // The order as it is now, for a reload that was started by something else.
+  const orderNow = useRef(order);
   const [page, setPage] = useState(() => choicesInAddress().page);
   // The Candidate whose CV is open over the list.
   const [cvOf, setCvOf] = useState<CandidateOverview["candidate"] | undefined>();
@@ -57,13 +74,21 @@ export function CandidateList() {
   const importCandidate = useRef<ImportCandidateHandle>(null);
 
   useEffect(() => {
-    loadCandidates();
     loadRoles();
   }, []);
 
+  // Core orders the list, so the first list and every new order is a list from core.
+  useEffect(() => {
+    orderNow.current = order;
+    loadCandidates();
+  }, [order]);
+
   function loadCandidates() {
-    Promise.all([api.listCandidateOverviews(), api.listDatedInterviews(), api.listRolesInUse()]).then(
+    const asked = orderNow.current;
+    Promise.all([api.listCandidateOverviews(asked), api.listDatedInterviews(), api.listRolesInUse()]).then(
       ([overviews, interviews, roleGroups]) => {
+        // An answer for an order that was changed meanwhile is left out; the newer one follows.
+        if (asked !== orderNow.current) return;
         setCandidates(overviews);
         setDated(interviews);
         setRolesInUse(roleGroups);
@@ -93,7 +118,9 @@ export function CandidateList() {
   useEffect(() => {
     const onPopState = () => {
       if (window.location.pathname !== "/") return;
-      const { role, view, page } = choicesInAddress();
+      const { role, view, order, page } = choicesInAddress();
+      // The same order is kept as it is, so the list is not loaded again for nothing.
+      setOrder((current) => (current?.by === order?.by && Boolean(current?.reversed) === Boolean(order?.reversed) ? current : order));
       setChosenRole(role);
       setChosenView(view);
       setPage(page);
@@ -133,6 +160,9 @@ export function CandidateList() {
     api.listCandidateRoles().then(setRoles, () => {});
   }
 
+  // One click orders by the column; a click on the column that already orders the list turns it round.
+  const orderBy = (by: CandidateOrder["by"]) => setOrder({ by, reversed: order?.by === by && !order.reversed });
+
   const t = text.home;
   // A chosen role narrows every view and the search, by the Candidates core lists for it. Until a
   // role from the address is matched or cleared, every Candidate is shown.
@@ -147,8 +177,10 @@ export function CandidateList() {
   // gives the order, and says which Interviews are today or Planned. Today's stay all day, so
   // the list does not lose a Candidate when their Interview's time passes.
   const plannedIds = [...new Set(dated?.filter((entry) => entry.today || entry.interview.planned).map(({ candidate }) => candidate.id))];
+  const planned = new Set(plannedIds);
   const byView: Record<View, CandidateOverview[]> = {
-    planned: plannedIds.flatMap((id) => byId.get(id) ?? []),
+    // With a column chosen, core's order of the whole list is kept in every view.
+    planned: order ? everyone.filter((overview) => planned.has(overview.candidate.id)) : plannedIds.flatMap((id) => byId.get(id) ?? []),
     // Core says who has no Interview yet.
     noInterview: everyone.filter((overview) => overview.noInterviewYet),
     all: everyone,
@@ -167,7 +199,7 @@ export function CandidateList() {
   const pageSize = usePageSize();
   const pages = Math.max(1, Math.ceil(shown.length / pageSize));
   const loaded = candidates !== undefined && dated !== undefined;
-  const listKey = loaded ? `${view}|${role?.role ?? ""}|${needle}` : undefined;
+  const listKey = loaded ? `${view}|${role?.role ?? ""}|${needle}|${order?.by ?? ""}|${order?.reversed ?? false}` : undefined;
   const [pagedKey, setPagedKey] = useState(listKey);
   if (listKey !== undefined && pagedKey !== listKey) {
     setPagedKey(listKey);
@@ -183,9 +215,10 @@ export function CandidateList() {
     const query = new URLSearchParams();
     if (chosenRole !== "") query.set("role", chosenRole);
     if (chosenView) query.set("view", viewInAddress[chosenView]);
+    if (order) query.set("sort", `${order.reversed ? "-" : ""}${order.by}`);
     if (pageShown > 0) query.set("page", String(pageShown + 1));
     showListQuery(query);
-  }, [chosenRole, chosenView, pageShown]);
+  }, [chosenRole, chosenView, order, pageShown]);
   const pageRows = shown.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
   const undated = candidates?.reduce((n, overview) => n + overview.interviews.filter((i) => i.date === null).length, 0) ?? 0;
 
@@ -291,9 +324,19 @@ export function CandidateList() {
           <table className="candidate-table card">
             <thead>
               <tr>
-                <th>{t.columns.candidate}</th>
-                <th>{t.columns.interview}</th>
-                <th>{t.columns.shortcuts}</th>
+                {orderColumns.map(({ by, column }) => {
+                  const ordered = order?.by === by;
+                  return (
+                    <th key={by} aria-sort={ordered ? (order.reversed ? "descending" : "ascending") : undefined}>
+                      <button type="button" className={ordered ? "column-sort ordered" : "column-sort"} title={t.sortHint} onClick={() => orderBy(by)}>
+                        {t.columns[column]}
+                        <span className="column-sort-mark" aria-hidden="true">
+                          {ordered ? (order.reversed ? "↓" : "↑") : "↕"}
+                        </span>
+                      </button>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
