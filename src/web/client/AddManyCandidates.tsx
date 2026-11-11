@@ -318,12 +318,13 @@ export function useAddManyCandidates({
               )}
             </p>
             <ul className="add-many-rows">
-              {rows.map((row, i) => (
+              {/* What needs the Interviewer comes first, so nothing waits unseen below a hundred ready rows. */}
+              {attentionFirst(rows, statuses).map(({ row, status }) => (
                 <CvRowItem
                   key={row.key}
                   text={text}
                   row={row}
-                  status={statuses[i]!}
+                  status={status}
                   locked={phase.kind !== "choosing"}
                   onName={(name) => changeName(row.key, name)}
                   onAddAnyway={(addAnyway) => setAddAnyway([row.key], addAnyway)}
@@ -370,6 +371,16 @@ export function useAddManyCandidates({
     confirmClose,
     cancelClose: () => setConfirmingClose(false),
   };
+}
+
+// The rows in the order they are shown: those the Interviewer must name, then those already in
+// the app, then those that cannot be added, then the ready ones. Within each group the order of
+// the files is kept.
+function attentionFirst<Row, Status extends { kind: string }>(rows: Row[], statuses: Status[]): { row: Row; status: Status }[] {
+  const rank = (kind: string) => (kind === "needsName" ? 0 : kind === "alreadyAdded" ? 1 : kind === "refused" || kind === "checkFailed" ? 2 : 3);
+  return rows
+    .map((row, i) => ({ row, status: statuses[i]!, place: i }))
+    .sort((a, b) => rank(a.status.kind) - rank(b.status.kind) || a.place - b.place);
 }
 
 function CvRowItem({

@@ -56,10 +56,19 @@ describe("Checking a CV before a Candidate is added from it", () => {
     expect(checks.map((check) => check.refusal)).toEqual(["readableText", "format", "required"]);
   });
 
-  it("gives an empty name when none can be read from the CV or its file name", async () => {
+  it("gives an empty name when none can be read from the CV", async () => {
     const cv = makePdf([[{ text: "Built payment services with Node.js and PostgreSQL since 2019.", size: 10 }]]);
 
     const check = await core.checkCandidateCv({ role, cv: { fileName: "CV.pdf", bytes: cv } });
+
+    expect(check).toEqual({ name: "", refusal: null, alreadyAdded: false });
+  });
+
+  it("never takes the name from the file name: a CV with no name in it gets an empty name", async () => {
+    // The largest text is not a name, and the file is named like one.
+    const bytes = makePdf([[{ text: "ornek@example.com | 2019 - 2025", size: 14 }]]);
+
+    const check = await core.checkCandidateCv({ role, cv: { fileName: "Ece_Yalin_CV.pdf", bytes } });
 
     expect(check).toEqual({ name: "", refusal: null, alreadyAdded: false });
   });

@@ -13,8 +13,8 @@ export interface CandidateCvToCheck {
 
 // What the Interviewer needs to know about one CV before a Candidate is added from it.
 export interface CandidateCvCheck {
-  // The name the Candidate would get: the one given, or else the one read from the CV. It is
-  // empty when none could be read.
+  // The name the Candidate would get: the one given, or else the one read from the CV's text. It
+  // is empty when none could be read there.
   name: string;
   // The rule the file breaks as a CV, or null when it can be added.
   refusal: InputRule | null;
@@ -26,7 +26,10 @@ export interface CandidateCvCheck {
 // same reasons as when a CV is added.
 export async function checkCandidateCv(db: DatabaseSync, input: CandidateCvToCheck): Promise<CandidateCvCheck> {
   const { firstPageLines, refusal } = await readCv(input.cv);
-  const name = (input.name ?? guessNameFromLines(firstPageLines, input.cv.fileName)).trim();
+  // The name is read from the CV's own text only. A file name is not trusted here: among many
+  // files, names such as "Profile (12).pdf" would become Candidates' names without being noticed,
+  // so a CV with no name in it is left for the Interviewer to name.
+  const name = (input.name ?? guessNameFromLines(firstPageLines, "")).trim();
   return { name, refusal, alreadyAdded: refusal === null && isCandidateAdded(db, name, input.role) };
 }
 
