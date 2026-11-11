@@ -304,6 +304,7 @@ const translation: TranslationFile = {
     },
     panels: {
       expand: "Tam ekran aç",
+      expandWord: "Tam ekran",
       collapse: "Tam ekranı kapat",
       sources: { title: "Kaynaklar" },
       cv: {

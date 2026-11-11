@@ -318,6 +318,7 @@ const text = {
   },
   panels: {
     expand: "Open full screen",
+    expandWord: "Full screen",
     collapse: "Close full screen",
     sources: { title: "Sources" },
     cv: {
