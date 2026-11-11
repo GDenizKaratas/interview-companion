@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
 import { useAddManyCandidates } from "./AddManyCandidates.tsx";
 import { api, ApiError } from "./api.ts";
@@ -21,7 +21,8 @@ export function AddCandidateDialog({
   roles: string[];
   // CVs dropped on the Candidate list: the dialog opens on the many way with them listed.
   initialFiles?: PickedFiles;
-  onAdded: () => void;
+  // Candidates were added. With a role, the Interviewer asked to see that role's new Candidates.
+  onAdded: (show?: { role: string }) => void;
   // The Interviewer wants to import a Candidate export instead.
   onImport: () => void;
   onClose: () => void;
@@ -41,6 +42,7 @@ export function AddCandidateDialog({
   const lastGuess = useRef("");
   // Only the guess for the most recently chosen file may fill the box.
   const guessFor = useRef<File | undefined>(undefined);
+  const roleIsNew = useRoleIsNew(role);
 
   const roleField = (
     <label>
@@ -51,6 +53,7 @@ export function AddCandidateDialog({
           <option key={knownRole} value={knownRole} />
         ))}
       </datalist>
+      {roleIsNew && <span className="form-hint role-hint">{text.candidates.newRole}</span>}
     </label>
   );
 
@@ -176,6 +179,28 @@ export function AddCandidateDialog({
       </p>
     </ModalDialog>
   );
+}
+
+// Whether no Candidate has the role typed yet. Core compares the roles; the answer comes a moment
+// after typing pauses, and an answer to an older role is ignored. Nothing is said about an empty
+// role, or when core cannot be asked.
+function useRoleIsNew(role: string): boolean {
+  const [answer, setAnswer] = useState<{ role: string; isNew: boolean } | undefined>();
+  useEffect(() => {
+    if (role.trim() === "") return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      api.isRoleInUse(role, controller.signal).then(
+        ({ inUse }) => setAnswer({ role, isNew: !inUse }),
+        () => {},
+      );
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [role]);
+  return role.trim() !== "" && answer?.role === role && answer.isNew;
 }
 
 // Core decides whether a Candidate is valid; this only says why, in the current language.

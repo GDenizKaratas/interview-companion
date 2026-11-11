@@ -8,6 +8,7 @@ function subscribe(onChange: () => void) {
   return () => window.removeEventListener("popstate", onChange);
 }
 
+// The pathname only: the query of the Candidate list (its role and view) does not change the page.
 export function usePath(): string {
   return useSyncExternalStore(subscribe, () => window.location.pathname);
 }
@@ -32,4 +33,26 @@ export function linkTo(path: string) {
 
 export function candidatePath(id: string): string {
   return `/candidates/${encodeURIComponent(id)}`;
+}
+
+// The Candidate list's role and view as last shown, as a query ("?role=…&view=…") or "". Going
+// back to the list from a Workspace, by the browser or by the app's own back link, returns to them.
+let listQuery = "";
+
+export function listPath(): string {
+  return `/${listQuery}`;
+}
+
+// Keeps the Candidate list's choices in the address without adding a history entry, so the
+// browser's back button leaves the list instead of stepping through each choice.
+export function showListQuery(params: URLSearchParams): void {
+  const query = params.toString();
+  listQuery = query === "" ? "" : `?${query}`;
+  if (window.location.pathname === "/" && window.location.search !== listQuery) {
+    window.history.replaceState(null, "", listPath());
+  }
+}
+
+export function readListQuery(): URLSearchParams {
+  return new URLSearchParams(window.location.search);
 }

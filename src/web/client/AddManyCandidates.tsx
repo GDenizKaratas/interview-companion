@@ -91,8 +91,9 @@ export function useAddManyCandidates({
   shown: boolean;
   // Files the dialog opens with, such as PDFs dropped on the Candidate list.
   initialFiles?: PickedFiles;
-  // At least one Candidate was added; the dialog closes and the list shows them.
-  onAdded: () => void;
+  // At least one Candidate was added; the dialog closes and the list shows them. With a role, the
+  // Interviewer asked to see that role's Candidates.
+  onAdded: (show?: { role: string }) => void;
   onClose: () => void;
 }) {
   const { text } = useText();
@@ -115,6 +116,8 @@ export function useAddManyCandidates({
   // Whether any run of adding, before a fix of the files not added, added a Candidate. Closing
   // then shows the Candidate list again with them.
   const addedAny = useRef(false);
+  // The role as core saved it for the Candidates added last, for "Show these Candidates".
+  const [addedRole, setAddedRole] = useState<string | undefined>();
   // Raised when a check ends without changing the rows, so the next waiting row starts.
   const [checksEnded, setChecksEnded] = useState(0);
 
@@ -238,8 +241,9 @@ export function useAddManyCandidates({
     for (const [i, row] of toAdd.entries()) {
       if (stopRequested.current) break;
       try {
-        await api.createCandidateWithCv({ name: row.name, role }, row.file, { onlyIfNew: !row.addAnyway });
+        const candidate = await api.createCandidateWithCv({ name: row.name, role }, row.file, { onlyIfNew: !row.addAnyway });
         outcomes.set(row.key, { added: true });
+        setAddedRole(candidate.role);
         addedAny.current = true;
       } catch (error) {
         outcomes.set(row.key, { added: false, error });
@@ -450,9 +454,14 @@ export function useAddManyCandidates({
             {t.fixNotAdded}
           </button>
         )}
-        <button type="button" onClick={requestClose}>
+        <button type="button" className={addedRole === undefined ? undefined : "secondary"} onClick={requestClose}>
           {t.close}
         </button>
+        {addedRole !== undefined && (
+          <button type="button" onClick={() => onAdded({ role: addedRole })}>
+            {t.showThese}
+          </button>
+        )}
       </>
     ) : phase.kind === "adding" ? (
       <>

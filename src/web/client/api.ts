@@ -31,6 +31,7 @@ import type {
   NewInterviewerNotes,
   Precondition,
   QuestionMark,
+  RoleInUse,
   RoleQuestion,
   RoleQuestionList,
   SavedQuestion,
@@ -44,7 +45,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, InputRule, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateCvCheck, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewAiStep, InterviewerNote, QuestionMark, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, InputRule, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateCvCheck, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewAiStep, InterviewerNote, QuestionMark, RoleInUse, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -102,6 +103,9 @@ export const api = {
   listDatedInterviews: () => request<DatedInterview[]>("/dated-interviews"),
   getMcpSetup: () => request<{ command: string | null }>("/mcp-setup"),
   listCandidateRoles: () => request<string[]>("/candidate-roles"),
+  listRolesInUse: () => request<RoleInUse[]>("/roles-in-use"),
+  isRoleInUse: (role: string, signal?: AbortSignal) =>
+    request<{ inUse: boolean }>(`/role-in-use?role=${encodeURIComponent(role)}`, { signal }),
   getCandidate: (id: string) => request<Candidate>(`/candidates/${encodeURIComponent(id)}`),
   createCandidate: (input: NewCandidate) => request<Candidate>("/candidates", sendJson("POST", input)),
   deleteCandidate: (id: string) => request<void>(`/candidates/${encodeURIComponent(id)}`, { method: "DELETE" }),
