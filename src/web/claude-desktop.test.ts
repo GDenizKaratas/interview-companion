@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -138,5 +138,18 @@ describe("Connecting Claude Desktop with one click", () => {
     connectClaudeDesktop(configPath, { ...entry, env: { DATA_DIR: "/data" } });
 
     expect(readdirSync(claudeDir).sort()).toEqual(["claude_desktop_config.json", "claude_desktop_config.json.interview-companion-backup"]);
+  });
+
+  // The file can hold other servers' secrets, so a file only its owner may read stays that way.
+  it("keeps the file's permissions, and makes a new file readable only by its owner", () => {
+    writeConfig({});
+    chmodSync(configPath, 0o600);
+    connectClaudeDesktop(configPath, entry);
+    expect(statSync(configPath).mode & 0o777).toBe(0o600);
+    expect(statSync(configPath + ".interview-companion-backup").mode & 0o777).toBe(0o600);
+
+    rmSync(configPath);
+    connectClaudeDesktop(configPath, entry);
+    expect(statSync(configPath).mode & 0o777).toBe(0o600);
   });
 });

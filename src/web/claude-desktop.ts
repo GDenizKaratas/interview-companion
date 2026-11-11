@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, posix, win32 } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 
@@ -59,8 +59,12 @@ export function connectClaudeDesktop(configPath: string | null, entry: DesktopEn
   const next = { ...read.config, mcpServers: { ...read.servers, [serverName]: entry } };
   if (read.exists) copyFileSync(path, path + backupSuffix);
   const temporary = path + temporarySuffix;
+  // The file can hold other servers' secrets: it keeps its permissions, and a new one is the owner's only.
+  const mode = read.exists ? statSync(path).mode & 0o777 : 0o600;
   try {
-    writeFileSync(temporary, `${JSON.stringify(next, null, 2)}\n`);
+    rmSync(temporary, { force: true });
+    writeFileSync(temporary, `${JSON.stringify(next, null, 2)}\n`, { mode });
+    chmodSync(temporary, mode);
     renameSync(temporary, path);
   } finally {
     rmSync(temporary, { force: true });
