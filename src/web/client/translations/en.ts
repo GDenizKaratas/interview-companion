@@ -140,7 +140,7 @@ const text = {
       confirmClose: {
         title: "Stop adding Candidates?",
         detail: "The Candidates added so far stay. The rest are not added.",
-        stop: "Stop and close",
+        stop: "Stop planning",
         keepGoing: "Keep adding",
       },
       confirmDiscard: {
@@ -301,6 +301,69 @@ const text = {
     // {count} is replaced by a number.
     questions: "Questions {count}",
     openQuestions: "Open this Candidate to see and suggest questions",
+  },
+  planInterviews: {
+    open: "Plan Interviews",
+    hint: "Plan Interviews for several Candidates on one day",
+    title: "Plan Interviews",
+    dayLabel: "Day",
+    firstTimeLabel: "First time",
+    minutesLabel: "Length of each (min)",
+    breakLabel: "Break between (min)",
+    intro: "Times follow the order you tick the Candidates. The app only records the plan; it sends nothing to the Candidates.",
+    // {count} is replaced by a number; {from} and {to} by times.
+    chosen: "{count} chosen · {from} – {to}",
+    chosenOne: "1 chosen · {from} – {to}",
+    chosenNoRange: "{count} chosen",
+    noneChosen: "No Candidate chosen yet",
+    // {count} is replaced by a number.
+    doNotFit: "{count} do not fit on the day",
+    untickDoNotFit: "Untick the ones that do not fit",
+    // {count} is replaced by a number.
+    passedCount: "{count} at a time that has passed",
+    chooseAll: "Choose all shown",
+    chooseNone: "Choose none",
+    // {name} is replaced by the Candidate's name.
+    timeFor: "Time for {name}",
+    sameTime: "same time",
+    // {when} is replaced by a day and a time.
+    plannedAlready: "planned: {when}",
+    afterMidnight: "Would end after midnight",
+    past: "This time has passed.",
+    empty: "No Candidate is shown in the list right now.",
+    planNone: "Plan Interviews",
+    // {count} is replaced by a number.
+    planCount: "Plan {count} Interviews",
+    planOne: "Plan 1 Interview",
+    progress: "Planning: {done} / {total}",
+    planned: "{count} Interviews planned.",
+    plannedOne: "1 Interview planned.",
+    plannedNone: "No Interview was planned.",
+    notPlanned: "Not planned ({count}):",
+    candidateGone: "This Candidate no longer exists.",
+    stopped: "Planning was stopped before this one.",
+    close: "Close",
+    cancel: "Cancel",
+    refused: {
+      date: "Choose a real day.",
+      firstTime: "Choose the first time.",
+      minutes: "Each Interview lasts at least 1 minute, in whole minutes.",
+      breakMinutes: "The break is 0 or more whole minutes.",
+      time: "A time must be between 00:00 and 23:59.",
+      other: "The times could not be worked out.",
+    },
+    confirmClose: {
+      title: "Stop planning?",
+      detail: "The Interviews planned so far stay. The rest are not planned.",
+      stop: "Stop and close",
+      keepGoing: "Keep planning",
+    },
+    confirmDiscard: {
+      title: "Close without planning?",
+      detail: "The Candidates you ticked and the times you typed will be lost.",
+      close: "Close",
+      keep: "Keep the plan",
+    },
   },
   roleQuestions: {
     open: "Role questions",

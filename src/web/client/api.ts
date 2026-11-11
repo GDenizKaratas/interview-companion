@@ -26,9 +26,13 @@ import type {
   Interview,
   InterviewAiStep,
   InterviewerNote,
+  InterviewPlan,
+  InterviewPlanRequest,
+  InterviewPlanSettings,
   NewCandidate,
   NewInterview,
   NewInterviewerNotes,
+  PlannedSlot,
   Precondition,
   QuestionMark,
   RoleInUse,
@@ -37,6 +41,7 @@ import type {
   SavedQuestion,
   SavedQuestionCheck,
   SavedQuestionState,
+  SlotRefusal,
   SpeakerRole,
   SuggestedQuestion,
   SuggestedQuestionGeneration,
@@ -45,7 +50,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, InputRule, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateCvCheck, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewAiStep, InterviewerNote, QuestionMark, RoleInUse, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, InputRule, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateCvCheck, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewAiStep, InterviewerNote, InterviewPlan, InterviewPlanRequest, InterviewPlanSettings, PlannedSlot, QuestionMark, RoleInUse, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SlotRefusal, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -164,6 +169,9 @@ export const api = {
     request<Interview | null>(`/candidates/${encodeURIComponent(candidateId)}/default-interview`),
   rescheduleInterview: (id: string, fields: { date: string; time: string }) =>
     request<Interview>(`/interviews/${encodeURIComponent(id)}`, sendJson("PUT", fields)),
+  suggestInterviewPlan: () => request<InterviewPlanSettings>("/interview-plan-defaults"),
+  planInterviewTimes: (input: InterviewPlanRequest, signal?: AbortSignal) =>
+    request<InterviewPlan>("/interview-plans", { ...sendJson("POST", input), signal }),
   deleteInterview: (id: string) => request<void>(`/interviews/${encodeURIComponent(id)}`, { method: "DELETE" }),
   listInterviewerNotes: (candidateId: string, interviewId: string | null) =>
     request<InterviewerNote[]>(
