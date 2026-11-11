@@ -17,6 +17,7 @@ import { openDatabase } from "./database.ts";
 import * as evidenceSearch from "./evidence-search.ts";
 import * as demoCandidate from "./demo-candidate.ts";
 import * as interfaceLanguage from "./interface-language.ts";
+import * as interviewAi from "./interview-ai.ts";
 import * as interviewerNotes from "./interviewer-notes.ts";
 import * as interviews from "./interviews.ts";
 import * as nameGuess from "./name-guess.ts";
@@ -66,6 +67,7 @@ export {
   type Precondition,
 } from "./errors.ts";
 export type { InterviewerNote, NewInterviewerNotes } from "./interviewer-notes.ts";
+export type { InterviewAiStep } from "./interview-ai.ts";
 export type { Interview, InterviewFilter, InterviewTime, NewInterview } from "./interviews.ts";
 export type { NewRoleQuestion, RoleQuestion, RoleQuestionList } from "./role-questions.ts";
 export type { NewSavedQuestion, QuestionMark, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
@@ -145,6 +147,7 @@ export interface Core {
   listAiNotes(interviewId: string): aiNotes.AiNote[];
   findAskedQuestions(interviewId: string): Promise<askedQuestions.AskedQuestionGeneration>;
   listAskedQuestions(interviewId: string): askedQuestions.AskedQuestions | null;
+  getInterviewAiStep(interviewId: string): interviewAi.InterviewAiStep;
   listSavedQuestionChecks(candidateId: string): askedQuestions.SavedQuestionCheck[];
   listSavedQuestionStates(candidateId: string): askedQuestions.SavedQuestionState[];
   saveAskedQuestionsFromClient(interviewId: string, askedQuestions: ProposedAskedQuestion[]): askedQuestions.AskedQuestionGeneration;
@@ -302,6 +305,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listAiNotes: (interviewId) => aiNotes.listAiNotes(db, interviewId),
     findAskedQuestions: (interviewId) => askedQuestions.findAskedQuestions(db, now, aiProvider, interviewId),
     listAskedQuestions: (interviewId) => askedQuestions.listAskedQuestions(db, interviewId),
+    getInterviewAiStep: (interviewId) => interviewAi.getInterviewAiStep(db, interviewId),
     saveAskedQuestionsFromClient: (interviewId, proposed) =>
       askedQuestions.saveAskedQuestionsFromClient(db, now, interviewId, proposed),
     listSavedQuestionChecks: (candidateId) => askedQuestions.listSavedQuestionChecks(db, today, candidateId),

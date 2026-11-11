@@ -49,7 +49,7 @@ export function AiNoteItem({ note, segmentTimes, onShowEvidence, onChanged }: Ai
   }
 
   const corrected = note.reviewState === "corrected";
-  const classes = ["ai-note", note.stale && "stale", note.reviewState === "dismissed" && "dismissed"];
+  const classes = ["ai-note", note.reviewState === "unreviewed" && "unreviewed", note.stale && "stale", note.reviewState === "dismissed" && "dismissed"];
 
   return (
     <li className={classes.filter(Boolean).join(" ")}>

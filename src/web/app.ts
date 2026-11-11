@@ -185,6 +185,9 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
     );
   });
 
+  // What the Interviewer does next to get this Interview's Asked Questions and AI Notes.
+  api.get("/interviews/:id/ai-step", (c) => respondOrRefuse(c, () => c.json({ step: core.getInterviewAiStep(c.req.param("id")) })));
+
   // The Interview's Asked Questions, or null when they were never looked for.
   api.get("/interviews/:id/asked-questions", (c) =>
     respondOrRefuse(c, () => c.json(core.listAskedQuestions(c.req.param("id")))),
