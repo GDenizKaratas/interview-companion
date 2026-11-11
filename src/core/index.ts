@@ -89,6 +89,9 @@ export interface Core {
   listCandidateRoles(): string[];
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
+  rescheduleInterview(id: string, input: { date?: string | null; time?: string | null }): interviews.Interview;
+  deleteInterview(id: string): void;
+  getDefaultInterview(candidateId: string): interviews.Interview | null;
   addInterviewerNotes(input: interviewerNotes.NewInterviewerNotes): interviewerNotes.InterviewerNote[];
   editInterviewerNote(id: string, text: string): interviewerNotes.InterviewerNote;
   tagInterviewerNote(id: string, interviewId: string | null): interviewerNotes.InterviewerNote;
@@ -201,7 +204,9 @@ export function readOnlyCore(core: Core): ReadOnlyCore {
 
 export interface CoreOptions {
   // Today as YYYY-MM-DD. Defaults to the day on this computer's clock; tests fix it.
-  today?: interviews.Today;
+  today?: () => string;
+  // The time now as HH:MM. Defaults to this computer's clock; tests fix it.
+  timeOfDay?: () => string;
   // The current time, used as the time a note is saved. Defaults to the system clock; tests fix it.
   now?: interviewerNotes.Now;
   // Makes the model provider for AI generation. Defaults to Claude; tests use a fake provider.
@@ -213,7 +218,9 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
   mkdirSync(dirname(dbPath), { recursive: true });
   const { db, created } = openDatabase(dbPath);
   if (created) demoCandidate.markDemoPending(db);
-  const today = options.today ?? localToday;
+  const day = options.today ?? localToday;
+  const timeOfDay = options.timeOfDay ?? localTimeOfDay;
+  const today: interviews.Today = () => ({ day: day(), time: timeOfDay() });
   const now = options.now ?? (() => new Date());
   const aiProvider = options.aiProvider ?? claudeProvider;
   // CV files live in a folder next to the database file.
@@ -233,6 +240,9 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listCandidateRoles: () => candidates.listCandidateRoles(db),
     addInterview: (input) => interviews.addInterview(db, today, input),
     listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),
+    rescheduleInterview: (id, input) => interviews.rescheduleInterview(db, today, id, input),
+    deleteInterview: (id) => interviews.deleteInterview(db, id),
+    getDefaultInterview: (candidateId) => interviews.getDefaultInterview(db, today, candidateId),
     addInterviewerNotes: (input) => interviewerNotes.addInterviewerNotes(db, now, input),
     editInterviewerNote: (id, text) => interviewerNotes.editInterviewerNote(db, id, text),
     tagInterviewerNote: (id, interviewId) => interviewerNotes.tagInterviewerNote(db, id, interviewId),
@@ -301,6 +311,12 @@ function localToday(): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+function localTimeOfDay(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 }
 
 // The database the app uses: data/interview-companion.sqlite in the project folder,

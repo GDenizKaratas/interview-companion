@@ -810,7 +810,7 @@ button.link-button:hover:not(:disabled) {
 
 /* A fixed width: the options carry dates and "planned", and the search needs the room. */
 .interview-select select {
-  width: 14rem;
+  width: 17rem;
 }
 
 .interview-bar .error {

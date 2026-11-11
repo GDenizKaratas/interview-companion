@@ -111,8 +111,8 @@ function addDemoContent(db: DatabaseSync, today: Today, now: Now): Candidate {
     role: "Kıdemli Backend Mühendisi",
   });
   const id = candidate.id;
-  const first = addInterview(db, today, { candidateId: id, date: shiftDays(today(), -7) });
-  const second = addInterview(db, today, { candidateId: id, date: shiftDays(today(), 3) });
+  const first = addInterview(db, today, { candidateId: id, date: shiftDays(today().day, -7), time: "11:00" });
+  const second = addInterview(db, today, { candidateId: id, date: shiftDays(today().day, 3), time: "14:00" });
 
   // A plain-text file, imported the way the Interviewer would import one, so it can also be
   // used to try the import by hand.
@@ -164,6 +164,8 @@ function shiftDays(day: string, days: number): string {
 
 // One more Candidate of the demo set. Days are counted from the day the set is loaded:
 // negative for an Interview that has taken place, positive for a Planned one, null for none.
+// Three Candidates have a Planned Interview on the same day, two at the same time, so the
+// calendar shows a busy day.
 interface DemoSetCandidate {
   id: string;
   name: string;
@@ -171,6 +173,7 @@ interface DemoSetCandidate {
   cv?: { file: string; fileName: string };
   interviews: {
     days: number | null;
+    time?: string;
     transcript?: { file: string; roles?: Record<string, SpeakerRole> };
     notes?: string[];
     // Ready-made Asked Questions and AI Notes; the Transcript's roles must be given.
@@ -189,11 +192,12 @@ const demoSet: DemoSetCandidate[] = [
     interviews: [
       {
         days: -12,
+        time: "10:30",
         transcript: { file: "transcript-elif-kaya.vtt", roles: { Ayşe: "interviewer", Elif: "candidate" } },
         notes: ["Profiler ile performans sorununu bulma adımlarını iyi sıraladı", "Mobil görünümü nasıl test ettiklerini sormayı unuttum"],
         ai: elifKaya,
       },
-      { days: 6, notes: ["Canlı kodlama: küçük bir form bileşeni"] },
+      { days: 6, time: "10:00", notes: ["Canlı kodlama: küçük bir form bileşeni"] },
     ],
     questions: [
       "Sanal listeyi neden seçtiniz, başka ne denediniz?",
@@ -209,11 +213,12 @@ const demoSet: DemoSetCandidate[] = [
     interviews: [
       {
         days: -6,
+        time: "15:00",
         transcript: { file: "transcript-mert-aydin.txt", roles: { Ayşe: "interviewer", Mert: "candidate" } },
         notes: ["Flink kontrol noktası süresini neden beş dakika seçtiklerini sor"],
         ai: mertAydin,
       },
-      { days: 1 },
+      { days: 1, time: "14:00" },
     ],
     notes: ["CV'deki Kafka akışının ölçeğini sor"],
     questions: [
@@ -228,14 +233,15 @@ const demoSet: DemoSetCandidate[] = [
     role: "DevOps Mühendisi",
     cv: { file: "cv-selin-ozturk.pdf", fileName: "Selin_Ozturk_CV.pdf" },
     interviews: [
-      { days: -20, notes: ["Ön görüşme: maaş beklentisi ve başlama tarihi konuşuldu"] },
+      { days: -20, time: "09:30", notes: ["Ön görüşme: maaş beklentisi ve başlama tarihi konuşuldu"] },
       {
         days: -4,
+        time: "13:00",
         transcript: { file: "transcript-selin-ozturk.txt", roles: { Ayşe: "interviewer", Selin: "candidate" } },
         notes: ["Kesinti sonrası alınan önlemleri somut anlattı"],
         ai: selinOzturk,
       },
-      { days: 14 },
+      { days: 6, time: "10:00" },
     ],
     questions: [
       "Kademeli dağıtımda geri dönüş kararını kim veriyor?",
@@ -247,7 +253,7 @@ const demoSet: DemoSetCandidate[] = [
     id: "demo-candidate-burak",
     name: "Burak Çelik",
     role: "Mobil Geliştirici",
-    interviews: [{ days: 9 }, { days: null }],
+    interviews: [{ days: 6, time: "15:30" }, { days: null }],
     notes: ["CV henüz gelmedi, işe alım ekibinden iste"],
     questions: ["Hem iOS hem Android için aynı kodu kullandınız mı?"],
   },
@@ -258,8 +264,8 @@ function addSetCandidate(db: DatabaseSync, today: Today, now: Now, demo: DemoSet
   // Saved Questions come first, so the ready-made Asked Questions can be linked to them.
   for (const text of demo.questions) addSavedQuestion(db, { candidateId: candidate.id, text });
   for (const plan of demo.interviews) {
-    const date = plan.days === null ? undefined : shiftDays(today(), plan.days);
-    const interview = addInterview(db, today, { candidateId: candidate.id, date });
+    const date = plan.days === null ? undefined : shiftDays(today().day, plan.days);
+    const interview = addInterview(db, today, { candidateId: candidate.id, date, time: plan.time });
     // Notes and the Transcript are dated the day of the Interview, or today for a Planned one.
     const written = daysBefore(now, Math.max(0, -(plan.days ?? 0)));
     if (plan.transcript) {

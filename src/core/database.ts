@@ -215,6 +215,8 @@ const migrations: string[] = [
   // The Transcript file exactly as the Interviewer chose it, so a Candidate export holds the
   // original. NULL for a Transcript imported before this column existed.
   `ALTER TABLE transcript ADD COLUMN original BLOB;`,
+  // The time of day an Interview starts, HH:MM, or NULL when none was given.
+  `ALTER TABLE interview ADD COLUMN time TEXT;`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

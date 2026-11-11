@@ -52,7 +52,7 @@ The switch protects the MCP connection. Like everything in the app (ADR 0001), t
 | Tool | Arguments | Returns |
 |---|---|---|
 | `list_candidates` | none | Every Candidate, newest first, with id, name, role, the time they were added, and their number of Interviews. |
-| `get_candidate` | `candidateId` | One Candidate's overview: the CV's file name, upload time, and page count (or `null`); each Interview in order with its number, date, and Planned flag, and its Transcript's file name, format, number of segments, and whether the Speaker Mapping is confirmed (or `null`); and the number of Interviewer Notes and Saved Questions. No full texts. |
+| `get_candidate` | `candidateId` | One Candidate's overview: the CV's file name, upload time, and page count (or `null`); each Interview in order with its number, date, time, and Planned flag, and its Transcript's file name, format, number of segments, and whether the Speaker Mapping is confirmed (or `null`); and the number of Interviewer Notes and Saved Questions. No full texts. |
 | `get_interviewer_notes` | `candidateId`, optional `interviewId` | The Interviewer Notes, newest save first. With `interviewId`, only that Interview's notes and the untagged ones. |
 | `get_saved_questions` | `candidateId` | The Saved Questions in the Interviewer's order. |
 | `get_ai_notes` | `interviewId` | The Interview's AI Notes, newest generation first. Each has the AI's statement, the Interviewer's correction (or `null`), its Review State, its Stale flag, and its Evidence: exact quotes with the Transcript segment number. Dismissed notes are included, marked `dismissed`. |

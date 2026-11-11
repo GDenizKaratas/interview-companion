@@ -13,9 +13,10 @@ export function interviewNameOf(text: Text, number: number): string {
   return ordinals[String(number)] ?? fill(text.interviews.numbered, { number: String(number) });
 }
 
-// "First interview · 2026-11-20 · planned", "Second interview · no date".
+// "First interview · 2026-11-20 14:00 · planned", "Second interview · no date".
 export function interviewLabel(text: Text, interview: Interview): string {
   const name = interviewName(text, interview);
   if (interview.date === null) return `${name} · ${text.interviews.noDate}`;
-  return interview.planned ? `${name} · ${interview.date} · ${text.interviews.planned}` : `${name} · ${interview.date}`;
+  const when = interview.time === null ? interview.date : `${interview.date} ${interview.time}`;
+  return interview.planned ? `${name} · ${when} · ${text.interviews.planned}` : `${name} · ${when}`;
 }
