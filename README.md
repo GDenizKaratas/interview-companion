@@ -2,112 +2,115 @@
 
 [Türkçe](README.tr.md)
 
-Interview Companion keeps everything about a Candidate in one place: the CV, the Interviews, their Transcripts, your notes, and your questions. An AI can take notes from a Transcript for you, and each note comes with the Candidate's exact words, so you can check it in one click. The AI is your note-taker. It does not score anyone, and every decision is yours. The app runs on your own computer, and all of its data stays in one folder there.
+**Your interviews in one place.** Stop racing to take notes during an Interview, and stop searching recordings afterwards for what the Candidate said. Interview Companion keeps each Candidate's CV, Interviews, Transcripts, your notes, and your questions together, and an AI takes notes from the Transcript for you.
 
-![The Candidate list with the Interview calendar](docs/images/home.png)
-*The Candidate list, with today's and this week's Interviews in the calendar.*
+- **Every note stands next to the Candidate's own words.** Each line the AI writes rests on a quote from the Transcript; if the quote is not in the Transcript word for word, the app does not save the line. A quote shows that the Candidate said it, not that it is true.
+- **You decide.** The AI takes notes. It does not score, rank, or decide about anyone.
+- **Your data stays on your computer.** There is no account, and the app has no server. It is free and open source.
 
-All names, CVs, and Transcripts in this repository and its screenshots are fictional. Terms in capitals, such as Candidate or Transcript, are defined in [GLOSSARY.md](GLOSSARY.md).
+![One Candidate's Workspace: the Transcript on the left, questions in the middle, notes and the AI's Interview notes on the right](docs/images/workspace.png)
+*One Candidate's Workspace: the CV and Transcript, your questions, your notes, and the Interview notes the AI took, on one screen. The screenshots show the Turkish interface; the app is also in English.*
 
-## What you can do today
+Every name, CV, and Transcript in this repository and its screenshots is fictional.
 
-### Add Candidates and plan Interviews
+## How you use it, in six steps
 
-- Add one Candidate, or drop many CVs (PDF) at once. The app reads each name from the CV, and you can correct it before saving.
-- Give each Candidate a role. Keep a list of Role Questions for a role, and each new Candidate with that role gets a copy.
-- Plan Interviews for several Candidates at once: pick a day and a first time, then tick the Candidates.
-- See today's and this week's Interviews in a calendar. Order the Candidate list by a column, filter it by role, or show only the Candidates with no Interview yet.
+The **?** button in the app shows the same six steps.
 
-![Adding many CVs at once](docs/images/add-many.png)
-*Many CVs at once: the names come from the CVs.*
+1. **Add a Candidate.** A name and a role are enough. With many Candidates, drop their CVs together; the names are read from the CVs.
+2. **Upload the CV.** A PDF that contains text.
+3. **Add an Interview.** With its date and time. You can plan Interviews for several Candidates at once; all of them show in the calendar.
+4. **Upload the Transcript.** After the Interview, the text of the meeting. Teams and Zoom give this file; the guide in the app, **How do I get a Transcript?**, says how.
+5. **Confirm the speakers.** Who is the Candidate, who is the Interviewer? The AI does nothing until you confirm.
+6. **Check the notes.** The AI drafts them, with quotes. You confirm what matches, and correct or dismiss what does not.
 
-### Work on one Candidate
+![A note about the Candidate and the two quotes it rests on](docs/images/interview-notes.png)
+*A click on a note opens the quotes it rests on; one more click shows the place in the Transcript.*
 
-- One screen per Candidate, the Workspace, shows the CV, the Transcript of each Interview, your notes, and your questions side by side.
-- Import a Transcript as WebVTT (`.vtt`, which Teams and Zoom produce) or as plain text with `Speaker: text` lines.
-- You confirm who is speaking: one Candidate and at least one Interviewer. The AI waits until you have.
-- Write your own notes and questions. Each question shows whether it was asked in an Interview, was looked for and not found, or is planned. If you mark it yourself, your mark wins.
-- Search the CV and all Transcripts for a word, optionally only in what the Candidate said. Every result is an exact excerpt that opens where it came from.
+## What you need
 
-![One Candidate's Workspace](docs/images/workspace.png)
-*One Candidate's Workspace: CV, Transcript, notes, and questions together.*
-
-### Let the AI take notes
-
-- **Interview notes**, in two tabs. **Questions and answers** lists the questions asked in the Interview, each with a short account of the answer. **Notes about the Candidate** lists short notes. Every line carries the quotes it was written from, and the app saves it only if each quote appears word for word in the Transcript.
-- You confirm, correct, or dismiss each note, and you can mark a question and its answer as wrong.
-- Suggested Questions for the next Interview, which you can copy into your own list.
-- A Candidate Brief: one page about the Candidate, with the quotes behind each point.
-
-![The AI's Interview notes with their quotes](docs/images/interview-notes.png)
-*Interview notes: each line with the Candidate's own words, ready for you to check.*
-
-### Everything else
-
-- Export a Candidate as a zip file and import it into another copy of the app.
-- The interface is in Turkish and English.
-- Demo data with eleven fictional Candidates lets you try every screen without any work.
+- **Setup:** done once, with a few commands ([below](#setup)). If you do not use a terminal, ask a technical colleague. Tried on macOS; not tried on Windows or Linux.
+- **A Transcript:** Microsoft Teams (work or school account) and Zoom (paid plan) give a file with the speakers' names. Google Meet offers transcripts in a short list of languages for now, and Turkish was not on it on 2026-11-11 ([Google's help page](https://support.google.com/meet/answer/12849897)). For other cases, the guide explains recording the Interview with the Candidate's consent and turning it into text on your computer.
+- **For the AI,** one of the two ways below. Everything else in the app works without AI.
 
 ## Two ways to use the AI
 
-1. **With an Anthropic API key.** Save the key in the app. The app calls the model only when you press a button, and it says beforehand what it will send.
-2. **Without a key, through Claude Desktop or Claude Code.** Connect it to the app once over MCP, an open standard that lets an AI application use another program's data. Then simply ask, for example: "What did Selin Öztürk say about Terraform?" Claude reads the app's data live, on your computer; nothing is copied or uploaded again. The answer comes with the quote it rests on and where it is from (the CV, or which Interview's Transcript), and it says so when something is written in the CV but was not talked about, or is not there at all. If you allow it, Claude saves the notes it writes into the app, where they are checked like the app's own.
+| | With an API key | With Claude Desktop or Claude Code (MCP) |
+|---|---|---|
+| What you need | An API key from Anthropic (paid by use), saved in the app once | Claude Desktop or Claude Code on your computer, connected to the app once. No API key |
+| How you use it | You press a button in the Workspace | You ask in Claude about a Candidate by name: "What did Selin Öztürk say about Terraform?" |
+| What leaves your computer | When you press the button, the data named beside the button goes to Anthropic | What Claude reads goes to the model Claude uses |
+| Where the result appears | In the Interview notes card of the Workspace | In the Claude chat; with **Allow saving here** on, the notes, questions, and Candidate Brief also appear in the app |
 
-Over MCP, the AI application can read, and, with your permission, save its own notes, questions, and Candidate Brief. It has no tool to delete or change Candidates, Interviews, CVs, Transcripts, or your notes. Setup takes a few minutes: see [docs/mcp.md](docs/mcp.md).
+Connected over MCP, Claude reads the app's data directly; you copy nothing. The answer comes with its quote and where the quote is from: the CV, or which Interview. It says so when something is written in the CV but was not talked about in an Interview, or is not there at all. Claude can read, and with your permission save only what it wrote itself; it cannot delete or change Candidates, Interviews, CVs, Transcripts, or your notes. To connect, press **Use with MCP** in the app; details are in [docs/mcp.md](docs/mcp.md).
 
-## Getting a Transcript
+## What else is there
 
-- Microsoft Teams (work or school account) and Zoom (paid plan) can give a WebVTT file with speaker names, which the app imports.
-- Google Meet makes transcripts only in a short list of languages, and Turkish was not on it on 2026-11-11 ([Google's help page](https://support.google.com/meet/answer/12849897)).
-- Otherwise, record the call with the Candidate's consent and turn the recording into text with a speech-to-text tool on your computer.
+- The **Candidates** list with a role filter, one-click sorting, today's and this week's Interviews, and the **Interview calendar**.
+- **Role questions** for each role: every new Candidate of that role gets a copy.
+- **My questions**: each shows whether it was asked in an Interview; your own mark comes before what the AI found.
+- Search across the CV and every Transcript; each result is a quote and leads to its place.
+- Suggested Questions for the next Interview; you add the ones you want to your list.
+- Export a Candidate as a file and import it into another copy of the app.
+- Turkish and English interface; eleven demo Candidates to try it with.
 
-The app has a guide for this, **How do I get a Transcript?**, next to the Transcript import. Its facts and sources are in [docs/research/getting-a-transcript.md](docs/research/getting-a-transcript.md).
+<details>
+<summary>More screenshots</summary>
 
-![The Transcript guide](docs/images/guide-transcript.png)
-*The guide in the app: the way to a Transcript for each meeting tool.*
+![The Candidates list and the Interview calendar](docs/images/home.png)
+*Candidates and the Interview calendar: who you meet today, at first glance.*
 
-## Run it
+![Adding many CVs at once: seven CVs and the names read from them](docs/images/add-many.png)
+*Many CVs at once: you do not type the names.*
 
-You need [Node.js](https://nodejs.org) 24 or later and git. No API key is needed.
+![The guide "How do I get a Transcript?"](docs/images/guide-transcript.png)
+*The Transcript guide: the way for each meeting tool, and what to do before you record.*
+
+</details>
+
+## What it deliberately does not do
+
+- It does not score, rank, or compare Candidates.
+- The AI decides nothing.
+- It does not join or record meetings. You bring the Transcript.
+- It has no cloud account. The AI works only when you ask, with your own key or your own Claude application.
+
+## Before you use real data
+
+Interview data is personal data. Before you add a real Candidate, make sure of three things: the Candidate agreed to the recording and to AI processing of their data; your organization allows this data on your computer; the AI provider you use is approved for it. The app does not encrypt its data folder: use an encrypted disk, and delete a Candidate when you are done. In Türkiye, the Personal Data Protection Law (No. 6698) applies. This is not legal advice; ask the person responsible for personal data in your organization.
+
+## Setup
+
+You need [Node.js](https://nodejs.org) 24 or later and git.
 
 ```sh
 git clone https://github.com/GDenizKaratas/interview-companion.git
 cd interview-companion
 npm install
-npm run demo     # optional: loads the eleven fictional demo Candidates
+npm run demo     # optional: loads the eleven demo Candidates
 npm start
 ```
 
-Then open http://localhost:3000. The interface starts in Turkish; the language menu at the top right switches it to English. Running `npm run demo` again gives a fresh demo set and leaves your other Candidates alone.
+Then open http://localhost:3000 in a browser. The interface starts in Turkish; the language menu is at the top right. Running `npm run demo` again gives a fresh demo set and leaves your own Candidates alone.
 
-The data is in the `data/` folder inside the project: one SQLite file and the CV files. Set `DATA_DIR` to use another folder. The app listens only on your own computer (`127.0.0.1`) and has no login.
+## On the agenda
 
-## What it deliberately does not do
+Plans, not promises. The reasons and sources are in [docs/research/what-could-come-next.md](docs/research/what-could-come-next.md).
 
-- It does not score, rank, or compare Candidates.
-- The AI decides nothing. It writes notes; you read the quotes and judge.
-- It has no cloud account. There is no sign-up and no server of ours; a model is called only when you ask, with your own key or your own Claude application.
-- It does not record or join meetings. You bring the Transcript.
+**Next**
 
-## Before you use real data
+- A calendar file (`.ics`) for Planned Interviews: one import and they are in Google Calendar or Outlook.
+- Pasting a Transcript, and reading `.srt` and `.docx` files.
+- Printing a Candidate Brief or saving it as a PDF.
+- Importing Candidates from a spreadsheet (CSV).
 
-Interview data is personal data. Before you add a real Candidate, check that the Candidate agreed to the recording and to AI processing, that your organization allows this data on your computer, and that your AI provider is approved for it. With an API key the data goes to Anthropic; over MCP it goes to the model your Claude application uses. The app does not encrypt its data folder, so use an encrypted disk, and delete a Candidate when you no longer need their data.
+**Needs more work**
 
-## What could come next
-
-Ideas, not promises. The reasoning and sources are in [docs/research/what-could-come-next.md](docs/research/what-could-come-next.md).
-
-| Idea | What it would give | What it needs |
-|---|---|---|
-| Calendar file (`.ics`) for Planned Interviews | Planned Interviews in Google Calendar or Outlook with one import | A file export; no account or permission |
-| Paste a Transcript; read `.srt` and `.docx` | Fewer steps from a meeting tool or a speech-to-text tool | Two more readers and a text box |
-| Speech-to-text on the computer for a recording | A Transcript when no meeting tool gives one, with the voice staying on the computer | A local model such as Whisper and a way to tell speakers apart; quality on Turkish is untested |
-| Print or PDF of a Candidate Brief | A brief to bring to a meeting | A print layout |
-| CSV import of Candidates | Many Candidates from a spreadsheet or an applicant tracking system | A column mapping and checks |
-| Heavy: fetch Transcripts automatically from Google Meet, Teams, or Zoom | No file to download | Meet has no Turkish transcripts. Before other people can connect, each vendor has its own review: Google's verification for sensitive data, a Microsoft administrator's permission, Zoom Marketplace review. Their "transcript ready" messages are made for a server on the internet, not for an app on your computer. |
-| Heavy: live Google Calendar sync | Interviews appear and update by themselves | The same Google verification; the `.ics` file gives most of the value |
-| Heavy: one database shared by several people over a network drive | A team working on the same Candidates | SQLite advises against a database file on a network drive; this needs a real server with accounts and permissions |
+- Turning a recording into text on the computer: the voice does not leave it. Quality on Turkish is not yet tried.
+- Fetching Transcripts from Teams or Zoom automatically: each company has its own approval process.
+- Live sync with Google Calendar: it needs Google's verification; the calendar file gives most of the value.
+- A team working on the same Candidates together: it needs a real server with accounts and permissions.
 
 ## For developers
 
-One TypeScript project with three modules: `core` holds every rule and all data access; `web` (a local server and the browser interface) and `mcp` (the MCP server) only call `core`. Run `npm test`, `npm run typecheck`, and `npm run lint`. More in [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/adr](docs/adr), [docs/mcp.md](docs/mcp.md), and [CONTRIBUTING.md](CONTRIBUTING.md). License: [MIT](LICENSE).
+One TypeScript project with three modules: `core` holds every rule and all data access; `web` (a local server and the browser interface) and `mcp` (the MCP server) only call `core`. The data is in `data/` inside the project folder (one SQLite file and the CV files); set `DATA_DIR` for another folder and `PORT` for another port. The app listens only on your own computer (`127.0.0.1`). Run `npm test`, `npm run typecheck`, and `npm run lint`. The terms used in code and documents are in [GLOSSARY.md](GLOSSARY.md); more in [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/adr](docs/adr), [docs/mcp.md](docs/mcp.md), and [CONTRIBUTING.md](CONTRIBUTING.md). License: [MIT](LICENSE).
