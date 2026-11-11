@@ -168,6 +168,7 @@ function InterviewDialog({
     <>
     <ModalDialog
       title={interview ? interviewLabel(text, languageCode, interview) : t.addTitle}
+      kind="form"
       wide
       onCancel={onClose}
       actions={

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { openMcpGuide } from "./McpGuideDialog.tsx";
+import { DialogCloseButton } from "./ModalDialog.tsx";
 import { useText } from "./text.tsx";
 
 // Fired on window when the API key is saved or removed, so the AI Notes panel can update.
@@ -130,6 +131,7 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
           <p>{t.confirmRemoveDetail}</p>
         </ConfirmDialog>
       )}
+      <DialogCloseButton onClose={onClose} />
     </dialog>
   );
 }

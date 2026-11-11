@@ -19,6 +19,7 @@ export function ExportCandidateDialog({ candidate, onClose }: { candidate: Candi
   return (
     <ModalDialog
       title={t.title}
+      kind="info"
       onCancel={onClose}
       actions={
         <>

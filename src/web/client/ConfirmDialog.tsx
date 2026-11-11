@@ -27,6 +27,7 @@ export function ConfirmDialog({ title, children, confirmLabel, cancelLabel, onCo
   return (
     <ModalDialog
       title={title}
+      kind="question"
       onCancel={onCancel}
       actions={
         <>

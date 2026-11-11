@@ -3,6 +3,7 @@ import { api, ApiError, type RoleQuestion, type RoleQuestionList } from "./api.t
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { onEnter } from "./enter-key.ts";
 import { fill } from "./languages.ts";
+import { DialogCloseButton } from "./ModalDialog.tsx";
 import { useText } from "./text.tsx";
 
 interface RoleQuestionsDialogProps {
@@ -33,6 +34,8 @@ export function RoleQuestionsDialog({ initialRole, onClose }: RoleQuestionsDialo
 
   useEffect(() => {
     dialog.current?.showModal();
+    // The × comes first in this dialog, so the focus is put in the first field by hand.
+    dialog.current?.querySelector<HTMLElement>("input, textarea")?.focus();
     // Earlier roles are only suggestions; if they cannot be loaded, a role can still be written.
     api.listCandidateRoles().then(setRoles, () => setRoles([]));
   }, []);
@@ -115,6 +118,8 @@ export function RoleQuestionsDialog({ initialRole, onClose }: RoleQuestionsDialo
         onClose();
       }}
     >
+      {/* First, so it can stay at the top while this dialog scrolls; the effect above gives the focus to the first field. */}
+      <DialogCloseButton onClose={onClose} />
       <h2 id="role-questions-title">{t.title}</h2>
       <label className="role-questions-role">
         {t.roleLabel}
