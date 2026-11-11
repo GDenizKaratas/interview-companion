@@ -194,6 +194,7 @@ describe("Importing a Candidate", () => {
 describe("Importing a Candidate who is already in the app", () => {
   it("asks first: without a choice it is refused and nothing changes", async () => {
     const candidate = await elif();
+    const count = source.listCandidates().length;
     const zip = source.exportCandidate(candidate.id).bytes;
     source.addSavedQuestion({ candidateId: candidate.id, text: "Bu kopyada yazılan soru?" });
     const before = contentOf(source, candidate.id);
@@ -203,11 +204,12 @@ describe("Importing a Candidate who is already in the app", () => {
     await expect(refused).rejects.toThrow(PreconditionError);
     await expect(refused).rejects.toMatchObject({ reason: "candidateExists" });
     expect(contentOf(source, candidate.id)).toEqual(before);
-    expect(source.listCandidates()).toHaveLength(5);
+    expect(source.listCandidates()).toHaveLength(count);
   });
 
   it("replaces them when the Interviewer chooses to, and removes the earlier CV file", async () => {
     const candidate = await elif();
+    const count = source.listCandidates().length;
     const exported = contentOf(source, candidate.id);
     const zip = source.exportCandidate(candidate.id).bytes;
     source.addSavedQuestion({ candidateId: candidate.id, text: "Bu kopyada yazılan soru?" });
@@ -217,19 +219,20 @@ describe("Importing a Candidate who is already in the app", () => {
 
     expect(imported.candidate.id).toBe(candidate.id);
     expect(contentOf(source, candidate.id)).toEqual(exported);
-    expect(source.listCandidates()).toHaveLength(5);
+    expect(source.listCandidates()).toHaveLength(count);
     expect(readdirSync(join(sourceDir, "cv-files"))).toHaveLength(cvFiles);
   });
 
   it("keeps both when the Interviewer chooses to, as two separate Candidates", async () => {
     const candidate = await elif();
+    const count = source.listCandidates().length;
     const zip = source.exportCandidate(candidate.id).bytes;
 
     const imported = await source.importCandidate(zip, { ifExists: "keepBoth" });
 
     expect(imported.candidate.id).not.toBe(candidate.id);
     expect(contentOf(source, imported.candidate.id)).toEqual(contentOf(source, candidate.id));
-    expect(source.listCandidates()).toHaveLength(6);
+    expect(source.listCandidates()).toHaveLength(count + 1);
   });
 });
 

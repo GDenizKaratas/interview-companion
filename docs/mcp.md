@@ -136,7 +136,7 @@ Claude Desktop does not always see the `PATH` of your terminal. If the server do
 
 ## Manual check with the demo data in Claude Code
 
-1. Load the demo set, if it is not there yet: `npm run demo`. It adds Deniz Yılmaz, with a CV and a First Interview with a Transcript, and four more fictional Candidates.
+1. Load the demo set, if it is not there yet: `npm run demo`. It adds Deniz Yılmaz, with a CV and a First Interview with a Transcript, and ten more fictional Candidates.
    It also adds a Planned Second Interview without a Transcript. The demo's Speaker Mapping starts unconfirmed.
 2. Add the server to Claude Code as in [Setup](#setup), start `claude`, and check with `/mcp` that `interview-companion` is connected.
 3. Ask: "What did the candidate Deniz Yılmaz say about Redis? Use Interview Companion." Claude Code calls `list_candidates`, then `search_evidence` with `query` "Redis". Expect the CV line "Arka plan işleri için Redis ve BullMQ kullanan bir kuyruk kurdum." on page 1, the skills line on page 2, and segment 4 of the First Interview, with the label Deniz and no confirmed role: "Arka plan işleri. Fatura ve iade işlemlerini kuyruğa alıyorduk, bunun için Redis ve BullMQ kullandık. …"

@@ -97,3 +97,72 @@ const selin = makePdf([
   ],
 ]);
 writeFileSync(new URL("cv-selin-ozturk.pdf", import.meta.url), selin);
+
+const can = makePdf([
+  [
+    { text: "ÖZGEÇMİŞ", size: 11 },
+    { text: "Can Arslan", size: 26 },
+    { text: "Kıdemli Backend Mühendisi", size: 14 },
+    { text: "Bursa · can.arslan@example.com", size: 10 },
+    { text: "", size: 10 },
+    { text: "Deneyim", size: 14 },
+    { text: "Backend Mühendisi, Kurgu Sigorta A.Ş. (2020 - bugün)", size: 11 },
+    { text: "Poliçe servislerini Java ve Spring Boot ile geliştirdim.", size: 10 },
+    { text: "Hasar bildirimlerini RabbitMQ ile işleyen bir kuyruk yapısı kurdum.", size: 10 },
+    { text: "Yavaş PostgreSQL sorgularını indekslerle iyileştirip yanıt süresini yarıya indirdim.", size: 10 },
+    { text: "Yazılım Geliştirici, Örnek Yazılım Ltd. (2017 - 2020)", size: 11 },
+    { text: "Kurumsal müşteriler için REST API'ler yazdım.", size: 10 },
+    { text: "", size: 10 },
+    { text: "Eğitim", size: 14 },
+    { text: "Bilgisayar Mühendisliği, Hayali Üniversitesi (2013 - 2017)", size: 11 },
+    { text: "", size: 10 },
+    { text: "Yetenekler", size: 14 },
+    { text: "Java, Spring Boot, PostgreSQL, RabbitMQ, Docker, Kubernetes", size: 10 },
+  ],
+]);
+writeFileSync(new URL("cv-can-arslan.pdf", import.meta.url), can);
+
+const zeynep = makePdf([
+  [
+    { text: "ÖZGEÇMİŞ", size: 11 },
+    { text: "Zeynep Şahin", size: 26 },
+    { text: "Kıdemli Backend Mühendisi", size: 14 },
+    { text: "İstanbul · zeynep.sahin@example.com", size: 10 },
+    { text: "", size: 10 },
+    { text: "Deneyim", size: 14 },
+    { text: "Kıdemli Yazılım Mühendisi, Hayali Seyahat A.Ş. (2021 - bugün)", size: 11 },
+    { text: "Otel rezervasyon servisini Go ile yeniden yazdım.", size: 10 },
+    { text: "Servisler arası iletişimi gRPC'ye taşıyan çalışmayı yönettim.", size: 10 },
+    { text: "Üç kişilik bir ekibin teknik liderliğini yaptım.", size: 10 },
+    { text: "Backend Geliştirici, Kurgu Medya Ltd. (2018 - 2021)", size: 11 },
+    { text: "İçerik yönetim sistemi için önbellek katmanını Redis ile kurdum.", size: 10 },
+    { text: "", size: 10 },
+    { text: "Eğitim", size: 14 },
+    { text: "Matematik Mühendisliği, Kurgu Teknik Üniversitesi (2014 - 2018)", size: 11 },
+    { text: "", size: 10 },
+    { text: "Yetenekler", size: 14 },
+    { text: "Go, gRPC, PostgreSQL, Redis, Kafka, AWS", size: 10 },
+  ],
+]);
+writeFileSync(new URL("cv-zeynep-sahin.pdf", import.meta.url), zeynep);
+
+const ece = makePdf([
+  [
+    { text: "ÖZGEÇMİŞ", size: 11 },
+    { text: "Ece Yıldız", size: 26 },
+    { text: "Frontend Geliştirici", size: 14 },
+    { text: "Antalya · ece.yildiz@example.com", size: 10 },
+    { text: "", size: 10 },
+    { text: "Deneyim", size: 14 },
+    { text: "Frontend Geliştirici, Örnek Turizm A.Ş. (2022 - bugün)", size: 11 },
+    { text: "Rezervasyon arayüzünü Vue'dan React ve TypeScript'e taşıdım.", size: 10 },
+    { text: "Tasarım ekibiyle ortak bir bileşen kütüphanesi kurdum.", size: 10 },
+    { text: "Sayfa açılış süresini kod bölme ile iki saniyenin altına indirdim.", size: 10 },
+    { text: "Web Geliştirici, Hayali Ajans (2020 - 2022)", size: 11 },
+    { text: "Kurumsal siteler ve kampanya sayfaları geliştirdim.", size: 10 },
+    { text: "", size: 10 },
+    { text: "Yetenekler", size: 14 },
+    { text: "React, TypeScript, Vue, Next.js, Storybook, CSS", size: 10 },
+  ],
+]);
+writeFileSync(new URL("cv-ece-yildiz.pdf", import.meta.url), ece);

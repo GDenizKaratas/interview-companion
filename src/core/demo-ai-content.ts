@@ -6,11 +6,16 @@ import type { ProposedAiNote, ProposedAskedQuestion } from "./ai-provider.ts";
 // is fictional.
 
 // An Asked Question names the Saved Question it matches by its text, since ids are made on load.
-export type DemoAskedQuestion = Omit<ProposedAskedQuestion, "savedQuestionId"> & { savedQuestion?: string };
+// `markedWrong` is the Interviewer's mark on an Answer Summary they found wrong, set after saving.
+export type DemoAskedQuestion = Omit<ProposedAskedQuestion, "savedQuestionId"> & { savedQuestion?: string; markedWrong?: true };
+
+// `review` is what the Interviewer did with the note after it was saved; without it the note stays
+// Unreviewed.
+export type DemoAiNote = ProposedAiNote & { review?: "confirmed" | "dismissed" | { correction: string } };
 
 export interface DemoAiContent {
   askedQuestions: DemoAskedQuestion[];
-  aiNotes: ProposedAiNote[];
+  aiNotes: DemoAiNote[];
 }
 
 const q = (segmentNumber: number, quote: string) => ({ segmentNumber, quote });
@@ -76,11 +81,13 @@ export const selinOzturk: DemoAiContent = {
       question: "Maliyet takibi",
       questionEvidence: q(16, "Maliyetleri takip ediyor musunuz?"),
       answerSummary:
-        "Harcamaları ekip etiketleriyle ayırdıklarını; kullanılmayan diskleri temizleyerek bulut faturasını yüzde on beş düşürdüklerini söyledi.",
+        // Wrong on purpose: the Candidate said fifteen percent. The Interviewer marked it wrong.
+        "Harcamaları ekip etiketleriyle ayırdıklarını; kullanılmayan diskleri temizleyerek bulut faturasını yarı yarıya düşürdüklerini söyledi.",
       answerEvidence: [
         q(17, "her ekibin harcamasını etiketlerle ayırıyoruz"),
         q(17, "bulut faturasını yüzde on beş düşürdük"),
       ],
+      markedWrong: true,
     },
     {
       question: "Nöbet düzeni",
@@ -97,6 +104,8 @@ export const selinOzturk: DemoAiContent = {
     {
       statement: "Kırk kadar servisi Kubernetes üzerinde çalıştırdıklarını ve altyapıyı Terraform ile yönettiklerini söyledi.",
       evidence: [q(2, "hepsi Kubernetes üzerinde çalışıyor"), q(2, "Altyapıyı Terraform ile yönetiyoruz.")],
+
+      review: "confirmed",
     },
     {
       statement: "Sertifika kaynaklı kesintiden sonra otomatik yenileme ve erken uyarı alarmı eklediklerini anlattı.",
@@ -105,6 +114,11 @@ export const selinOzturk: DemoAiContent = {
     {
       statement: "Kesintiyi ilk müşteri destek ekibinin bildirdiğini söyledi; alarmları bağlantı hatalarını görmüyormuş.",
       evidence: [q(8, "Bizim alarmımız yalnızca sunucu hatalarına bakıyordu, bağlantı hatalarını görmüyordu.")],
+
+      review: {
+        correction:
+          "Kesintiyi ilk müşteri destek ekibi bildirmiş; alarmlar bağlantı hatalarını görmüyormuş. Sonra ödeme sayfasını dışarıdan her dakika çağıran bir kontrol eklemişler.",
+      },
     },
     {
       statement: "Otomatik geri dönüş için Argo Rollouts kullandıklarını belirtti.",
@@ -113,6 +127,8 @@ export const selinOzturk: DemoAiContent = {
     {
       statement: "Kullanılmayan diskleri temizleyerek bulut maliyetini yüzde on beş azalttıklarını söyledi.",
       evidence: [q(17, "Geçen yıl kullanılmayan diskleri temizleyerek bulut faturasını yüzde on beş düşürdük.")],
+
+      review: "dismissed",
     },
   ],
 };
