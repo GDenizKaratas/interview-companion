@@ -114,6 +114,17 @@ export function copyRoleQuestions(db: DatabaseSync, candidate: Candidate): Saved
   });
 }
 
+// Records as copied each question of the Candidate's role whose text is that of a role question the
+// Candidate already has, such as one an imported Candidate brought with them, so it is neither
+// offered nor copied again.
+export function recordRoleQuestionCopies(db: DatabaseSync, candidate: Candidate, texts: string[]): void {
+  const brought = new Set(texts);
+  const record = db.prepare("INSERT INTO role_question_copy (role_question_id, candidate_id) VALUES (?, ?)");
+  for (const question of notCopiedTo(db, candidate)) {
+    if (brought.has(question.text)) record.run(question.id, candidate.id);
+  }
+}
+
 function notCopiedTo(db: DatabaseSync, candidate: Candidate): RoleQuestion[] {
   const rows = db
     .prepare(

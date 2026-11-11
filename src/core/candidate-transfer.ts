@@ -4,8 +4,10 @@ import { join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { z } from "zod";
-import { confirmAiNote, correctAiNote, dismissAiNote, listAiNotes, saveCheckedAiNotes } from "./ai-notes.ts";
-import { listAskedQuestions, saveCheckedAskedQuestions } from "./asked-questions.ts";
+import type { AiSource } from "./ai-notes.ts";
+import type { ProposedQuestionEvidence } from "./ai-provider.ts";
+import { confirmAiNote, correctAiNote, dismissAiNote, listAiNotes, restoreAiNote, saveCheckedAiNotes } from "./ai-notes.ts";
+import { askedQuestionRunOf, listAskedQuestions, saveCheckedAskedQuestions } from "./asked-questions.ts";
 import { getCandidateBrief, saveCandidateBrief } from "./candidate-brief.ts";
 import { deleteCandidateIfExists, getCandidate, insertCandidateRow, requireCandidate, type Candidate } from "./candidates.ts";
 import { acceptCv, getCv, readCvFile, storeCv, storedFileName, type AcceptedCv } from "./cv.ts";
@@ -14,7 +16,9 @@ import { InvalidInputError, PreconditionError } from "./errors.ts";
 import { addInterviewerNotes, listInterviewerNotes, type Now } from "./interviewer-notes.ts";
 import { addInterview, listInterviews, type Today } from "./interviews.ts";
 import { insertSavedQuestion, listSavedQuestions } from "./saved-questions.ts";
+import { recordRoleQuestionCopies } from "./role-questions.ts";
 import {
+  acceptedTimesOf,
   dismissSuggestedQuestion,
   listSuggestedQuestions,
   markSuggestionAccepted,
@@ -62,7 +66,7 @@ const version = 1;
 const maxUnpackedBytes = 200 * 1024 * 1024;
 
 const time = z.iso.datetime();
-const source = z.enum(["app", "aiClient"]);
+const source = z.enum(["app", "aiClient"]) satisfies z.ZodType<AiSource>;
 const segmentQuote = z.object({ segmentNumber: z.number().int(), quote: z.string() });
 const sourceQuote = z.discriminatedUnion("source", [
   z.object({ source: z.literal("cv"), page: z.number().int(), quote: z.string() }),
@@ -160,14 +164,13 @@ export function exportCandidate(db: DatabaseSync, folder: string, today: Today, 
 
   const cv = getCv(db, candidateId);
   const cvEntry = cv ? { file: addFile("cv.pdf", "cv", readCvFile(db, folder, candidateId)!), uploadedAt: cv.uploadedAt } : null;
-  const checkedOf = db.prepare("SELECT saved_question_id FROM asked_question_checked WHERE interview_id = ?");
-  const runSourceOf = db.prepare("SELECT source FROM asked_question_run WHERE interview_id = ?");
 
   const interviews = listInterviews(db, today, candidateId).map((interview): Manifest["interviews"][number] => {
     const transcript = getTranscript(db, interview.id);
     if (!transcript) return { id: interview.id, date: interview.date, transcript: null, aiNotes: [], askedQuestions: null };
     const file = readTranscriptFile(db, interview.id)!;
     const asked = listAskedQuestions(db, interview.id);
+    const run = askedQuestionRunOf(db, interview.id);
     return {
       id: interview.id,
       date: interview.date,
@@ -187,8 +190,8 @@ export function exportCandidate(db: DatabaseSync, folder: string, today: Today, 
       })),
       askedQuestions: asked && {
         foundAt: asked.foundAt,
-        source: (runSourceOf.get(interview.id) as { source: "app" | "aiClient" }).source,
-        checkedSavedQuestionIds: (checkedOf.all(interview.id) as { saved_question_id: string }[]).map((row) => row.saved_question_id),
+        source: run!.source,
+        checkedSavedQuestionIds: run!.checkedIds,
         questions: asked.askedQuestions.map((question) => ({
           question: question.question,
           questionEvidence: question.questionEvidence,
@@ -200,14 +203,7 @@ export function exportCandidate(db: DatabaseSync, folder: string, today: Today, 
     };
   });
 
-  const acceptedAt = new Map(
-    (
-      db.prepare("SELECT id, accepted_at FROM suggested_question WHERE candidate_id = ?").all(candidateId) as {
-        id: string;
-        accepted_at: string | null;
-      }[]
-    ).map((row) => [row.id, row.accepted_at]),
-  );
+  const acceptedAt = acceptedTimesOf(db, candidateId);
   const brief = getCandidateBrief(db, candidateId);
   const manifest: Manifest = {
     format,
@@ -301,7 +297,7 @@ export async function importCandidate(
     if (replace) deleteCandidateIfExists(db, candidateId);
     return insertCandidateRow(db, candidateId, manifest.candidate);
   };
-  const addContent = (candidate: Candidate) => rebuild(db, today, candidate.id, manifest, files, problems);
+  const addContent = (candidate: Candidate) => rebuild(db, today, candidate, manifest, files, problems);
   let candidate: Candidate;
   if (cv) {
     const replaced = replacedCvFile === undefined ? [] : [replacedCvFile];
@@ -324,6 +320,8 @@ function readZip(zip: Uint8Array): { manifest: Manifest; files: Record<string, U
     new InvalidInputError("candidateExport", "format", "This file is not a Candidate export from Interview Companion.");
   let files: Record<string, Uint8Array>;
   try {
+    // The sizes come from the zip's headers. fflate never writes more than a header says, so they
+    // bound what unpacking can take, even when a header is false.
     let unpacked = 0;
     files = unzipSync(zip, {
       filter: (file) => {
@@ -354,10 +352,15 @@ function readZip(zip: Uint8Array): { manifest: Manifest; files: Record<string, U
   }
   const manifest = manifestSchema.safeParse(parsed);
   if (!manifest.success) throw notAnExport();
-  // Every file the JSON names must be listed, and every listed file must be in the zip.
+  // The JSON lists exactly the other files in the zip, and every file it names is listed.
   const listed = new Set(manifest.data.files.map((file) => file.path));
+  const inZip = Object.keys(files).filter((path) => path !== manifestPath && !path.endsWith("/"));
   const named = [manifest.data.cv?.file, ...manifest.data.interviews.map((interview) => interview.transcript?.file)];
-  if (named.some((path) => path !== undefined && !listed.has(path)) || [...listed].some((path) => !files[path])) {
+  if (
+    named.some((path) => path !== undefined && !listed.has(path)) ||
+    [...listed].some((path) => !files[path]) ||
+    inZip.some((path) => !listed.has(path))
+  ) {
     throw notAnExport();
   }
   return { manifest: manifest.data, files };
@@ -380,11 +383,12 @@ function at(time: string): Now {
 function rebuild(
   db: DatabaseSync,
   today: Today,
-  candidateId: string,
+  candidate: Candidate,
   manifest: Manifest,
   files: Record<string, Uint8Array>,
   problems: ImportProblem[],
 ): void {
+  const candidateId = candidate.id;
   const interviewIds = new Map<string, string>();
   for (const interview of manifest.interviews) {
     interviewIds.set(interview.id, addInterview(db, today, { candidateId, date: interview.date }).id);
@@ -398,8 +402,16 @@ function rebuild(
     const saved = insertSavedQuestion(db, candidateId, question.text, question.origin, question.createdAt, newInterview(question.interviewId));
     savedIds.set(question.id, saved.id);
   }
+  // The role's questions the Candidate brought copies of count as copied, so they are not offered again.
+  recordRoleQuestionCopies(
+    db,
+    candidate,
+    manifest.savedQuestions.filter((question) => question.origin === "role").map((question) => question.text),
+  );
 
-  // Lines saved together, at one time for one Interview, are added together, so they keep their order.
+  // Lines saved together, at one time for one Interview, are added together, so they keep their
+  // order. A note never holds a line break (adding splits lines, editing joins them), so joining
+  // them with line breaks gives the same notes back.
   const notes = manifest.interviewerNotes;
   for (let i = 0; i < notes.length; ) {
     let end = i + 1;
@@ -436,9 +448,7 @@ function rebuild(
     const brief = manifest.candidateBrief;
     saveCandidateBrief(db, at(brief.savedAt), candidateId, {
       text: brief.text,
-      evidence: brief.evidence.map((evidence) =>
-        evidence.source === "cv" ? evidence : { ...evidence, interviewId: interviewIds.get(evidence.interviewId) ?? evidence.interviewId },
-      ),
+      evidence: brief.evidence.map((evidence) => withNewInterviewId(evidence, interviewIds)),
     });
   }
 }
@@ -481,7 +491,9 @@ function rebuildTranscript(
 }
 
 // Saves each generation of AI Notes through the quote check, oldest first, then gives each note
-// its Review State through the same operations the Interviewer uses.
+// its Review State through the same operations the Interviewer uses. Saving a generation replaces
+// the Unreviewed notes before it, so an older note that is Unreviewed (dismissed and shown again)
+// is kept dismissed until every generation is saved, then shown again.
 function rebuildAiNotes(
   db: DatabaseSync,
   interviewId: string,
@@ -489,24 +501,28 @@ function rebuildAiNotes(
   notes: Manifest["interviews"][number]["aiNotes"],
   problems: ImportProblem[],
 ): void {
-  for (const generation of generationsOf(notes, (note) => `${note.generatedAt}|${note.source}`)) {
+  const generations = generationsOf(notes, (note) => `${note.generatedAt}|${note.source}`);
+  const showAgain: string[] = [];
+  for (const [i, generation] of generations.entries()) {
     const { generatedAt, source } = generation[0]!;
     saveCheckedAiNotes(db, at(generatedAt), interviewId, generation, source);
-    const saved = listAiNotes(db, interviewId).filter((note) => note.generatedAt === generatedAt && note.reviewState === "unreviewed");
+    const saved = listAiNotes(db, interviewId).filter(
+      (note) => note.generatedAt === generatedAt && note.source === source && note.reviewState === "unreviewed",
+    );
     for (const note of generation) {
-      const match = saved.findIndex(
-        (candidate) => candidate.statement === note.statement.trim() && sameQuotes(candidate.evidence, note.evidence),
-      );
-      if (match === -1) {
+      const match = takeMatch(saved, (candidate) => candidate.statement === note.statement.trim() && sameQuotes(candidate.evidence, note.evidence));
+      if (!match) {
         problems.push({ kind: "aiNote", interviewNumber: number, text: note.statement });
         continue;
       }
-      const { id } = saved.splice(match, 1)[0]!;
-      if (note.correction !== null && note.reviewState !== "confirmed") correctAiNote(db, id, note.correction);
-      if (note.reviewState === "confirmed") confirmAiNote(db, id);
-      if (note.reviewState === "dismissed") dismissAiNote(db, id);
+      if (note.correction !== null && note.reviewState !== "confirmed") correctAiNote(db, match.id, note.correction);
+      if (note.reviewState === "confirmed") confirmAiNote(db, match.id);
+      const olderUnreviewed = note.reviewState === "unreviewed" && i < generations.length - 1;
+      if (note.reviewState === "dismissed" || olderUnreviewed) dismissAiNote(db, match.id);
+      if (olderUnreviewed) showAgain.push(match.id);
     }
   }
+  for (const id of showAgain) restoreAiNote(db, id);
 }
 
 function rebuildAskedQuestions(
@@ -526,14 +542,14 @@ function rebuildAskedQuestions(
   const result = saveCheckedAskedQuestions(db, at(asked.foundAt), interviewId, proposed, asked.source, checked);
   const saved = [...result.askedQuestions];
   for (const question of proposed) {
-    const match = saved.findIndex(
+    const match = takeMatch(
+      saved,
       (candidate) =>
         candidate.question === question.question.trim() &&
         sameQuotes([candidate.questionEvidence], [question.questionEvidence]) &&
         sameQuotes(candidate.answerEvidence, question.answerEvidence),
     );
-    if (match === -1) problems.push({ kind: "askedQuestion", interviewNumber: number, text: question.question });
-    else saved.splice(match, 1);
+    if (!match) problems.push({ kind: "askedQuestion", interviewNumber: number, text: question.question });
   }
 }
 
@@ -551,30 +567,29 @@ function rebuildSuggestedQuestions(
   const mapped = suggestions.map((suggestion) => ({
     ...suggestion,
     question: suggestion.text,
-    evidence: suggestion.evidence.map((evidence) =>
-      evidence.source === "cv" ? evidence : { ...evidence, interviewId: interviewIds.get(evidence.interviewId) ?? evidence.interviewId },
-    ),
+    evidence: suggestion.evidence.map((evidence) => withNewInterviewId(evidence, interviewIds)),
   }));
   for (const generation of generationsOf(mapped, (suggestion) => `${suggestion.generatedAt}|${suggestion.source}`)) {
     const { generatedAt, source } = generation[0]!;
     saveCheckedSuggestedQuestions(db, today, at(generatedAt), candidateId, generation, source);
     const saved = listSuggestedQuestions(db, candidateId).filter(
-      (suggestion) => suggestion.generatedAt === generatedAt && !suggestion.accepted,
+      (suggestion) => suggestion.generatedAt === generatedAt && suggestion.source === source && !suggestion.accepted,
     );
     for (const suggestion of generation) {
-      const match = saved.findIndex(
+      const match = takeMatch(
+        saved,
         (candidate) =>
           candidate.text === suggestion.text.trim() &&
           candidate.reason === suggestion.reason.trim() &&
-          JSON.stringify(candidate.evidence) === JSON.stringify(suggestion.evidence),
+          candidate.evidence.length === suggestion.evidence.length &&
+          candidate.evidence.every((evidence, i) => sameSourceQuote(evidence, suggestion.evidence[i]!)),
       );
-      if (match === -1) {
+      if (!match) {
         problems.push({ kind: "suggestedQuestion", interviewNumber: null, text: suggestion.text });
         continue;
       }
-      const { id } = saved.splice(match, 1)[0]!;
-      if (suggestion.acceptedAt !== null) markSuggestionAccepted(db, id, suggestion.acceptedAt);
-      if (suggestion.dismissed) dismissSuggestedQuestion(db, id);
+      if (suggestion.acceptedAt !== null) markSuggestionAccepted(db, match.id, suggestion.acceptedAt);
+      if (suggestion.dismissed) dismissSuggestedQuestion(db, match.id);
     }
   }
 }
@@ -599,6 +614,23 @@ function generationsOf<T extends { generatedAt: string }>(items: T[], key: (item
   const groups = new Map<string, T[]>();
   for (const item of items) groups.set(key(item), [...(groups.get(key(item)) ?? []), item]);
   return [...groups.values()].sort((a, b) => a[0]!.generatedAt.localeCompare(b[0]!.generatedAt));
+}
+
+// Takes the first item that matches out of the list and returns it, so a duplicate matches the next one.
+function takeMatch<T>(items: T[], matches: (item: T) => boolean): T | undefined {
+  const index = items.findIndex(matches);
+  return index === -1 ? undefined : items.splice(index, 1)[0];
+}
+
+// A CV or Transcript quote with the Interview id of this app. An id the zip does not know stays as
+// it is, so its quote is not found.
+function withNewInterviewId<T extends ProposedQuestionEvidence>(evidence: T, interviewIds: Map<string, string>): T {
+  return evidence.source === "cv" ? evidence : { ...evidence, interviewId: interviewIds.get(evidence.interviewId) ?? evidence.interviewId };
+}
+
+function sameSourceQuote(a: ProposedQuestionEvidence, b: ProposedQuestionEvidence): boolean {
+  if (a.source === "cv") return b.source === "cv" && a.page === b.page && a.quote === b.quote;
+  return b.source === "transcript" && a.interviewId === b.interviewId && a.segmentNumber === b.segmentNumber && a.quote === b.quote;
 }
 
 function sameQuotes(a: { segmentNumber: number; quote: string }[], b: { segmentNumber: number; quote: string }[]): boolean {

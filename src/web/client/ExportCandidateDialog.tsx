@@ -1,16 +1,11 @@
-import { useEffect, useRef } from "react";
 import { api, type Candidate } from "./api.ts";
+import { ModalDialog } from "./ModalDialog.tsx";
 import { useText } from "./text.tsx";
 
 // Says what a Candidate export holds and that it is personal data, then downloads the zip.
 export function ExportCandidateDialog({ candidate, onClose }: { candidate: Candidate; onClose: () => void }) {
   const { text } = useText();
   const t = text.exportCandidate;
-  const dialog = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
 
   // The server sends the zip as a download, so following the link keeps the Workspace open.
   function download() {
@@ -22,31 +17,25 @@ export function ExportCandidateDialog({ candidate, onClose }: { candidate: Candi
   }
 
   return (
-    <dialog
-      ref={dialog}
-      className="confirm-dialog"
-      aria-labelledby="export-candidate-title"
-      onCancel={(event) => {
-        event.preventDefault();
-        onClose();
-      }}
+    <ModalDialog
+      title={t.title}
+      onCancel={onClose}
+      actions={
+        <>
+          <button type="button" className="quiet" onClick={onClose}>
+            {t.cancel}
+          </button>
+          <button type="button" onClick={download}>
+            {t.download}
+          </button>
+        </>
+      }
     >
-      <h2 id="export-candidate-title">{t.title}</h2>
-      <div className="confirm-dialog-subject">
-        <p>
-          <strong>{candidate.name}</strong> · {candidate.role}
-        </p>
-        <p>{t.contents}</p>
-        <p className="personal-data-warning">{t.personalData}</p>
-      </div>
-      <div className="confirm-dialog-actions">
-        <button type="button" className="quiet" onClick={onClose}>
-          {t.cancel}
-        </button>
-        <button type="button" onClick={download}>
-          {t.download}
-        </button>
-      </div>
-    </dialog>
+      <p>
+        <strong>{candidate.name}</strong> · {candidate.role}
+      </p>
+      <p>{t.contents}</p>
+      <p className="personal-data-warning">{t.personalData}</p>
+    </ModalDialog>
   );
 }

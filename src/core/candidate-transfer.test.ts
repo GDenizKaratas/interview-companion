@@ -237,6 +237,45 @@ describe("Checks on import", () => {
     expect(target.listMissingRoleQuestions(imported.candidate.id).map((q) => q.text)).toEqual(["Bu ekipteki rol sorusu?"]);
   });
 
+  it("counts imported copies of the role's questions as copied, so they are not offered or added again", async () => {
+    source.addRoleQuestion({ role: "Frontend Geliştirici", text: "Ortak rol sorusu?" });
+    const candidate = await elif();
+    target.addRoleQuestion({ role: "Frontend Geliştirici", text: "Ortak rol sorusu?" });
+    target.addRoleQuestion({ role: "Frontend Geliştirici", text: "Yalnız burada olan soru?" });
+
+    const imported = await target.importCandidate(source.exportCandidate(candidate.id).bytes);
+
+    const id = imported.candidate.id;
+    expect(target.listMissingRoleQuestions(id).map((q) => q.text)).toEqual(["Yalnız burada olan soru?"]);
+    target.addRoleQuestionsToCandidates("Frontend Geliştirici");
+    expect(target.listSavedQuestions(id).filter((q) => q.text === "Ortak rol sorusu?")).toHaveLength(1);
+  });
+
+  it("keeps an older AI Note that was dismissed and shown again, Unreviewed, next to newer ones", async () => {
+    const candidate = await elif();
+    const [first] = source.listInterviews(candidate.id);
+    const older = source.listAiNotes(first!.id);
+    source.allowAiClientWrites(true);
+    const evidence = older[0]!.evidence;
+    source.dismissAiNote(older[1]!.id);
+    source.saveAiNotesFromClient(first!.id, [{ statement: "Yeni nesil not.", evidence }]);
+    source.restoreAiNote(older[1]!.id);
+    const before = contentOf(source, candidate.id);
+    expect(before.interviews[0]!.aiNotes.map((n) => n.reviewState)).toEqual(["unreviewed", "unreviewed"]);
+
+    const imported = await target.importCandidate(source.exportCandidate(candidate.id).bytes);
+
+    expect(imported.problems).toEqual([]);
+    expect(contentOf(target, imported.candidate.id)).toEqual(before);
+  });
+
+  it("refuses a zip with a file its JSON does not list", async () => {
+    const candidate = await elif();
+    const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);
+
+    await expect(target.importCandidate(repack({ ...files, "extra.txt": strToU8("?") }, manifest))).rejects.toThrow(InvalidInputError);
+  });
+
   it("checks every AI quote again, and reports what fails instead of saving it", async () => {
     const candidate = await fullElif();
     const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);

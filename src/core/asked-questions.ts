@@ -269,6 +269,19 @@ export function listAskedQuestions(db: DatabaseSync, interviewId: string): Asked
   };
 }
 
+// Who found the Interview's Asked Questions and which Saved Questions were checked, for an export,
+// or null when they were never found.
+export function askedQuestionRunOf(db: DatabaseSync, interviewId: string): { source: AiSource; checkedIds: string[] } | null {
+  const run = db.prepare("SELECT source FROM asked_question_run WHERE interview_id = ?").get(interviewId) as
+    | { source: AiSource }
+    | undefined;
+  if (!run) return null;
+  const checked = db
+    .prepare("SELECT saved_question_id FROM asked_question_checked WHERE interview_id = ?")
+    .all(interviewId) as unknown as { saved_question_id: string }[];
+  return { source: run.source, checkedIds: checked.map((row) => row.saved_question_id) };
+}
+
 // Where one Saved Question stands in one Interview whose questions were found: the Asked Question
 // it matched, or null when it was not found in that Transcript.
 export interface SavedQuestionCheck {

@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { api, ApiError, type CandidateImport, type ExistingCandidate } from "./api.ts";
+import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { interviewNameOf } from "./interview-names.ts";
 import type { Text } from "./languages.ts";
+import { ModalDialog } from "./ModalDialog.tsx";
 import { candidatePath, navigate } from "./navigation.ts";
 import { useText } from "./text.tsx";
 
@@ -48,7 +50,7 @@ export function ImportCandidate() {
         {state.step === "importing" ? t.importing : t.open}
       </button>
       {state.step === "failed" && (
-        <Modal
+        <ModalDialog
           title={t.failedTitle}
           onCancel={() => setState({ step: "idle" })}
           actions={
@@ -58,31 +60,22 @@ export function ImportCandidate() {
           }
         >
           <p role="alert">{failureMessage(text, state.error)}</p>
-        </Modal>
+        </ModalDialog>
       )}
       {state.step === "exists" && (
-        <Modal
+        <ConfirmDialog
           title={t.exists.title}
+          confirmLabel={t.exists.replace}
+          cancelLabel={t.exists.cancel}
+          otherAction={{ label: t.exists.keepBoth, onClick: () => void importFile(state.file, "keepBoth") }}
+          onConfirm={() => void importFile(state.file, "replace")}
           onCancel={() => setState({ step: "idle" })}
-          actions={
-            <>
-              <button type="button" className="quiet" autoFocus onClick={() => setState({ step: "idle" })}>
-                {t.exists.cancel}
-              </button>
-              <button type="button" className="secondary" onClick={() => void importFile(state.file, "keepBoth")}>
-                {t.exists.keepBoth}
-              </button>
-              <button type="button" className="danger" onClick={() => void importFile(state.file, "replace")}>
-                {t.exists.replace}
-              </button>
-            </>
-          }
         >
           <p>{t.exists.detail}</p>
-        </Modal>
+        </ConfirmDialog>
       )}
       {state.step === "report" && (
-        <Modal
+        <ModalDialog
           title={t.report.title}
           onCancel={() => navigate(candidatePath(state.result.candidate.id))}
           actions={
@@ -106,31 +99,9 @@ export function ImportCandidate() {
               </li>
             ))}
           </ul>
-        </Modal>
+        </ModalDialog>
       )}
     </>
-  );
-}
-
-function Modal({ title, children, actions, onCancel }: { title: string; children: ReactNode; actions: ReactNode; onCancel: () => void }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
-  return (
-    <dialog
-      ref={dialog}
-      className="confirm-dialog"
-      aria-labelledby="import-candidate-title"
-      onCancel={(event) => {
-        event.preventDefault();
-        onCancel();
-      }}
-    >
-      <h2 id="import-candidate-title">{title}</h2>
-      <div className="confirm-dialog-subject">{children}</div>
-      <div className="confirm-dialog-actions">{actions}</div>
-    </dialog>
   );
 }
 

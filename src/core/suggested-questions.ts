@@ -285,7 +285,7 @@ export function acceptSuggestedQuestion(db: DatabaseSync, now: Now, id: string):
   requireOpen(suggestion);
   const acceptedAt = now().toISOString();
   return inTransaction(db, () => {
-    db.prepare("UPDATE suggested_question SET accepted_at = ? WHERE id = ?").run(acceptedAt, id);
+    markSuggestionAccepted(db, id, acceptedAt);
     return insertSavedQuestion(db, suggestion.candidateId, suggestion.text, "suggestion", acceptedAt);
   });
 }
@@ -294,6 +294,14 @@ export function acceptSuggestedQuestion(db: DatabaseSync, now: Now, id: string):
 // whose copy is among their Saved Questions already.
 export function markSuggestionAccepted(db: DatabaseSync, id: string, acceptedAt: string): void {
   db.prepare("UPDATE suggested_question SET accepted_at = ? WHERE id = ?").run(acceptedAt, id);
+}
+
+// When each of the Candidate's accepted suggestions was accepted, by id, for an export.
+export function acceptedTimesOf(db: DatabaseSync, candidateId: string): Map<string, string> {
+  const rows = db
+    .prepare("SELECT id, accepted_at FROM suggested_question WHERE candidate_id = ? AND accepted_at IS NOT NULL")
+    .all(candidateId) as unknown as { id: string; accepted_at: string }[];
+  return new Map(rows.map((row) => [row.id, row.accepted_at]));
 }
 
 // Changes the question before it is accepted. The reason and Evidence stay as the AI gave them.
