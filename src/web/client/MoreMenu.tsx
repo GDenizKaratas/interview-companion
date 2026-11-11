@@ -8,8 +8,8 @@ export interface MenuItem {
 }
 
 // The "more" button of the Workspace bar: the things done rarely, one click further away.
-// Escape or a click elsewhere closes the menu; choosing an item closes it first, so a dialog the
-// item opens gives focus back to the button.
+// Escape or a click elsewhere closes the menu. Choosing an item closes it before the item runs,
+// so a dialog the item opens is not left with an open menu behind it.
 export function MoreMenu({ label, items }: { label: string; items: MenuItem[] }) {
   const [open, setOpen] = useState(false);
   const menu = useRef<HTMLDivElement>(null);
@@ -20,21 +20,24 @@ export function MoreMenu({ label, items }: { label: string; items: MenuItem[] })
     function onPointer(event: PointerEvent) {
       if (!menu.current?.contains(event.target as Node)) setOpen(false);
     }
+    // Listened for on the document: a browser that does not focus a clicked button would not
+    // send the key to the menu itself.
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      event.stopPropagation();
+      setOpen(false);
+      button.current?.focus();
+    }
     document.addEventListener("pointerdown", onPointer);
-    return () => document.removeEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey, true);
+    };
   }, [open]);
 
   return (
-    <div
-      ref={menu}
-      className="more-menu"
-      onKeyDown={(event) => {
-        if (event.key !== "Escape" || !open) return;
-        event.stopPropagation();
-        setOpen(false);
-        button.current?.focus();
-      }}
-    >
+    <div ref={menu} className="more-menu">
       <button ref={button} type="button" className="icon-button" aria-label={label} title={label} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
         <svg viewBox="0 0 16 16" aria-hidden="true">
           <circle cx="3" cy="8" r="1.4" fill="currentColor" />

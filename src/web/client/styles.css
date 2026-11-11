@@ -1279,6 +1279,19 @@ button.more-menu-item.danger {
 }
 
 .panel-sources { grid-area: sources; }
+
+/* Each source scrolls by itself, so switching tabs keeps the place in both. */
+.panel-sources .panel-body {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+}
+
+.panel-sources .tab-pane:not([hidden]) {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
 .panel-notes { grid-area: notes; }
 .panel-ai { grid-area: ai; }
 .panel-questions { grid-area: questions; }
@@ -1372,7 +1385,13 @@ button.more-menu-item.danger {
       "sources ai";
   }
 
-  /* Less room in the bar: the role and the label of the add button give way first. */
+  /* Less room in the bar: the role gives way first, the selector narrows, and then the bar wraps. */
+  .workspace-bar {
+    height: auto;
+    min-height: var(--workspace-bar);
+    flex-wrap: wrap;
+  }
+
   .workspace-bar .role {
     display: none;
   }
@@ -1569,9 +1588,13 @@ select.note-tag,
   margin: 0;
 }
 
+/* Over the end of the state line, on the card's own background, like the buttons above it. */
 .question > .question-meta {
   grid-row: 2;
   justify-self: end;
+  position: relative;
+  padding-left: 0.5rem;
+  background: var(--surface);
   opacity: 0;
 }
 
@@ -1585,7 +1608,7 @@ select.note-tag,
 }
 
 /* The same for a note: its time stays, its tag and buttons wait for the pointer or focus. */
-.note .note-meta > :not(time):not(.note-time) {
+.note .note-meta > :not(time) {
   opacity: 0;
 }
 
@@ -2366,15 +2389,6 @@ mark {
 .textLayer mark {
   color: transparent;
   background: rgb(255 200 0 / 0.45);
-}
-
-/* Suggested Questions: collapsed under the Saved Questions, with the AI look of AI Notes. */
-.suggestions {
-  margin-top: 0.65rem;
-}
-
-.suggestions-toggle {
-  font-weight: 600;
 }
 
 .suggestions-body {

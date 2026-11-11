@@ -184,7 +184,9 @@ export function SavedQuestions({
 
   const hiddenInterview = interviews.find((interview) => interview.id === hiddenInterviewId);
 
-  const askedCount = states.filter((state) => state.state === "asked").length;
+  // Counted over the questions on screen, so the line agrees with the list under it.
+  const stateOf = (question: SavedQuestion) => states.find((state) => state.savedQuestionId === question.id)?.state ?? "planned";
+  const askedCount = questions?.filter((question) => stateOf(question) === "asked").length ?? 0;
 
   return (
     <>
@@ -201,14 +203,24 @@ export function SavedQuestions({
             }}
           >
             {key === "saved" ? t.savedTab : t.suggestions.open}
-            {key === "saved" && questions && <span className="range-count">{questions.length}</span>}
           </button>
         ))}
-        {states.length > 0 && <span className="asked-count">{fill(t.askedCount, { asked: String(askedCount), total: String(states.length) })}</span>}
+        {tab === "saved" && questions && questions.length > 0 && (
+          <span className="asked-count">{fill(t.askedCount, { asked: String(askedCount), total: String(questions.length) })}</span>
+        )}
       </div>
       <div className="tab-pane" hidden={tab !== "suggested"}>
         {suggestionsOpened && (
-          <SuggestedQuestions candidateId={candidateId} interviews={interviews} sourceVersion={sourceVersion} onAccepted={() => void reload()} />
+          <SuggestedQuestions
+            candidateId={candidateId}
+            interviews={interviews}
+            sourceVersion={sourceVersion}
+            onAccepted={() => {
+              void reload();
+              // The new question needs its state, too.
+              setChangeCount((count) => count + 1);
+            }}
+          />
         )}
       </div>
       <div className="tab-pane" hidden={tab !== "saved"}>
@@ -265,7 +277,7 @@ export function SavedQuestions({
               isLast={index === questions.length - 1}
               interviews={interviews}
               checks={checks.filter((check) => check.savedQuestionId === question.id)}
-              state={states.find((state) => state.savedQuestionId === question.id)?.state ?? "planned"}
+              state={stateOf(question)}
               onOpenExchange={setExchange}
               onMove={(position) => change(() => api.moveSavedQuestion(question.id, position, shownFilter)).then(() => {})}
               onEdit={(newText) => change(() => api.editSavedQuestion(question.id, newText))}

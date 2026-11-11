@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError, type EvidenceResult, type EvidenceSearch as SearchResult, type EvidenceSources, type Interview } from "./api.ts";
 import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
@@ -35,24 +35,49 @@ export function EvidenceSearch({
   const [shownResetKey, setShownResetKey] = useState(resetKey);
   if (shownResetKey !== resetKey) {
     setShownResetKey(resetKey);
+    setSearching(false);
     setSearch(undefined);
     setError(undefined);
     setOpen(false);
   }
 
+  // Only the newest search may show its answer: an earlier one that arrives late would not match
+  // the options chosen since, or could bring back results a reset has dropped.
+  const latestSearch = useRef(0);
+  const section = useRef<HTMLElement>(null);
+
   async function runSearch(options = { sources, candidateOnly }) {
+    const thisSearch = ++latestSearch.current;
     setSearching(true);
     setError(undefined);
     setOpen(true);
     try {
-      setSearch(await api.searchEvidence(candidateId, query, options.sources, options.candidateOnly));
+      const found = await api.searchEvidence(candidateId, query, options.sources, options.candidateOnly);
+      if (thisSearch !== latestSearch.current) return;
+      setSearch(found);
     } catch (failure) {
+      if (thisSearch !== latestSearch.current) return;
       setSearch(undefined);
       setError(failure instanceof ApiError && failure.rule === "required" ? t.required : t.failed);
     } finally {
-      setSearching(false);
+      if (thisSearch === latestSearch.current) setSearching(false);
     }
   }
+
+  // A search still on its way when the results are reset belongs to the old state.
+  useEffect(() => {
+    latestSearch.current++;
+  }, [resetKey]);
+
+  // A click anywhere else closes the results; the search itself is kept.
+  useEffect(() => {
+    if (!open) return;
+    function onPointer(event: PointerEvent) {
+      if (!section.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointer);
+    return () => document.removeEventListener("pointerdown", onPointer);
+  }, [open]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -95,6 +120,7 @@ export function EvidenceSearch({
 
   return (
     <section
+      ref={section}
       className="evidence-search"
       aria-label={t.label}
       onKeyDown={(event) => {

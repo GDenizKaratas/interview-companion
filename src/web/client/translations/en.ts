@@ -73,7 +73,6 @@ const text = {
     briefCommandCopied: "Copied",
     briefCommandCopyFailed: "Could not copy",
     exportCandidate: "Export",
-    exportCandidateHint: "Download everything about this Candidate as one zip",
   },
   exportCandidate: {
     title: "Export this Candidate",
@@ -270,14 +269,14 @@ const text = {
   },
   search: {
     label: "Search the CV and Transcripts",
-    placeholder: "Search the CV and Transcripts, such as Redis",
+    placeholder: "Search the CV and Transcripts, then press Enter",
     searching: "Searching…",
     closeResults: "Close the results",
     clear: "Clear",
     sourcesLabel: "Sources",
     sources: { all: "CV and Transcripts", cv: "CV", transcripts: "Transcripts" },
     candidateOnly: "Only what the Candidate said",
-    candidateOnlyHint: "Searches only Transcripts whose speakers are confirmed.",
+    candidateOnlyHint: "Leaves out what the Interviewer said. Works only in Transcripts whose speakers are confirmed.",
     // {places} is replaced by where the word was found, such as "CV · First interview".
     foundIn: "Found in: {places}",
     cv: "CV",
@@ -515,7 +514,7 @@ const text = {
       showAll: "Show all questions",
       // {interview} is replaced by the Interview's name.
       askedIn: "Asked in {interview}",
-      notFoundIn: "Not found in {interview}",
+      notFoundIn: "Not found in the Transcript of {interview}",
       notFoundHint: "Not found in this Transcript. It may have been asked in other words.",
       suggestions: {
         open: "Suggest questions",

@@ -72,7 +72,6 @@ const translation: TranslationFile = {
       briefCommandCopied: "Kopyalandı",
       briefCommandCopyFailed: "Kopyalanamadı",
       exportCandidate: "Dışa aktar",
-      exportCandidateHint: "Bu adayla ilgili her şeyi tek bir zip olarak indir",
     },
     exportCandidate: {
       title: "Bu adayı dışa aktar",
@@ -261,14 +260,14 @@ const translation: TranslationFile = {
     },
     search: {
       label: "CV ve transkriptlerde ara",
-      placeholder: "CV ve transkriptlerde ara, örneğin Redis",
+      placeholder: "CV ve transkriptlerde ara, sonra Enter",
       searching: "Aranıyor…",
       closeResults: "Sonuçları kapat",
       clear: "Temizle",
       sourcesLabel: "Kaynaklar",
       sources: { all: "CV ve transkriptler", cv: "CV", transcripts: "Transkriptler" },
       candidateOnly: "Sadece adayın sözleri",
-      candidateOnlyHint: "Yalnızca konuşmacıları onaylanmış transkriptlerde arar.",
+      candidateOnlyHint: "Görüşmecinin söylediklerini sonuçlardan çıkarır. Yalnızca konuşmacıları onaylanmış transkriptlerde çalışır.",
       foundIn: "Bulunduğu yer: {places}",
       cv: "CV",
       count: "{count} sonuç",
@@ -485,7 +484,7 @@ const translation: TranslationFile = {
         hiddenByFilter: "{interview} altına kaydedildi. Bir mülakat seçiliyken diğer mülakatların soruları gizlenir.",
         showAll: "Tüm soruları göster",
         askedIn: "Soruldu: {interview}",
-        notFoundIn: "Bulunamadı: {interview}",
+        notFoundIn: "{interview} transkriptinde bulunamadı",
         notFoundHint: "Bu transkriptte bulunamadı. Başka sözcüklerle sorulmuş olabilir.",
         suggestions: {
           open: "Soru öner",

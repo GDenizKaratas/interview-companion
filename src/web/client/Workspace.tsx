@@ -118,9 +118,17 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   async function handleInterviewDeleted() {
     setHighlight(undefined);
     setDeletedInterviews((count) => count + 1);
-    await loadInterviews(candidateId);
-    const next = await api.getDefaultInterview(candidateId).catch(() => null);
-    setInterviewId(next?.id ?? null);
+    // The new list and the new selection are set together, so no card ever sees the deleted id
+    // as selected without its Interview in the list.
+    try {
+      const [list, next] = await Promise.all([api.listInterviews(candidateId), api.getDefaultInterview(candidateId)]);
+      setInterviews(list);
+      setInterviewsFailed(false);
+      setInterviewId(next?.id ?? null);
+    } catch {
+      setInterviewsFailed(true);
+      setInterviewId(null);
+    }
     setTranscriptVersion((version) => version + 1);
   }
 

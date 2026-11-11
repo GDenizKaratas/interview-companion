@@ -121,8 +121,12 @@ function InterviewDialog({
     try {
       onSaved(interview ? await api.rescheduleInterview(interview.id, { date, time }) : await api.addInterview({ candidateId, date, time }));
     } catch (error) {
-      setSaveError(error);
-      setSaving(false);
+      // A 404 on a change means the Interview is already gone, as it does on a delete.
+      if (interview && error instanceof ApiError && error.status === 404) onDeleted?.();
+      else {
+        setSaveError(error);
+        setSaving(false);
+      }
     }
   }
 
