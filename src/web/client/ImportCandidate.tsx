@@ -18,7 +18,7 @@ type Step =
 
 // The Candidate list's Import button: choose a Candidate export, decide what happens to a
 // Candidate who is already here, and see what was not saved before opening the Workspace.
-export function ImportCandidate() {
+export function ImportCandidate({ className = "quiet", label }: { className?: string; label?: string }) {
   const { text } = useText();
   const t = text.importCandidate;
   const input = useRef<HTMLInputElement>(null);
@@ -46,8 +46,8 @@ export function ImportCandidate() {
   return (
     <>
       <input ref={input} type="file" accept="application/zip,.zip" hidden onChange={handleChosen} />
-      <button type="button" className="quiet" disabled={state.step === "importing"} onClick={() => input.current?.click()}>
-        {state.step === "importing" ? t.importing : t.open}
+      <button type="button" className={className} disabled={state.step === "importing"} onClick={() => input.current?.click()}>
+        {state.step === "importing" ? t.importing : (label ?? t.open)}
       </button>
       {state.step === "failed" && (
         <ModalDialog

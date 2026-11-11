@@ -104,8 +104,12 @@ export function deleteInterview(db: DatabaseSync, interviewId: string): void {
 // counts as later than the timed ones.
 export function getDefaultInterview(db: DatabaseSync, today: Today, candidateId: string): Interview | null {
   const interviews = listInterviews(db, today, candidateId);
-  const takenPlace = interviews.filter((interview) => interview.date !== null && !interview.planned);
-  return takenPlace.at(-1) ?? interviews.find((interview) => interview.planned) ?? interviews[0] ?? null;
+  return interviews.findLast(hasTakenPlace) ?? interviews.find((interview) => interview.planned) ?? interviews[0] ?? null;
+}
+
+// True for an Interview with a date that is not Planned. One without a date is neither.
+export function hasTakenPlace(interview: Interview): boolean {
+  return interview.date !== null && !interview.planned;
 }
 
 // Refuses with NotFoundError unless the Interview exists.

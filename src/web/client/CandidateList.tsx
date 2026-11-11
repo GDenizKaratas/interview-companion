@@ -1,40 +1,35 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
-import { api, ApiError, type CandidateOverview } from "./api.ts";
-import { cvRefusalMessage } from "./cv-refusal.ts";
+import { AddCandidateDialog } from "./AddCandidateDialog.tsx";
+import { api, type CandidateOverview, type DatedInterview, type Interview } from "./api.ts";
 import { CvPreviewDialog } from "./CvPreviewDialog.tsx";
+import { localDay, shortDay } from "./dates.ts";
 import { ExpandableCard } from "./ExpandableCard.tsx";
-import { ImportCandidate } from "./ImportCandidate.tsx";
+import { NoKeyGuide } from "./NoKeyGuide.tsx";
 import { InterviewCalendar } from "./InterviewCalendar.tsx";
 import { interviewName } from "./interview-names.ts";
+import { fill } from "./languages.ts";
 import { candidatePath, linkTo, navigate } from "./navigation.ts";
-import { fill, type Text } from "./languages.ts";
-import { NoKeyGuide } from "./NoKeyGuide.tsx";
 import { RoleQuestionsDialog } from "./RoleQuestionsDialog.tsx";
 import { useText } from "./text.tsx";
 
-// The home page: every Candidate in one table with the form to add one, and beside it the
-// calendar of all Interviews and how to use AI without an API key.
+type View = "planned" | "all";
+
+// The home page: the Candidates the Interviewer meets next, or all of them, in one table, and
+// beside it the calendar of all Interviews.
 export function CandidateList() {
   const { text } = useText();
   const [candidates, setCandidates] = useState<CandidateOverview[] | undefined>();
-  const [filter, setFilter] = useState("");
+  const [dated, setDated] = useState<DatedInterview[] | undefined>();
+  const [search, setSearch] = useState("");
+  // The view the Interviewer chose. Until they choose, the page decides.
+  const [chosenView, setChosenView] = useState<View | undefined>();
   // The Candidate whose CV is open over the list.
   const [cvOf, setCvOf] = useState<CandidateOverview["candidate"] | undefined>();
   const [roles, setRoles] = useState<string[]>([]);
   const [roleQuestionsOpen, setRoleQuestionsOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [loadError, setLoadError] = useState(false);
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("");
-  const [saveError, setSaveError] = useState<unknown>();
-  const [saving, setSaving] = useState(false);
-  // The optional CV. Choosing one fills the name box with core's guess.
-  const [cv, setCv] = useState<File | undefined>();
-  const cvInput = useRef<HTMLInputElement>(null);
-  // The last guess put in the name box. A name the Interviewer typed is never replaced.
-  const lastGuess = useRef("");
-  // Only the guess for the most recently chosen file may fill the box.
-  const guessFor = useRef<File | undefined>(undefined);
 
   useEffect(() => {
     loadCandidates();
@@ -42,7 +37,13 @@ export function CandidateList() {
   }, []);
 
   function loadCandidates() {
-    api.listCandidateOverviews().then(setCandidates, () => setLoadError(true));
+    Promise.all([api.listCandidateOverviews(), api.listDatedInterviews()]).then(
+      ([overviews, interviews]) => {
+        setCandidates(overviews);
+        setDated(interviews);
+      },
+      () => setLoadError(true),
+    );
   }
 
   // Earlier roles are only suggestions; if they cannot be loaded the form still works.
@@ -50,51 +51,18 @@ export function CandidateList() {
     api.listCandidateRoles().then(setRoles, () => {});
   }
 
-  function handleCvChosen(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    setCv(file);
-    setSaveError(undefined);
-    guessFor.current = file;
-    if (!file) return;
-    // The guess is only a suggestion; if it fails, the Interviewer types the name.
-    api.guessCandidateName(file).then(({ name: guess }) => {
-      if (guessFor.current !== file || guess === "") return;
-      setName((current) => (current.trim() === "" || current === lastGuess.current ? guess : current));
-      lastGuess.current = guess;
-    }, () => {});
-  }
-
-  function clearCv() {
-    setCv(undefined);
-    guessFor.current = undefined;
-    lastGuess.current = "";
-    if (cvInput.current) cvInput.current.value = "";
-  }
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setSaving(true);
-    setSaveError(undefined);
-    try {
-      if (cv) await api.createCandidateWithCv({ name, role }, cv);
-      else await api.createCandidate({ name, role });
-      loadCandidates();
-      loadRoles();
-      setName("");
-      setRole("");
-      clearCv();
-    } catch (error) {
-      setSaveError(error);
-    } finally {
-      setSaving(false);
-    }
-  }
-
   const t = text.home;
-  const needle = folded(filter.trim());
-  const shown = candidates?.filter(
+  // Candidates with a Planned Interview, the one who is met soonest first. Core gives the order.
+  const byId = new Map(candidates?.map((overview) => [overview.candidate.id, overview]));
+  const plannedIds = [...new Set(dated?.filter(({ interview }) => interview.planned).map(({ candidate }) => candidate.id))];
+  const planned = plannedIds.flatMap((id) => byId.get(id) ?? []);
+  // Opens on who comes next; with nothing Planned, on everyone, so the page is never empty.
+  const view = chosenView ?? (planned.length > 0 ? "planned" : "all");
+  const needle = folded(search.trim());
+  const shown = (view === "planned" ? planned : (candidates ?? [])).filter(
     ({ candidate }) => needle === "" || folded(candidate.name).includes(needle) || folded(candidate.role).includes(needle),
   );
+  const undated = candidates?.reduce((n, overview) => n + overview.interviews.filter((i) => i.date === null).length, 0) ?? 0;
 
   return (
     <main className="home">
@@ -104,73 +72,61 @@ export function CandidateList() {
             {text.candidates.title}
             {candidates && <span className="count">{candidates.length}</span>}
           </h1>
-          <input
-            type="search"
-            className="filter"
-            value={filter}
-            placeholder={t.filterPlaceholder}
-            aria-label={t.filterLabel}
-            onChange={(event) => setFilter(event.target.value)}
-          />
-          <button type="button" className="quiet" onClick={() => setRoleQuestionsOpen(true)}>
-            {text.roleQuestions.open}
-          </button>
-          <ImportCandidate />
+          <span className="section-actions">
+            <button type="button" className="secondary with-icon" title={text.roleQuestions.hint} onClick={() => setRoleQuestionsOpen(true)}>
+              <ListIcon />
+              {text.roleQuestions.open}
+            </button>
+            <AddButton onClick={() => setAdding(true)}>{text.candidates.add}</AddButton>
+          </span>
         </header>
-        <form className="candidate-form card" onSubmit={handleSubmit}>
-          <label>
-            {text.candidates.nameLabel}
-            <input value={name} onChange={(e) => setName(e.target.value)} />
-          </label>
-          <label>
-            {text.candidates.roleLabel}
-            <input value={role} onChange={(e) => setRole(e.target.value)} list="known-roles" autoComplete="off" />
-            <datalist id="known-roles">
-              {roles.map((knownRole) => (
-                <option key={knownRole} value={knownRole} />
-              ))}
-            </datalist>
-          </label>
-          {/* The browser's own file box speaks the system's language, so it stays hidden behind a button. */}
-          <div className="cv-choice">
-            <span>{text.candidates.cvLabel}</span>
-            <span className="cv-choice-row">
-              <input ref={cvInput} type="file" accept="application/pdf,.pdf" hidden onChange={handleCvChosen} />
-              {/* Once a file is chosen, the button shows its name; clicking it chooses another. */}
-              <button
-                type="button"
-                className="secondary cv-choose"
-                title={cv?.name}
-                onClick={() => cvInput.current?.click()}
-              >
-                {cv ? cv.name : text.candidates.cvChoose}
-              </button>
-              {cv && (
-                <button type="button" className="quiet" onClick={clearCv}>
-                  {text.candidates.cvRemove}
-                </button>
-              )}
-            </span>
-          </div>
-          <AddButton type="submit" disabled={saving}>
-            {text.candidates.add}
-          </AddButton>
-        </form>
-        {cv && saveError === undefined && <p className="form-hint">{text.candidates.cvHint}</p>}
-        {saveError !== undefined && <p className="error">{refusalMessage(text, saveError)}</p>}
         {loadError && <p className="error">{text.candidates.loadFailed}</p>}
         {candidates && candidates.length === 0 && <p className="empty">{text.candidates.empty}</p>}
-        {shown && candidates!.length > 0 && shown.length === 0 && <p className="empty">{t.noMatch}</p>}
-        {shown && shown.length > 0 && (
+        {candidates && candidates.length > 0 && (
+          <div className="candidate-tools">
+            <label className="search-field">
+              <SearchIcon />
+              <input
+                type="search"
+                value={search}
+                placeholder={t.searchPlaceholder}
+                aria-label={t.searchLabel}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </label>
+            <div className="view-choice" role="group" aria-label={t.views.label}>
+              {(["planned", "all"] as const).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={view === key}
+                  className={view === key ? "role-choice chosen" : "role-choice"}
+                  onClick={() => setChosenView(key)}
+                >
+                  {t.views[key]}
+                  <span className="view-count">{key === "planned" ? planned.length : candidates.length}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {candidates && candidates.length > 0 && shown.length === 0 && (
+          <p className="empty">
+            {needle !== "" ? t.noMatch : t.noPlanned}{" "}
+            {view === "planned" && (
+              <button type="button" className="link-button" onClick={() => setChosenView("all")}>
+                {t.showAll}
+              </button>
+            )}
+          </p>
+        )}
+        {shown.length > 0 && (
           <table className="candidate-table card">
             <thead>
               <tr>
                 <th>{t.columns.candidate}</th>
-                <th>{t.columns.interviews}</th>
-                <th>{t.columns.next}</th>
-                <th>{t.columns.cv}</th>
-                <th className="number">{t.columns.notes}</th>
-                <th className="number">{t.columns.questions}</th>
+                <th>{t.columns.interview}</th>
+                <th>{t.columns.shortcuts}</th>
               </tr>
             </thead>
             <tbody>
@@ -180,9 +136,22 @@ export function CandidateList() {
             </tbody>
           </table>
         )}
+        {adding && (
+          <AddCandidateDialog
+            roles={roles}
+            onClose={() => setAdding(false)}
+            onAdded={() => {
+              setAdding(false);
+              // The new Candidate has no Planned Interview yet, so they show among all Candidates.
+              setChosenView("all");
+              loadCandidates();
+              loadRoles();
+            }}
+          />
+        )}
         {roleQuestionsOpen && (
           <RoleQuestionsDialog
-            initialRole={role.trim()}
+            initialRole=""
             onClose={() => {
               setRoleQuestionsOpen(false);
               // A role that now has questions is suggested in the form; copies change question counts.
@@ -194,7 +163,7 @@ export function CandidateList() {
         {cvOf && <CvPreviewDialog candidate={cvOf} onClose={() => setCvOf(undefined)} onChanged={loadCandidates} />}
       </section>
       <aside className="home-side">
-        {candidates && <InterviewCalendar overviews={candidates} />}
+        {dated && <InterviewCalendar interviews={dated} undated={undated} />}
         <ExpandableCard className="panel no-key-card" title={text.noKey.title}>
           <NoKeyGuide withTitle={false} />
         </ExpandableCard>
@@ -206,65 +175,91 @@ export function CandidateList() {
 // One Candidate in the table. The whole row opens the Workspace; the name is the real link,
 // so it also works with the keyboard and opens in a new tab.
 function CandidateRow({ overview, onViewCv }: { overview: CandidateOverview; onViewCv: () => void }) {
-  const { text, languageCode } = useText();
+  const { text } = useText();
   const t = text.home;
-  const { candidate, cv, interviews } = overview;
+  const { candidate, cv, interviews, nextPlanned, latestTakenPlace } = overview;
   const path = candidatePath(candidate.id);
-  const planned = interviews.filter((interview) => interview.planned);
-  // Core lists Interviews in date order, so the first Planned one is the next.
-  const next = planned[0];
-  const dateFormat = new Intl.DateTimeFormat(languageCode, { day: "numeric", month: "short", weekday: "short", timeZone: "UTC" });
   return (
     <tr onClick={(event) => openRow(event, path)}>
       <td>
         <a className="candidate-name" href={path} onClick={linkTo(path)}>
           {candidate.name}
         </a>
-        <span className="candidate-role">{candidate.role}</span>
+        <span className="candidate-role">
+          {candidate.role}
+          {interviews.length > 1 && <span className="interview-count"> · {fill(t.interviewCount, { count: String(interviews.length) })}</span>}
+        </span>
       </td>
-      <td>
-        <Count value={interviews.length} />
-        {planned.length > 0 && <span className="pill planned">{fill(t.plannedCount, { count: String(planned.length) })}</span>}
+      <td className="interview-cell">
+        {nextPlanned && <InterviewWhen interview={nextPlanned} planned />}
+        {latestTakenPlace && <InterviewWhen interview={latestTakenPlace} />}
+        {!nextPlanned && !latestTakenPlace && <span className="muted">{interviews.length === 0 ? t.noInterviews : t.noDate}</span>}
       </td>
-      <td>
-        {next ? (
-          <>
-            {dateFormat.format(new Date(`${next.date}T00:00:00Z`))}
-            <span className="muted"> · {interviewName(text, next)}</span>
-          </>
-        ) : (
-          <span className="muted">{t.noNext}</span>
-        )}
-      </td>
-      <td>
+      <td className="shortcuts">
         {cv ? (
           <button type="button" className="quiet cv-shortcut" title={cv.fileName} onClick={onViewCv}>
             <DocumentIcon />
             {t.viewCv}
           </button>
         ) : (
-          <Count value={0} />
+          <span className="muted shortcut-none">{t.noCv}</span>
         )}
-      </td>
-      <td className="number">
-        <Count value={overview.interviewerNoteCount} />
-      </td>
-      <td className="number">
-        <Count value={overview.savedQuestionCount} />
+        <a className="shortcut-link" href={path} onClick={linkTo(path)} title={t.openQuestions}>
+          <QuestionIcon />
+          {fill(t.questions, { count: String(overview.savedQuestionCount) })}
+        </a>
       </td>
     </tr>
   );
 }
 
-// A number in the table, or a quiet dash for none, so the eye finds what is there.
-function Count({ value }: { value: number }) {
-  return value === 0 ? <span className="muted">—</span> : <>{value}</>;
+// One line of the Interview cell: "Planned · Today · 14:00 · Second Interview", or the same for
+// the latest Interview that has taken place. Today stands out.
+function InterviewWhen({ interview, planned = false }: { interview: Interview; planned?: boolean }) {
+  const { text, languageCode } = useText();
+  const t = text.home;
+  const today = localDay(new Date());
+  const isToday = interview.date === today;
+  return (
+    <span className={planned ? "interview-when planned" : "interview-when"}>
+      <span className={planned ? (isToday ? "pill today" : "pill planned") : "pill"}>{planned ? t.planned : t.takenPlace}</span>
+      <span className="interview-day">{isToday ? t.today : shortDay(languageCode, interview.date!, today)}</span>
+      {interview.time !== null && <span className="interview-time">{interview.time}</span>}
+      <span className="muted interview-which">{interviewName(text, interview)}</span>
+    </span>
+  );
 }
 
 function DocumentIcon() {
   return (
     <svg viewBox="0 0 16 16" aria-hidden="true">
       <path d="M4 1.75h5.25L12.5 5v9.25H4zM9 1.75V5.25h3.5M6 8.25h4.5M6 10.75h4.5" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function QuestionIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M2.5 3h11v8h-6l-3 2.5V11h-2z" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" />
+      <path d="M6.6 6.1a1.5 1.5 0 1 1 2.1 1.4c-.5.3-.7.5-.7 1M8 9.6v.1" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="4.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10.2 10.2 14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ListIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M2.5 4h1M6 4h7.5M2.5 8h1M6 8h7.5M2.5 12h1M6 12h7.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -277,20 +272,8 @@ function openRow(event: MouseEvent, path: string) {
   else navigate(path);
 }
 
-// Text for the filter, so that case and the dotted and dotless i do not matter: "elif" finds
-// "ELİF", and "ivan" finds "IVAN". Only for this filter; the Evidence search has its own rule in core.
+// Text for the search, so that case and the dotted and dotless i do not matter: "elif" finds
+// "ELİF", and "ivan" finds "IVAN". Only for this search; the Evidence search has its own rule in core.
 function folded(value: string): string {
   return value.toLocaleLowerCase("tr").replaceAll("ı", "i");
-}
-
-// Core decides whether a Candidate is valid; this only says why, in the current language.
-// The message is worked out when shown, so it follows a change of language.
-function refusalMessage(text: Text, error: unknown): string {
-  if (error instanceof ApiError && error.field === "cv") return cvRefusalMessage(text, error);
-  if (error instanceof ApiError && error.rule === "required") {
-    const messages: Record<string, string> = text.candidates.required;
-    const message = error.field !== undefined && Object.hasOwn(messages, error.field) ? messages[error.field] : undefined;
-    if (message) return message;
-  }
-  return text.candidates.saveFailed;
 }

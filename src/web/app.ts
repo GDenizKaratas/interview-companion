@@ -20,6 +20,9 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   // Every Candidate's overview, newest Candidate first, for the Candidate list and the calendar.
   api.get("/candidate-overviews", (c) => c.json(core.listCandidates().map((candidate) => core.getCandidateOverview(candidate.id))));
 
+  // Every Candidate's Interviews that have a date, earliest first, each with its Candidate.
+  api.get("/dated-interviews", (c) => c.json(core.listDatedInterviews()));
+
   // The command that adds the MCP server to Claude Code for every folder, or null when the path
   // is not known. A data folder other than the default is passed on, so both read the same data.
   api.get("/mcp-setup", (c) => {

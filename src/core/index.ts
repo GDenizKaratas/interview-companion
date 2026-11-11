@@ -38,7 +38,7 @@ export type {
 } from "./ai-provider.ts";
 export type { AskedQuestion, AskedQuestionGeneration, AskedQuestions, SavedQuestionCheck, SegmentQuote } from "./asked-questions.ts";
 export type { BriefEvidence, CandidateBrief, NewBriefEvidence, NewCandidateBrief } from "./candidate-brief.ts";
-export type { CandidateOverview, InterviewOverview } from "./candidate-overview.ts";
+export type { CandidateOverview, InterviewOverview, DatedInterview } from "./candidate-overview.ts";
 export type { CandidateExport, CandidateImport, ExistingCandidate, ImportOptions, ImportProblem } from "./candidate-transfer.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
@@ -80,6 +80,7 @@ export interface Core {
   listCandidates(): candidates.Candidate[];
   getCandidate(id: string): candidates.Candidate | undefined;
   getCandidateOverview(candidateId: string): candidateOverview.CandidateOverview;
+  listDatedInterviews(): candidateOverview.DatedInterview[];
   deleteCandidate(id: string): void;
   exportCandidate(id: string): candidateTransfer.CandidateExport;
   importCandidate(zip: Uint8Array, options?: candidateTransfer.ImportOptions): Promise<candidateTransfer.CandidateImport>;
@@ -233,6 +234,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listCandidates: () => candidates.listCandidates(db),
     getCandidate: (id) => candidates.getCandidate(db, id),
     getCandidateOverview: (candidateId) => candidateOverview.getCandidateOverview(db, today, candidateId),
+    listDatedInterviews: () => candidateOverview.listDatedInterviews(db, today),
     deleteCandidate: (id) => cv.deleteCandidateAndCv(db, cvFolder, id),
     exportCandidate: (id) => candidateTransfer.exportCandidate(db, cvFolder, today, now, id),
     importCandidate: (zip, options) => candidateTransfer.importCandidate(db, cvFolder, today, zip, options),

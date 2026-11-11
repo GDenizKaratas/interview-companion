@@ -30,6 +30,8 @@ describe("Candidate overview", () => {
       candidate,
       cv: null,
       interviews: [],
+      nextPlanned: null,
+      latestTakenPlace: null,
       interviewerNoteCount: 0,
       savedQuestionCount: 0,
     });
@@ -72,5 +74,50 @@ describe("Candidate overview", () => {
     core.importTranscript(interview.id, { fileName: "t.txt", bytes: new TextEncoder().encode("Ada: Hello.") });
 
     expect(core.getCandidateOverview(candidate.id).interviews[0]!.transcript?.speakerMappingConfirmed).toBe(false);
+  });
+
+  it("names the next Planned Interview and the latest one that has taken place", () => {
+    core.addInterview({ candidateId: candidate.id, date: "2026-10-01" });
+    const latest = core.addInterview({ candidateId: candidate.id, date: "2026-11-05", time: "10:00" });
+    const next = core.addInterview({ candidateId: candidate.id, date: "2026-11-12", time: "14:00" });
+    core.addInterview({ candidateId: candidate.id, date: "2026-11-20" });
+    core.addInterview({ candidateId: candidate.id });
+
+    const overview = core.getCandidateOverview(candidate.id);
+
+    expect(overview.nextPlanned).toEqual(next);
+    expect(overview.latestTakenPlace).toEqual(latest);
+  });
+});
+
+describe("Dated Interviews of all Candidates", () => {
+  it("lists them earliest first, with their Candidates, and leaves out those without a date", () => {
+    const can = core.createCandidate({ name: "Can Aksoy", role: "Data Engineer" });
+    const elif = core.createCandidate({ name: "Elif Kaya", role: "Frontend Developer" });
+    const past = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    core.addInterview({ candidateId: can.id });
+    const untimed = core.addInterview({ candidateId: candidate.id, date: "2026-11-12" });
+    const afternoon = core.addInterview({ candidateId: elif.id, date: "2026-11-12", time: "15:00" });
+    const later = core.addInterview({ candidateId: can.id, date: "2026-11-20", time: "09:00" });
+    const morningCan = core.addInterview({ candidateId: can.id, date: "2026-11-12", time: "10:00" });
+    const morningElif = core.addInterview({ candidateId: elif.id, date: "2026-11-12", time: "10:00" });
+
+    const dated = core.listDatedInterviews();
+
+    expect(dated.map((d) => [d.candidate.name, d.interview.id, d.interview.planned])).toEqual([
+      ["Ada Demir", past.id, false],
+      ["Can Aksoy", morningCan.id, true],
+      ["Elif Kaya", morningElif.id, true],
+      ["Elif Kaya", afternoon.id, true],
+      ["Ada Demir", untimed.id, true],
+      ["Can Aksoy", later.id, true],
+    ]);
+    expect(dated[1]!.interview).toEqual(core.listInterviews(can.id).find((i) => i.id === morningCan.id));
+  });
+
+  it("is empty when no Interview has a date", () => {
+    core.addInterview({ candidateId: candidate.id });
+
+    expect(core.listDatedInterviews()).toEqual([]);
   });
 });

@@ -16,6 +16,7 @@ import type {
   ImportProblem,
   Cv,
   CvPage,
+  DatedInterview,
   EvidenceResult,
   EvidenceSearch,
   EvidenceSources,
@@ -39,7 +40,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -93,6 +94,7 @@ function sendJson(method: string, body: unknown): RequestInit {
 export const api = {
   listCandidates: () => request<Candidate[]>("/candidates"),
   listCandidateOverviews: () => request<CandidateOverview[]>("/candidate-overviews"),
+  listDatedInterviews: () => request<DatedInterview[]>("/dated-interviews"),
   getMcpSetup: () => request<{ command: string | null }>("/mcp-setup"),
   listCandidateRoles: () => request<string[]>("/candidate-roles"),
   getCandidate: (id: string) => request<Candidate>(`/candidates/${encodeURIComponent(id)}`),
