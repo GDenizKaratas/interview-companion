@@ -12,6 +12,7 @@ import type {
   CandidateBrief,
   CandidateCvCheck,
   CandidateImport,
+  CandidateOrder,
   CandidateOverview,
   ExistingCandidate,
   ImportProblem,
@@ -50,7 +51,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, InputRule, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateCvCheck, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewAiStep, InterviewerNote, InterviewPlan, InterviewPlanRequest, InterviewPlanSettings, PlannedSlot, QuestionMark, RoleInUse, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SlotRefusal, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, InputRule, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateCvCheck, CandidateImport, CandidateOrder, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewAiStep, InterviewerNote, InterviewPlan, InterviewPlanRequest, InterviewPlanSettings, PlannedSlot, QuestionMark, RoleInUse, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SlotRefusal, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -103,7 +104,9 @@ function sendJson(method: string, body: unknown): RequestInit {
 
 export const api = {
   listCandidates: () => request<Candidate[]>("/candidates"),
-  listCandidateOverviews: () => request<CandidateOverview[]>("/candidate-overviews"),
+  // With an order, core orders the whole list by that column.
+  listCandidateOverviews: (order?: CandidateOrder) =>
+    request<CandidateOverview[]>(`/candidate-overviews${order ? `?by=${order.by}${order.reversed ? "&reversed=true" : ""}` : ""}`),
   getCandidateOverview: (id: string) => request<CandidateOverview>(`/candidates/${encodeURIComponent(id)}/overview`),
   listDatedInterviews: () => request<DatedInterview[]>("/dated-interviews"),
   getMcpSetup: () => request<{ command: string | null; desktopConfig: string | null }>("/mcp-setup"),

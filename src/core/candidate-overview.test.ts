@@ -158,4 +158,56 @@ describe("Dated Interviews of all Candidates", () => {
 
     expect(core.listDatedInterviews()).toEqual([]);
   });
+
+  describe("listCandidateOverviews", () => {
+    const names = (overviews: { candidate: Candidate }[]) => overviews.map((overview) => overview.candidate.name);
+
+    // Ada (from beforeEach) has no Interview. Çağla is met tomorrow, İpek was met last week and
+    // has a CV, Zeynep is met today at 15:00 and has two Saved Questions.
+    async function addThreeMore(): Promise<void> {
+      const cagla = core.createCandidate({ name: "Çağla Öz", role: "Backend Engineer" });
+      core.addInterview({ candidateId: cagla.id, date: "2026-11-11", time: "09:00" });
+      const ipek = core.createCandidate({ name: "İpek Ak", role: "Backend Engineer" });
+      core.addInterview({ candidateId: ipek.id, date: "2026-11-03" });
+      await core.attachCv(ipek.id, { fileName: "ipek.pdf", bytes: makePdf([[{ text: "İpek Ak", size: 24 }, { text: "Backend Engineer", size: 11 }]]) });
+      const zeynep = core.createCandidate({ name: "Zeynep Ay", role: "Backend Engineer" });
+      core.addInterview({ candidateId: zeynep.id, date: "2026-11-10", time: "15:00" });
+      core.addSavedQuestion({ candidateId: zeynep.id, interviewId: null, text: "First?" });
+      core.addSavedQuestion({ candidateId: zeynep.id, interviewId: null, text: "Second?" });
+    }
+
+    it("lists every Candidate's overview, the newest Candidate first, when no order is asked for", async () => {
+      await addThreeMore();
+
+      expect(names(core.listCandidateOverviews())).toEqual(["Zeynep Ay", "İpek Ak", "Çağla Öz", "Ada Demir"]);
+      expect(core.listCandidateOverviews().at(-1)).toEqual(core.getCandidateOverview(candidate.id));
+    });
+
+    it("orders by name in the Turkish alphabet, and reversed", async () => {
+      await addThreeMore();
+
+      expect(names(core.listCandidateOverviews({ by: "name" }))).toEqual(["Ada Demir", "Çağla Öz", "İpek Ak", "Zeynep Ay"]);
+      expect(names(core.listCandidateOverviews({ by: "name", reversed: true }))).toEqual(["Zeynep Ay", "İpek Ak", "Çağla Öz", "Ada Demir"]);
+    });
+
+    it("orders by the Interview a row shows first, earliest first, with no dated Interview last in both directions", async () => {
+      await addThreeMore();
+
+      expect(names(core.listCandidateOverviews({ by: "interview" }))).toEqual(["İpek Ak", "Zeynep Ay", "Çağla Öz", "Ada Demir"]);
+      expect(names(core.listCandidateOverviews({ by: "interview", reversed: true }))).toEqual(["Çağla Öz", "Zeynep Ay", "İpek Ak", "Ada Demir"]);
+    });
+
+    it("orders by CV and Saved Questions: with a CV first, then the most questions, then by name", async () => {
+      await addThreeMore();
+
+      expect(names(core.listCandidateOverviews({ by: "cvAndQuestions" }))).toEqual(["İpek Ak", "Zeynep Ay", "Ada Demir", "Çağla Öz"]);
+      expect(names(core.listCandidateOverviews({ by: "cvAndQuestions", reversed: true }))).toEqual(["Çağla Öz", "Ada Demir", "Zeynep Ay", "İpek Ak"]);
+    });
+
+    it("refuses an order it does not know", () => {
+      expect(() => core.listCandidateOverviews({ by: "salary" as never })).toThrow(
+        expect.objectContaining({ name: "InvalidInputError", field: "by", rule: "format" }),
+      );
+    });
+  });
 });

@@ -4,6 +4,7 @@ import {
   InvalidInputError,
   NotFoundError,
   PreconditionError,
+  type CandidateOrder,
   type Core,
   type CvFile,
   type EvidenceSources,
@@ -20,7 +21,13 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   const api = new Hono();
 
   // Every Candidate's overview, newest Candidate first, for the Candidate list and the calendar.
-  api.get("/candidate-overviews", (c) => c.json(core.listCandidates().map((candidate) => core.getCandidateOverview(candidate.id))));
+  // "?by=name" orders the list by a column, and "&reversed=true" turns it round; core decides the order.
+  api.get("/candidate-overviews", (c) => {
+    const by = c.req.query("by");
+    return respondOrRefuse(c, () =>
+      c.json(core.listCandidateOverviews(by === undefined ? undefined : { by: by as CandidateOrder["by"], reversed: c.req.query("reversed") === "true" })),
+    );
+  });
 
   // Every Candidate's Interviews that have a date, earliest first, each with its Candidate.
   api.get("/dated-interviews", (c) => c.json(core.listDatedInterviews()));
