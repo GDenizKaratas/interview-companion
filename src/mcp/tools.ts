@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { briefPrompt } from "./brief-prompt.ts";
-import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, type AiClientCore } from "../core/index.ts";
+import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, writingRulesInBrief, type AiClientCore } from "../core/index.ts";
 
 // Bounds on what the AI client can save in one call, so a runaway client cannot flood the
 // Workspace. They are generous for a real Interview.
@@ -197,7 +197,8 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "checks every quote: a note with any quote that is not found word for word in a Candidate segment is " +
         "dropped, and the answer says how many. Saved notes are Unreviewed and replace the earlier Unreviewed " +
         "ones; notes the Interviewer reviewed stay. Refused until the Speaker Mapping is confirmed, and while " +
-        "saving from the AI client is off in the app, under “Use with MCP”.",
+        "saving from the AI client is off in the app, under “Use with MCP”. " +
+        writingRulesInBrief,
       inputSchema: {
         interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate."),
         notes: z
@@ -233,7 +234,10 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "savedQuestionId to the id of the Saved Question it asks (see get_saved_questions), or null. The app " +
         "checks every quote and drops a question that fails, and the answer says how many. Saving replaces the " +
         "Interview's earlier Asked Questions. Refused until the Speaker Mapping is confirmed, and while saving " +
-        "from the AI client is off in the app, under “Use with MCP”.",
+        "from the AI client is off in the app, under “Use with MCP”. An Answer Summary is your paraphrase, not " +
+        "the Candidate's words. " +
+        writingRulesInBrief +
+        " A question that touched on such a matter is still listed; say only that a personal matter was talked about.",
       inputSchema: {
         interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate."),
         askedQuestions: z
@@ -274,7 +278,9 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "quotes is saved as a general question. The app checks every quote; a suggestion with a quote that is not " +
         "found, or that comes from a Transcript whose Speaker Mapping is not confirmed, is dropped, and the answer " +
         "says how many. Saving replaces the earlier suggestions that were not accepted. Refused while saving from " +
-        "the AI client is off in the app, under “Use with MCP”.",
+        "the AI client is off in the app, under “Use with MCP”. A reason names what was or was not talked about " +
+        "and never doubts the Candidate. " +
+        writingRulesInBrief,
       inputSchema: {
         candidateId,
         suggestions: z

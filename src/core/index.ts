@@ -56,6 +56,7 @@ export type {
 } from "./evidence-search.ts";
 export { evidenceSources } from "./evidence-search.ts";
 // The real model, for the hand-run evaluation (#18). The app gets it through openCore.
+export { neutralityRules, privateMatters, writingRulesInBrief } from "./ai-writing-rules.ts";
 export { claudeModel, claudeProvider } from "./claude-provider.ts";
 export {
   AiProviderError,
