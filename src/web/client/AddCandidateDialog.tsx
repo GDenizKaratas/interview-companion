@@ -42,7 +42,9 @@ export function AddCandidateDialog({
   const lastGuess = useRef("");
   // Only the guess for the most recently chosen file may fill the box.
   const guessFor = useRef<File | undefined>(undefined);
-  const roleIsNew = useRoleIsNew(role);
+  // Raised after each run of adding many that added someone, so the "New role" hint is asked again.
+  const [runsAdded, setRunsAdded] = useState(0);
+  const roleIsNew = useRoleIsNew(role, runsAdded);
 
   const roleField = (
     <label>
@@ -57,7 +59,15 @@ export function AddCandidateDialog({
     </label>
   );
 
-  const many = useAddManyCandidates({ role, roleField, shown: way === "many", initialFiles, onAdded, onClose });
+  const many = useAddManyCandidates({
+    role,
+    roleField,
+    shown: way === "many",
+    initialFiles,
+    onRunAdded: () => setRunsAdded((n) => n + 1),
+    onAdded,
+    onClose,
+  });
 
   function handleCvChosen(event: ChangeEvent<HTMLInputElement>) {
     const chosen = [...(event.target.files ?? [])];
@@ -182,16 +192,18 @@ export function AddCandidateDialog({
 }
 
 // Whether no Candidate has the role typed yet. Core compares the roles; the answer comes a moment
-// after typing pauses, and an answer to an older role is ignored. Nothing is said about an empty
-// role, or when core cannot be asked.
-function useRoleIsNew(role: string): boolean {
-  const [answer, setAnswer] = useState<{ role: string; isNew: boolean } | undefined>();
+// after typing pauses, and an answer to an older role is ignored. The last answer stays shown until
+// the next one arrives, so the hint does not flicker while typing. Core is asked again when
+// `asked` changes, such as after Candidates were added. Nothing is said about an empty role, or
+// when core cannot be asked.
+function useRoleIsNew(role: string, asked: number): boolean {
+  const [isNew, setIsNew] = useState(false);
   useEffect(() => {
     if (role.trim() === "") return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      api.isRoleInUse(role, controller.signal).then(
-        ({ inUse }) => setAnswer({ role, isNew: !inUse }),
+      api.findRoleInUse(role, controller.signal).then(
+        (found) => setIsNew(found.role === null),
         () => {},
       );
     }, 250);
@@ -199,8 +211,8 @@ function useRoleIsNew(role: string): boolean {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [role]);
-  return role.trim() !== "" && answer?.role === role && answer.isNew;
+  }, [role, asked]);
+  return role.trim() !== "" && isNew;
 }
 
 // Core decides whether a Candidate is valid; this only says why, in the current language.

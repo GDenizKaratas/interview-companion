@@ -8,7 +8,7 @@ function subscribe(onChange: () => void) {
   return () => window.removeEventListener("popstate", onChange);
 }
 
-// The pathname only: the query of the Candidate list (its role and view) does not change the page.
+// The pathname only: the query of the Candidate list (its role, view, and page) does not change the page.
 export function usePath(): string {
   return useSyncExternalStore(subscribe, () => window.location.pathname);
 }
@@ -35,8 +35,9 @@ export function candidatePath(id: string): string {
   return `/candidates/${encodeURIComponent(id)}`;
 }
 
-// The Candidate list's role and view as last shown, as a query ("?role=…&view=…") or "". Going
-// back to the list from a Workspace, by the browser or by the app's own back link, returns to them.
+// The Candidate list's role, view, and page as last shown, as a query ("?role=…&view=…&page=…")
+// or "". Going back to the list from a Workspace, by the browser or by the app's own back link,
+// returns to them.
 let listQuery = "";
 
 export function listPath(): string {

@@ -689,6 +689,11 @@ select.role-filter {
   padding: 0.32rem 0.75rem;
 }
 
+/* A view of the Candidate list with no one in it. */
+.view-choice button.role-choice.none {
+  opacity: 0.55;
+}
+
 .view-count,
 .range-count {
   margin-left: 0.4rem;

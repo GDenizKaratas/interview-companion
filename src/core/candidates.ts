@@ -100,31 +100,30 @@ export function listCandidateRoles(db: DatabaseSync): string[] {
 
 // A role that at least one Candidate has, with those Candidates, oldest first.
 export interface RoleInUse {
-  // The spelling written first among the Candidates who share the role.
+  // The role as every Candidate who has it carries it.
   role: string;
   candidateIds: string[];
 }
 
-// Every role that a Candidate has, once each by the role rule (isSameRole), in alphabetical
-// order. Roles that only Role Questions use are left out: no Candidate can be filtered by them.
+// Every role that a Candidate has, once each, in Turkish alphabetical order, as the interface is
+// used mostly in Turkish. Roles are saved under one spelling (roleSpelling), so equal text is one
+// role. Roles that only Role Questions use are left out: no Candidate can be filtered by them.
 export function listRolesInUse(db: DatabaseSync): RoleInUse[] {
   const rows = db.prepare("SELECT id, role FROM candidate ORDER BY rowid").all() as unknown as { id: string; role: string }[];
-  const roles: RoleInUse[] = [];
-  for (const row of rows) {
-    const known = roles.find((existing) => isSameRole(existing.role, row.role));
-    if (known) known.candidateIds.push(row.id);
-    else roles.push({ role: row.role, candidateIds: [row.id] });
-  }
-  const alphabetical = new Intl.Collator("en", { sensitivity: "accent" });
-  return roles.sort((a, b) => alphabetical.compare(a.role, b.role));
+  const roles = new Map<string, string[]>();
+  for (const row of rows) roles.set(row.role, [...(roles.get(row.role) ?? []), row.id]);
+  const alphabetical = new Intl.Collator("tr", { sensitivity: "accent" });
+  return [...roles]
+    .map(([role, candidateIds]) => ({ role, candidateIds }))
+    .sort((a, b) => alphabetical.compare(a.role, b.role));
 }
 
-// Whether a Candidate already has this role, by the rule that saves roles: spaces trimmed and
-// collapsed, letter case ignored. An empty role is in use by no one.
-export function isRoleInUse(db: DatabaseSync, role: string): boolean {
+// The spelling under which Candidates have this role, by the rule that saves roles: spaces trimmed
+// and collapsed, letter case ignored. Undefined when no Candidate has it, or for an empty role.
+export function findRoleInUse(db: DatabaseSync, role: string): string | undefined {
   const cleaned = collapseSpaces(role.trim());
-  if (cleaned === "") return false;
-  return listRolesInUse(db).some((existing) => isSameRole(existing.role, cleaned));
+  if (cleaned === "") return undefined;
+  return listRolesInUse(db).find((existing) => isSameRole(existing.role, cleaned))?.role;
 }
 
 // Candidate roles first, then roles that only Role Questions use, each in the order first written.

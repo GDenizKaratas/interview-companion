@@ -135,6 +135,7 @@ const translation: TranslationFile = {
         close: "Kapat",
         fixNotAdded: "Eklenmeyenleri düzelt",
         showThese: "Bu adayları göster",
+        roleKept: "Düzelttiğiniz dosyalar da aynı role eklenir.",
         confirmClose: {
           title: "Aday ekleme durdurulsun mu?",
           detail: "Şimdiye kadar eklenen adaylar kalır. Kalanlar eklenmez.",
@@ -275,7 +276,8 @@ const translation: TranslationFile = {
       noMatch: "Aramaya uyan aday yok.",
       noPlanned: "Bugün görüşme yok, planlı görüşme de yok.",
       showAll: "Tüm adayları göster",
-      noneWithoutInterview: "Buradaki her adayın bir görüşmesi var.",
+      noneWithoutInterview: "Tüm adayların görüşmesi var.",
+      noneWithoutInterviewInRole: "Bu roldeki tüm adayların görüşmesi var.",
       views: { label: "Hangi adaylar gösterilsin", planned: "Bugün ve planlı", noInterview: "Görüşmesi yok", all: "Tümü" },
       roles: { label: "Tek bir roldeki adayları göster", all: "Tüm roller" },
       columns: { candidate: "Aday", interview: "Görüşme", shortcuts: "CV ve sorular" },

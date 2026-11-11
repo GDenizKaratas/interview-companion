@@ -136,6 +136,7 @@ const text = {
       close: "Close",
       fixNotAdded: "Fix the ones not added",
       showThese: "Show these Candidates",
+      roleKept: "The role stays the same for the files you fix.",
       confirmClose: {
         title: "Stop adding Candidates?",
         detail: "The Candidates added so far stay. The rest are not added.",
@@ -277,7 +278,8 @@ const text = {
     noMatch: "No Candidate matches the search.",
     noPlanned: "No Interviews today, and none Planned.",
     showAll: "Show all Candidates",
-    noneWithoutInterview: "Every Candidate here has an Interview.",
+    noneWithoutInterview: "Every Candidate has an Interview.",
+    noneWithoutInterviewInRole: "Every Candidate of this role has an Interview.",
     views: { label: "Which Candidates to show", planned: "Today and Planned", noInterview: "No Interview yet", all: "All" },
     roles: { label: "Show Candidates of one role", all: "All roles" },
     columns: { candidate: "Candidate", interview: "Interview", shortcuts: "CV and questions" },

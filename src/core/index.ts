@@ -94,7 +94,7 @@ export interface Core {
   loadDemoCandidates(): Promise<candidates.Candidate[]>;
   listCandidateRoles(): string[];
   listRolesInUse(): candidates.RoleInUse[];
-  isRoleInUse(role: string): boolean;
+  findRoleInUse(role: string): string | undefined;
   addInterview(input: interviews.NewInterview): interviews.Interview;
   listInterviews(candidateId: string): interviews.Interview[];
   rescheduleInterview(id: string, input: interviews.InterviewTime): interviews.Interview;
@@ -255,7 +255,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     loadDemoCandidates: () => demoCandidate.loadDemoCandidates(db, cvFolder, today, now),
     listCandidateRoles: () => candidates.listCandidateRoles(db),
     listRolesInUse: () => candidates.listRolesInUse(db),
-    isRoleInUse: (role) => candidates.isRoleInUse(db, role),
+    findRoleInUse: (role) => candidates.findRoleInUse(db, role),
     addInterview: (input) => interviews.addInterview(db, today, input),
     listInterviews: (candidateId) => interviews.listInterviews(db, today, candidateId),
     rescheduleInterview: (id, input) => interviews.rescheduleInterview(db, today, id, input),

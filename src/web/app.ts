@@ -212,8 +212,9 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   // The roles Candidates have, each with its Candidates, for the role filter of the Candidate list.
   api.get("/roles-in-use", (c) => c.json(core.listRolesInUse()));
 
-  // Whether a Candidate already has the role in ?role=, by core's role rule.
-  api.get("/role-in-use", (c) => c.json({ inUse: core.isRoleInUse(c.req.query("role") ?? "") }));
+  // The spelling under which Candidates have the role in ?role=, by core's role rule, or null
+  // when no Candidate has it.
+  api.get("/role-in-use", (c) => c.json({ role: core.findRoleInUse(c.req.query("role") ?? "") ?? null }));
 
   api.get("/candidates/:id", (c) => {
     const candidate = core.getCandidate(c.req.param("id"));
