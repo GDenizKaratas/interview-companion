@@ -118,9 +118,6 @@ export function CandidateList() {
   }
 
   const t = text.home;
-  // Candidates met today or with a Planned Interview, the one who is met soonest first. Core
-  // gives the order, and says which Interviews are today or Planned. Today's stay all day, so
-  // the list does not lose a Candidate when their Interview's time passes.
   // A chosen role narrows every view and the search. Core grouped the Candidates by role; a role
   // that is no longer in use shows every Candidate.
   const role = rolesInUse.find((group) => group.role === chosenRole);
@@ -128,6 +125,9 @@ export function CandidateList() {
   const ofRole = (overview: CandidateOverview) => inRole === undefined || inRole.has(overview.candidate.id);
   const everyone = (candidates ?? []).filter(ofRole);
   const byId = new Map(everyone.map((overview) => [overview.candidate.id, overview]));
+  // Candidates met today or with a Planned Interview, the one who is met soonest first. Core
+  // gives the order, and says which Interviews are today or Planned. Today's stay all day, so
+  // the list does not lose a Candidate when their Interview's time passes.
   const plannedIds = [...new Set(dated?.filter((entry) => entry.today || entry.interview.planned).map(({ candidate }) => candidate.id))];
   const byView: Record<View, CandidateOverview[]> = {
     planned: plannedIds.flatMap((id) => byId.get(id) ?? []),
