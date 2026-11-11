@@ -4,10 +4,11 @@ import { deleteCandidateIfExists, getCandidate, hasAnyCandidate, insertCandidate
 import { acceptCv, deleteCandidateAndCv, storeCv, storedFileName, type AcceptedCv } from "./cv.ts";
 import { inTransaction } from "./database.ts";
 import { addInterviewerNotes, type Now } from "./interviewer-notes.ts";
-import { addInterview, type Today } from "./interviews.ts";
-import { saveCheckedAiNotes } from "./ai-notes.ts";
-import { saveCheckedAskedQuestions } from "./asked-questions.ts";
+import { addInterview, listInterviews, type Today } from "./interviews.ts";
+import { confirmAiNote, correctAiNote, dismissAiNote, listAiNotes, saveCheckedAiNotes } from "./ai-notes.ts";
+import { listAskedQuestions, markAskedQuestionWrong, saveCheckedAskedQuestions, setSavedQuestionAsked } from "./asked-questions.ts";
 import { elifKaya, mertAydin, selinOzturk, type DemoAiContent } from "./demo-ai-content.ts";
+import { addRoleQuestion, listRoleQuestions } from "./role-questions.ts";
 import { addSavedQuestion, listSavedQuestions } from "./saved-questions.ts";
 import { deleteSetting, setSetting } from "./settings.ts";
 import { confirmSpeakerMapping, importTranscript, type SpeakerRole } from "./transcripts.ts";
@@ -23,12 +24,13 @@ export async function loadDemoCandidate(db: DatabaseSync, folder: string, today:
   return loadDemo(db, folder, today, now, cv);
 }
 
-// Loads the demo set for `npm run demo`: the demo Candidate and four more fictional Candidates,
-// with past, Planned, and undated Interviews, so the Candidate list and the calendar have
-// something to show. Like the demo Candidate, each has a fixed id, so loading again replaces
-// the set with a fresh copy and other Candidates are not touched. The first start of the app
-// still loads only the demo Candidate.
+// Loads the demo set for `npm run demo`: the demo Candidate and ten more fictional Candidates, a
+// small hiring process that shows what the app does without any work (decision 375). Like the
+// demo Candidate, each has a fixed id, so loading again replaces the set with a fresh copy and
+// other Candidates are not touched. The first start of the app still loads only the demo Candidate.
 export async function loadDemoCandidates(db: DatabaseSync, folder: string, today: Today, now: Now): Promise<Candidate[]> {
+  // Before any Candidate, so the demo Candidates of the role get them as a new Candidate would.
+  inTransaction(db, () => addDemoRoleQuestions(db));
   const loaded = [await loadDemoCandidate(db, folder, today, now)];
   for (const demo of demoSet) {
     const cv = demo.cv === undefined ? undefined : await readDemoFile(demo.cv.file, demo.cv.fileName);
@@ -46,6 +48,25 @@ export async function loadDemoCandidates(db: DatabaseSync, folder: string, today
     }
   }
   return loaded;
+}
+
+// The Role Questions of the demo Candidate's role, which most of the set has. Only the ones the
+// role does not have yet are added, so loading again neither repeats them nor touches the
+// Interviewer's own questions or order (decision 376).
+const demoRoleQuestions = {
+  role: "Kıdemli Backend Mühendisi",
+  questions: [
+    "Yeni bir servis tasarlarken ilk hangi soruları sorarsın?",
+    "Canlıda bir hatanın kaynağını nasıl ararsın, önce nelere bakarsın?",
+    "Bir veritabanı şemasını kesinti olmadan nasıl değiştirirsin?",
+  ],
+};
+
+function addDemoRoleQuestions(db: DatabaseSync): void {
+  const existing = new Set(listRoleQuestions(db, demoRoleQuestions.role).questions.map((q) => q.text));
+  for (const text of demoRoleQuestions.questions) {
+    if (!existing.has(text)) addRoleQuestion(db, { role: demoRoleQuestions.role, text });
+  }
 }
 
 // The demo Candidate's fictional CV, made by demo/make-cv.ts. It is read before any change,
@@ -163,9 +184,10 @@ function shiftDays(day: string, days: number): string {
 }
 
 // One more Candidate of the demo set. Days are counted from the day the set is loaded:
-// negative for an Interview that has taken place, positive for a Planned one, null for none.
-// Three Candidates have a Planned Interview on the same day, two at the same time, so the
-// calendar shows a busy day.
+// negative for an Interview that has taken place, 0 for today, positive for a Planned one, null
+// for one without a date. Three Candidates have a Planned Interview on the same day, two at the
+// same time, so the calendar shows a busy day. Candidates of the demo Candidate's role also get
+// its Role Questions, first in their list.
 interface DemoSetCandidate {
   id: string;
   name: string;
@@ -181,6 +203,10 @@ interface DemoSetCandidate {
   }[];
   notes?: string[];
   questions: string[];
+  // Saved Questions the Interviewer marked as asked by hand, against what the Transcripts say.
+  markedAsked?: string[];
+  // Saved Questions written after the questions asked were found, for the next Planned Interview.
+  nextQuestions?: string[];
 }
 
 const demoSet: DemoSetCandidate[] = [
@@ -238,16 +264,24 @@ const demoSet: DemoSetCandidate[] = [
         days: -4,
         time: "13:00",
         transcript: { file: "transcript-selin-ozturk.txt", roles: { Ayşe: "interviewer", Selin: "candidate" } },
-        notes: ["Kesinti sonrası alınan önlemleri somut anlattı"],
+        notes: [
+          "Kesinti sonrası alınan önlemleri somut anlattı",
+          "Kayıt bittikten sonra Terraform durum dosyasını sordum: S3'te tutuyorlar, kilit için DynamoDB kullanıyorlar",
+        ],
         ai: selinOzturk,
       },
-      { days: 6, time: "10:00" },
+      { days: 6, time: "10:00", notes: ["Teknik müdür de katılacak, sistem tasarımı ağırlıklı"] },
     ],
+    // The Workspace that shows everything: AI Notes in every Review State, an Answer Summary marked
+    // wrong, and Saved Questions asked, not found, planned, and decided by hand (decision 375).
     questions: [
       "Kademeli dağıtımda geri dönüş kararını kim veriyor?",
       "Kesintiyi ilk kim fark etti?",
       "Felaket kurtarma planınızı en son ne zaman denediniz?",
+      "Terraform durum dosyasını nerede tutuyorsunuz?",
     ],
+    markedAsked: ["Terraform durum dosyasını nerede tutuyorsunuz?"],
+    nextQuestions: ["Vault erişimini servis bazında nasıl sınırlıyorsunuz?", "Felaket kurtarma tatbikatını kim planlıyor?"],
   },
   {
     id: "demo-candidate-burak",
@@ -256,6 +290,64 @@ const demoSet: DemoSetCandidate[] = [
     interviews: [{ days: 6, time: "15:30" }, { days: null }],
     notes: ["CV henüz gelmedi, işe alım ekibinden iste"],
     questions: ["Hem iOS hem Android için aynı kodu kullandınız mı?"],
+  },
+  {
+    id: "demo-candidate-can",
+    name: "Can Arslan",
+    role: "Kıdemli Backend Mühendisi",
+    cv: { file: "cv-can-arslan.pdf", fileName: "Can_Arslan_CV.pdf" },
+    // Today, so the Candidate list and the calendar always have an Interview today.
+    interviews: [{ days: 0, time: "16:30", notes: ["RabbitMQ kuyruğunda tekrar denemenin nasıl çalıştığını sor"] }],
+    questions: [
+      "Hasar bildirimi kuyruğunda bir mesaj işlenemezse ne oluyor?",
+      "Sorgu süresini yarıya indirirken hangi indeksleri eklediniz?",
+    ],
+  },
+  {
+    id: "demo-candidate-kerem",
+    name: "Kerem Doğan",
+    role: "Kıdemli Backend Mühendisi",
+    interviews: [
+      {
+        days: -2,
+        time: "11:00",
+        notes: ["Monolitten servislere geçişi somut örneklerle anlattı", "Transkripti toplantı aracından indirip ekle"],
+      },
+    ],
+    notes: ["CV'yi işe alım ekibinden iste"],
+    questions: ["Monolitten ayırdığınız ilk servis hangisiydi, neden onu seçtiniz?"],
+  },
+  {
+    id: "demo-candidate-zeynep",
+    name: "Zeynep Şahin",
+    role: "Kıdemli Backend Mühendisi",
+    cv: { file: "cv-zeynep-sahin.pdf", fileName: "Zeynep_Sahin_CV.pdf" },
+    interviews: [],
+    notes: ["İşe alım ekibi gelecek hafta için uygun saatleri soracak"],
+    questions: ["Üç kişilik ekibin teknik liderliğinde verdiğin en zor karar neydi?"],
+  },
+  {
+    id: "demo-candidate-emre",
+    name: "Emre Koç",
+    role: "Kıdemli Backend Mühendisi",
+    interviews: [],
+    questions: [],
+  },
+  {
+    id: "demo-candidate-ece",
+    name: "Ece Yıldız",
+    role: "Frontend Geliştirici",
+    cv: { file: "cv-ece-yildiz.pdf", fileName: "Ece_Yildiz_CV.pdf" },
+    interviews: [{ days: 2, time: "11:00" }],
+    questions: ["Vue'dan React'e geçmeye neden karar verdiniz?", "Kod bölmeyi hangi sayfalarda uyguladınız?"],
+  },
+  {
+    id: "demo-candidate-berk",
+    name: "Berk Aksoy",
+    role: "Frontend Geliştirici",
+    interviews: [],
+    notes: ["Referansla geldi, CV'sini e-postayla iste"],
+    questions: [],
   },
 ];
 
@@ -289,6 +381,12 @@ function addSetCandidate(db: DatabaseSync, today: Today, now: Now, demo: DemoSet
     }
   }
   if (demo.notes) addInterviewerNotes(db, now, { candidateId: candidate.id, text: demo.notes.join("\n") });
+  const savedIds = new Map(listSavedQuestions(db, candidate.id).map((question) => [question.text, question.id]));
+  for (const text of demo.markedAsked ?? []) setSavedQuestionAsked(db, today, savedIds.get(text)!, true);
+  if (demo.nextQuestions) {
+    const next = listInterviews(db, today, candidate.id).find((interview) => interview.planned);
+    for (const text of demo.nextQuestions) addSavedQuestion(db, { candidateId: candidate.id, interviewId: next?.id, text });
+  }
   return candidate;
 }
 
@@ -302,8 +400,24 @@ function saveDemoAiContent(db: DatabaseSync, now: Now, candidateId: string, inte
     return { ...asked, savedQuestionId };
   });
   const asked = saveCheckedAskedQuestions(db, now, interviewId, askedQuestions, "app");
-  const notes = saveCheckedAiNotes(db, now, interviewId, content.aiNotes, "app");
+  const notes = saveCheckedAiNotes(db, now, interviewId, content.aiNotes.map(({ statement, evidence }) => ({ statement, evidence })), "app");
   if (asked.dropped > 0 || notes.dropped > 0) {
     throw new Error(`Demo AI content has quotes that are not in its Transcript: ${asked.dropped + notes.dropped}.`);
+  }
+  reviewDemoAiContent(db, interviewId, content);
+}
+
+// Does what the Interviewer did after the AI output was saved, through the same operations.
+function reviewDemoAiContent(db: DatabaseSync, interviewId: string, content: DemoAiContent): void {
+  const askedIds = new Map(listAskedQuestions(db, interviewId)!.askedQuestions.map((asked) => [asked.question, asked.id]));
+  for (const asked of content.askedQuestions) {
+    if (asked.markedWrong) markAskedQuestionWrong(db, askedIds.get(asked.question)!, true);
+  }
+  const noteIds = new Map(listAiNotes(db, interviewId).map((note) => [note.statement, note.id]));
+  for (const { statement, review } of content.aiNotes) {
+    const id = noteIds.get(statement)!;
+    if (review === "confirmed") confirmAiNote(db, id);
+    else if (review === "dismissed") dismissAiNote(db, id);
+    else if (review) correctAiNote(db, id, review.correction);
   }
 }

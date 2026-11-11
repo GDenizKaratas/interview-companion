@@ -79,6 +79,7 @@ const translation: TranslationFile = {
       open: "Transkripti nasıl alırım?",
       title: "Transkripti nasıl alırım?",
       routesLabel: "Toplantı aracınız",
+      meetInstead: "Ücretli plan yoksa ne yapılır, ona bakın",
       routes: {
         teams: {
           name: "Microsoft Teams",

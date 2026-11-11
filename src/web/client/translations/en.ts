@@ -81,6 +81,7 @@ const text = {
     open: "How do I get a Transcript?",
     title: "How do I get a Transcript?",
     routesLabel: "Your meeting tool",
+    meetInstead: "See what to do with no paid plan",
     routes: {
       teams: {
         name: "Microsoft Teams",

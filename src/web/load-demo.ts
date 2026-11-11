@@ -1,5 +1,5 @@
 // `npm run demo`: loads the fictional demo set into the app's database: the demo Candidate and
-// four more Candidates, with past and Planned Interviews. Running it again replaces the set with
+// ten more Candidates, with past, today's, and Planned Interviews. Running it again replaces the set with
 // a fresh copy; other Candidates stay. The app loads only the demo Candidate by itself on its
 // first start; this command brings it back later, with the rest of the set.
 import { defaultDatabasePath, openCore } from "../core/index.ts";

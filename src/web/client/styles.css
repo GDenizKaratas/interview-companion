@@ -3740,6 +3740,19 @@ button.wrong-mark-button.with-words {
   color: var(--muted);
 }
 
+/* The tabs of the Transcript guide: each tool's small picture before its name. */
+.guide-routes button.role-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.guide-route-icon {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
 /* A column head that orders the list: the head's own quiet look, a mark for the direction, and
    the accent colour on the column that orders the list now. */
 button.column-sort {

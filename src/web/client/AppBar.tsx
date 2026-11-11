@@ -36,7 +36,7 @@ export function AppBar() {
   return (
     <header className="app-bar">
       <a className="brand" href="/" onClick={linkTo("/")}>
-        <QuoteMark />
+        <BrandMark />
         <span className="brand-name">{text.appName}</span>
       </a>
       <span className="tagline">{text.tagline}</span>
@@ -81,15 +81,15 @@ export function AppBar() {
   );
 }
 
-// An opening quotation mark: the app is about what was actually said.
-function QuoteMark() {
+// The app's mark: two overlapping squares, the Interviewer and the Candidate, with what was said
+// between them where they meet. Drawn for the navy bar; the tab icon in index.html is the same
+// mark for a light background.
+function BrandMark() {
   return (
     <svg className="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="5" fill="currentColor" />
-      <path
-        d="M8.5 22.5v-4.2c0-3.9 1.9-6.9 5.4-8.3l1 1.7c-1.9.9-2.9 2.4-3.1 4.1h3.1v6.7zm9 0v-4.2c0-3.9 1.9-6.9 5.4-8.3l1 1.7c-1.9.9-2.9 2.4-3.1 4.1h3.1v6.7z"
-        fill="var(--surface)"
-      />
+      <rect x="2" y="2" width="19" height="19" rx="4.5" fill="#577aff" />
+      <rect x="11" y="11" width="19" height="19" rx="4.5" fill="#ffffff" />
+      <path d="M11 15.5A4.5 4.5 0 0 1 15.5 11H21v5.5A4.5 4.5 0 0 1 16.5 21H11z" fill="#c9d6ff" />
     </svg>
   );
 }
