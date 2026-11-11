@@ -624,10 +624,10 @@ const text = {
     },
     // The AI panel holds AI Notes and Asked Questions, one tab each.
     ai: {
-      title: "What was said in the interview",
+      title: "Interview notes",
       label: "AI draft · you check",
-      notesTab: "AI Notes",
-      askedTab: "Asked questions",
+      notesTab: "Notes about the Candidate",
+      askedTab: "Questions and answers",
       promise: "AI takes notes from the Transcript; you evaluate the Candidate.",
       steps: ["Transcript", "Speakers", "AI draft", "You check"],
       noInterview: "Add an Interview first.",
@@ -657,10 +657,10 @@ const text = {
       loadFailed: "The state of this Interview could not be loaded.",
     },
     askedQuestions: {
-      noInterview: "Add an Interview first. Asked questions are found in its Transcript.",
-      selectInterview: "Select an Interview above to see the questions asked in it.",
-      noApiKey: "Add an API key to find the asked questions here, or let your own AI client do it: see “Use with MCP”.",
-      noTranscript: "Import this Interview's Transcript to find the questions asked.",
+      noInterview: "Add an Interview first. Questions and answers are taken from its Transcript.",
+      selectInterview: "Select an Interview above to see its questions and answers.",
+      noApiKey: "Add an API key to take the questions and answers here, or let your own AI client do it: see “Use with MCP”.",
+      noTranscript: "Import this Interview's Transcript to take its questions and answers.",
       confirmSpeakersFirst: "Confirm who is speaking first.",
       notYet: "Every question you asked in this Interview, each with a short summary of the answer.",
       find: "Pull out the questions",
@@ -671,14 +671,14 @@ const text = {
       // {count} is replaced by a number.
       dropped: "Questions left out because a quote was not found word for word: {count}.",
       stale: "The speakers changed after these questions were pulled out. Pull them out again to bring them up to date.",
-      savedQuestion: "saved question",
+      savedQuestion: "from my list",
       fromAiClient: "From your AI client",
-      loadFailed: "The questions asked could not be loaded.",
+      loadFailed: "The questions and answers could not be loaded.",
       // The Interviewer's mark that a summary is wrong. A question marked wrong does not count as asked.
       markWrong: "Mark the summary as wrong",
       summaryIsWrong: "Summary is wrong",
       markedWrong: "Summary marked wrong",
-      markedWrongHint: "Not counted as asked.",
+      markedWrongHint: "Not counted as asked in My questions.",
       notWrong: "Remove the mark",
       markFailed: "The mark could not be saved.",
       // {count} is replaced by a number.
@@ -728,6 +728,11 @@ const text = {
       segment: "part {number}",
       fromAiClient: "From your AI client",
       fromAiClientHint: "Written by Claude Code or Claude Desktop through MCP, and checked by the app like any AI Note.",
+      open: "Opens the note and the quotes it rests on",
+      quoteCount: "{count} quotes",
+      staleTag: "Speakers changed",
+      dialogTitle: "Note about the Candidate",
+      close: "Close",
       reviewStates: { unreviewed: "Unreviewed", confirmed: "Confirmed", corrected: "Corrected", dismissed: "Dismissed" },
       confirmRegenerate: "Take the AI Notes again?",
       // {count} is replaced by a number.
@@ -783,7 +788,7 @@ const text = {
       // {interview} is replaced by the Interview's name.
       hiddenByFilter: "Saved under {interview}. Questions of other Interviews are hidden while one is selected.",
       showAll: "Show all questions",
-      view: "View",
+      view: "See the answer",
       viewHint: "Opens the question and the Candidate's answer",
       // {interview} is replaced by the Interview's name.
       aiFoundAskedIn: "It is in the Transcript of {interview}",

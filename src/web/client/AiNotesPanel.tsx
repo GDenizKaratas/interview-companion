@@ -5,6 +5,7 @@ import { ConnectAi } from "./ConnectAi.tsx";
 import { api, ApiError, type AiNote, type Interview, type Transcript } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { fill, type Text } from "./languages.ts";
+import { ModalDialog } from "./ModalDialog.tsx";
 import { useText } from "./text.tsx";
 
 interface AiNotesPanelProps {
@@ -55,6 +56,8 @@ function InterviewAiNotes({
   const [confirmingReplace, setConfirmingReplace] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showDismissed, setShowDismissed] = useState(false);
+  // The note whose detail is open: its quotes and the review actions.
+  const [openNoteId, setOpenNoteId] = useState<string | undefined>();
 
   useEffect(() => {
     const loadKey = () => api.getApiKeyStatus().then((status) => setApiKeySaved(status.saved), () => setLoadFailed(true));
@@ -92,6 +95,7 @@ function InterviewAiNotes({
   const dismissedCount = notes?.filter((note) => note.reviewState === "dismissed").length ?? 0;
   // Dismissed notes are hidden unless the Interviewer asks to see them.
   const visibleNotes = notes?.filter((note) => showDismissed || note.reviewState !== "dismissed") ?? [];
+  const openNote = notes?.find((note) => note.id === openNoteId);
   const replaceNote = (changed: AiNote) =>
     setNotes((current) => current?.map((note) => (note.id === changed.id ? changed : note)));
   const confirmed = transcript ? transcript.speakerMappingConfirmedAt !== null : false;
@@ -100,7 +104,8 @@ function InterviewAiNotes({
   return (
     <div className="ai-notes">
       {loadFailed && <p className="error">{t.loadFailed}</p>}
-      {apiKeySaved === false && (
+      {/* With notes already here, the list comes first; the ways to connect an AI are in the app bar. */}
+      {apiKeySaved === false && (notes?.length ?? 0) === 0 && (
         <div className="ai-notes-empty">
           <p className="empty">{t.noApiKey}</p>
           <ConnectAi onAddApiKey={() => setSettingsOpen(true)} />
@@ -133,13 +138,7 @@ function InterviewAiNotes({
       {visibleNotes.length > 0 && (
         <ul className="ai-note-list">
           {visibleNotes.map((note) => (
-            <AiNoteItem
-              key={note.id}
-              note={note}
-              segmentTimes={segmentTimes}
-              onShowEvidence={onShowEvidence}
-              onChanged={replaceNote}
-            />
+            <AiNoteRow key={note.id} note={note} onOpen={() => setOpenNoteId(note.id)} />
           ))}
         </ul>
       )}
@@ -147,6 +146,33 @@ function InterviewAiNotes({
         <button type="button" className="link-button ai-notes-dismissed-toggle" onClick={() => setShowDismissed(!showDismissed)}>
           {showDismissed ? t.hideDismissed : fill(t.showDismissed, { count: String(dismissedCount) })}
         </button>
+      )}
+      {openNote && (
+        <ModalDialog
+          title={t.dialogTitle}
+          // The note can be corrected here, so a stray click outside must not lose what was typed.
+          kind="form"
+          wide
+          onCancel={() => setOpenNoteId(undefined)}
+          actions={
+            <button type="button" className="secondary" onClick={() => setOpenNoteId(undefined)}>
+              {t.close}
+            </button>
+          }
+        >
+          <ul className="ai-note-list in-dialog">
+            <AiNoteItem
+              note={openNote}
+              segmentTimes={segmentTimes}
+              onShowEvidence={(segmentNumber) => {
+                // The quote is shown in the Transcript card, so the dialog gets out of its way.
+                setOpenNoteId(undefined);
+                onShowEvidence(segmentNumber);
+              }}
+              onChanged={replaceNote}
+            />
+          </ul>
+        </ModalDialog>
       )}
       {confirmingReplace && (
         <ConfirmDialog
@@ -174,4 +200,26 @@ export function generationErrorMessage(text: Text, error: unknown): string {
     if (error.failure) return `${t.failed} ${t.failures[error.failure]}`;
   }
   return t.failed;
+}
+
+// One AI Note as a short row: what it says in at most two lines, how many quotes it rests on, and
+// its Review State. A click opens the whole note with its quotes and the review actions.
+function AiNoteRow({ note, onOpen }: { note: AiNote; onOpen: () => void }) {
+  const { text } = useText();
+  const t = text.panels.aiNotes;
+  const classes = ["ai-note-row", note.reviewState === "unreviewed" && "unreviewed", note.stale && "stale", note.reviewState === "dismissed" && "dismissed"];
+  return (
+    <li>
+      <button type="button" className={classes.filter(Boolean).join(" ")} title={t.open} onClick={onOpen}>
+        <span className="ai-note-row-text">{note.correction ?? note.statement}</span>
+        <span className="ai-note-row-meta">
+          <span className="ai-note-row-quotes">
+            <span aria-hidden="true">❝</span> {fill(t.quoteCount, { count: String(note.evidence.length) })}
+          </span>
+          <span className="review-state">{t.reviewStates[note.reviewState]}</span>
+          {note.stale && <span className="review-state stale">{t.staleTag}</span>}
+        </span>
+      </button>
+    </li>
+  );
 }

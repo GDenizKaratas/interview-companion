@@ -3820,3 +3820,80 @@ button.quiet.danger-text:hover:not(:disabled) {
   border-color: #f1c8c4;
   background: #fdf1f0;
 }
+
+/* An AI Note as a short row of the list: two lines of what it says, then what it rests on and
+   where its review stands. The whole row opens the note. */
+button.ai-note-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-align: left;
+  white-space: normal;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+}
+
+button.ai-note-row:hover:not(:disabled) {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+}
+
+.ai-note-list li + li {
+  margin-top: 0.4rem;
+}
+
+button.ai-note-row.unreviewed {
+  background: var(--ai-surface);
+  border-style: dashed;
+  border-color: var(--line-strong);
+}
+
+button.ai-note-row.stale {
+  border-color: var(--warn-line);
+}
+
+button.ai-note-row.dismissed {
+  opacity: 0.6;
+}
+
+.ai-note-row-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.ai-note-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.review-state.stale {
+  color: var(--warn);
+  border-color: var(--warn-line);
+}
+
+/* The whole note inside its dialog: no card around it, the dialog is the card. */
+.ai-note-list.in-dialog {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ai-note-list.in-dialog .ai-note {
+  padding: 0;
+  background: none;
+  border: none;
+}
