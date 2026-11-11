@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -405,6 +405,15 @@ describe("API key", () => {
 
     core.removeApiKey();
     expect(core.hasApiKey()).toBe(false);
+  });
+
+  it("leaves nothing of a removed key in the database file", () => {
+    core.saveApiKey("sk-ant-removed-key-0123456789");
+    core.removeApiKey();
+    core.close();
+
+    expect(readFileSync(join(dir, "test.sqlite")).includes("sk-ant-removed-key-0123456789")).toBe(false);
+    core = openCore(join(dir, "test.sqlite"), { now: () => clock, aiProvider: fake.factory });
   });
 
   it("is handed to the provider exactly as saved", async () => {

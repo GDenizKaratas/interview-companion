@@ -8,6 +8,7 @@ import { Hono } from "hono";
 import { defaultDatabasePath, openCore } from "../core/index.ts";
 import { createApi } from "./app.ts";
 import { claudeDesktopConfigPath } from "./claude-desktop.ts";
+import { localOnly } from "./local-only.ts";
 
 const port = Number(process.env.PORT ?? 3000);
 const clientDir = fileURLToPath(new URL("../../dist/client", import.meta.url));
@@ -25,6 +26,8 @@ try {
   console.error("The demo Candidate could not be loaded. Run `npm run demo` to load it.", error);
 }
 const app = new Hono();
+// Only this computer's own pages may use the server (local-only.ts), for the API and the page alike.
+app.use("*", localOnly());
 
 app.route(
   "/api",

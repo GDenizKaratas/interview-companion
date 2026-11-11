@@ -1,4 +1,5 @@
 import { Hono, type Context } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import {
   AiProviderError,
   InvalidInputError,
@@ -14,6 +15,9 @@ import {
 import { ClaudeDesktopRefusal, claudeDesktopState, connectClaudeDesktop } from "./claude-desktop.ts";
 import { desktopEntry, mcpSetup } from "./mcp-setup.ts";
 
+// The largest request body the server reads: 100 MB.
+const maxRequestBytes = 100 * 1024 * 1024;
+
 // The HTTP interface of the local server. Every route only translates between HTTP and core.
 // mcpServerPath is the absolute path of the MCP server's file, and dataDir the data folder the
 // server was started with, if any, so the interface can show the exact command that connects an
@@ -24,6 +28,16 @@ export function createApi(
   options: { mcpServerPath?: string; dataDir?: string; claudeDesktopConfigPath?: string | null } = {},
 ): Hono {
   const api = new Hono();
+
+  // No request body may be larger than this, so an upload can never fill the server's memory.
+  // A CV, a Transcript, or a Candidate export is far smaller.
+  api.use(
+    "*",
+    bodyLimit({
+      maxSize: maxRequestBytes,
+      onError: (c) => c.json({ error: "The file is too large.", field: "file", rule: "format" }, 413),
+    }),
+  );
 
   // Every Candidate's overview, newest Candidate first, for the Candidate list and the calendar.
   // "?by=name" orders the list by a column, and "&reversed=true" turns it round; core decides the order.
@@ -45,8 +59,8 @@ export function createApi(
   });
 
   // Whether Claude Desktop is connected to this copy, and the one-click connect that writes this
-  // copy's entry into its configuration file. The connect takes only a JSON request, which a page
-  // on another site cannot send here without the browser asking first.
+  // copy's entry into its configuration file. The connect takes only a JSON request, and the
+  // server's guard (local-only.ts) refuses it, like every change, from any page but the app's own.
   const configPath = options.mcpServerPath ? (options.claudeDesktopConfigPath ?? null) : null;
   const entry = () => desktopEntry({ serverPath: options.mcpServerPath ?? "", nodePath: process.execPath, dataDir: options.dataDir });
   api.get("/claude-desktop", (c) => c.json({ state: claudeDesktopState(configPath, entry()), configPath }));
