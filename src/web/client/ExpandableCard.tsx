@@ -4,7 +4,8 @@ import { useText } from "./text.tsx";
 // The name of the document event that closes every full-screen card.
 export const collapsePanels = "collapse-panels";
 
-// A card with a title and a full-screen button that shows on hover or focus. Full screen turns
+// A card with a title and a full-screen button, faint until the pointer is over the card. With
+// the pointer or focus on the button itself, a small tip names it and takes no room in the head. Full screen turns
 // the same card into a layer almost the size of the window, over a dimmed page; the card stays
 // mounted, so nothing loaded or typed is lost. Escape (outside a field or dialog), the button,
 // or a click outside closes it, and Tab stays inside while it is open.
@@ -75,12 +76,11 @@ export function ExpandableCard({
             type="button"
             className="icon-button panel-expand"
             aria-label={toggleLabel}
-            title={toggleLabel}
+            // Shown by the stylesheet as a small tip over the card, so nothing in the head moves.
+            data-tip={expanded ? toggleLabel : text.panels.expandWord}
             aria-pressed={expanded}
             onClick={() => setExpanded(!expanded)}
           >
-            {/* The word joins the icon while the pointer is over the card, so the button is not missed. */}
-            {!expanded && <span className="panel-expand-word">{text.panels.expandWord}</span>}
             {expanded ? <CollapseIcon /> : <ExpandIcon />}
           </button>
         </header>
