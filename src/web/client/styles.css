@@ -3632,3 +3632,16 @@ button.wrong-mark-button.with-words {
   font-size: 0.8rem;
   color: var(--muted);
 }
+
+/* The tabs of the Transcript guide: each tool's small picture before its name. */
+.guide-routes button.role-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.guide-route-icon {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+}

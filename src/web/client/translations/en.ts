@@ -73,6 +73,7 @@ const text = {
     title: "How do I get a Transcript?",
     reads: "The app reads a .vtt file with speaker names, or text where every line is \"Speaker: text\".",
     routesLabel: "Your meeting tool",
+    meetInstead: "See what to do with no paid plan",
     routes: {
       teams: {
         name: "Microsoft Teams",

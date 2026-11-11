@@ -71,6 +71,7 @@ const translation: TranslationFile = {
       title: "Transkripti nasıl alırım?",
       reads: "Uygulama konuşmacı adlarını içeren bir .vtt dosyasını ya da her satırı \"Konuşmacı: metin\" olan bir metni okur.",
       routesLabel: "Toplantı aracınız",
+      meetInstead: "Ücretli plan yoksa ne yapılır, ona bakın",
       routes: {
         teams: {
           name: "Microsoft Teams",
