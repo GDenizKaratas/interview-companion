@@ -70,14 +70,14 @@ const translation: TranslationFile = {
       open: "Transkripti nasıl alırım?",
       title: "Transkripti nasıl alırım?",
       reads: "Uygulama konuşmacı adlarını içeren bir .vtt dosyasını ya da her satırı \"Konuşmacı: metin\" olan bir metni okur.",
-      routesLabel: "Görüşme aracınız",
+      routesLabel: "Toplantı aracınız",
       routes: {
         teams: {
           name: "Microsoft Teams",
           needs: "Transkripsiyona izin verilen bir iş ya da okul hesabı gerekir. Türkçeyi yazıya döker.",
           steps: [
             { title: "Transkripsiyonu başlatın", hint: "Toplantıda, görüşme başlarken." },
-            { title: ".vtt dosyasını indirin", hint: "Toplantıdan sonra. Varsayılan olarak yalnızca düzenleyen ve ortak düzenleyenler indirebilir." },
+            { title: ".vtt dosyasını indirin", hint: "Toplantıdan sonra. Varsayılan olarak yalnızca toplantı düzenleyicisi ve ortak düzenleyiciler indirebilir." },
             { title: "Buraya aktarın", hint: "Transkript içe aktar düğmesiyle." },
           ],
           notes: ["Ücretsiz kişisel Teams hesabının transkript çıkarıp çıkaramadığı doğrulanmadı."],
@@ -103,13 +103,13 @@ const translation: TranslationFile = {
           needs: "Ücretli plan gerekmez. Kayıt bilgisayarınızda kalabilir.",
           steps: [
             { title: "Görüşmeyi kaydedin", hint: "Zoom'un ücretsiz planı bilgisayara kaydeder." },
-            { title: "Bilgisayarınızda yazıya dökün", hint: "Konuşmacıları ayıran bir araçla, örneğin Buzz (ücretsiz) ya da MacWhisper." },
+            { title: "Bilgisayarınızda yazıya dökün", hint: "Konuşmacıları ayıran bir araçla, örneğin Buzz (ücretsiz; Intel Mac'lerde konuşmacı ayırmaz) ya da MacWhisper." },
             { title: "Konuşmacılara ad verin", hint: "Konuşmacı etiketlerini açın, her birine ad verin, .vtt olarak dışa aktarın." },
             { title: "Buraya aktarın", hint: "Transkript içe aktar düğmesiyle." },
           ],
           notes: [
             "Bu yol bu araçlardan çıkan gerçek bir dosyayla henüz denenmedi. Dosya kabul edilmezse her satırda konuşmacının adı olduğunu kontrol edin.",
-            "Görüşmeye katılan bir not alma hizmeti de işe yarar, ama adayın sesini başka bir şirkete gönderir.",
+            "Görüşmeye katılan bir not alma hizmeti başka bir yoldur; ama verdiği dosyayı uygulama okuyamayabilir ve adayın sesini başka bir şirkete gönderir.",
           ],
         },
       },
@@ -125,7 +125,7 @@ const translation: TranslationFile = {
         notLegalAdvice: "Bu hukuki tavsiye değildir; şirketinizde kişisel verilerden sorumlu kişiye danışın.",
       },
       checked:
-        "11 Kasım 2026'da her şirketin kendi sayfalarından kontrol edildi; planlar ve diller değişir. Kaynaklar: proje klasöründeki docs/research/getting-a-transcript.md.",
+        "11 Kasım 2026'da çoğunlukla her şirketin kendi sayfalarından kontrol edildi; planlar ve diller değişir. Kaynaklar: proje klasöründeki docs/research/getting-a-transcript.md.",
       close: "Kapat",
     },
     candidates: {

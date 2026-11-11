@@ -105,13 +105,13 @@ const text = {
         needs: "Needs no paid plan. The recording can stay on your computer.",
         steps: [
           { title: "Record the call", hint: "Zoom's free plan records to the computer." },
-          { title: "Transcribe it on your computer", hint: "With a tool that labels speakers, for example Buzz (free) or MacWhisper." },
+          { title: "Transcribe it on your computer", hint: "With a tool that labels speakers, for example Buzz (free; not on Intel Macs) or MacWhisper." },
           { title: "Name the speakers", hint: "Turn speaker labels on, name each speaker, export as .vtt." },
           { title: "Import it here", hint: "With the Import Transcript button." },
         ],
         notes: [
           "This route has not been tried with a real file from these tools yet. If the file is refused, check that every line has its speaker's name.",
-          "A note-taker service that joins the call also works, but it sends the Candidate's voice to another company.",
+          "A note-taker service that joins the call is another way, but the app may not read the file it gives, and it sends the Candidate's voice to another company.",
         ],
       },
     },
@@ -124,10 +124,10 @@ const text = {
         "If a cloud service outside Türkiye processes the recording, the rules on sending data abroad apply.",
         "Delete the recording when you no longer need it.",
       ],
-      notLegalAdvice: "This is not legal advice; ask your company's data protection officer.",
+      notLegalAdvice: "This is not legal advice; ask the person responsible for personal data at your company.",
     },
     checked:
-      "Checked on 11 November 2026 from each vendor's own pages; plans and languages change. Sources: docs/research/getting-a-transcript.md in the project folder.",
+      "Checked on 11 November 2026 mostly from each vendor's own pages; plans and languages change. Sources: docs/research/getting-a-transcript.md in the project folder.",
     close: "Close",
   },
   candidates: {
