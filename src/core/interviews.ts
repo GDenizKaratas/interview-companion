@@ -161,7 +161,7 @@ function nextAddedOrder(db: DatabaseSync, candidateId: string): number {
 
 // A blank date means the Interview has no date yet. Any other value must be a real
 // calendar day written as YYYY-MM-DD, so "2026-02-30" is refused.
-function optionalDate(value: string | null | undefined): string | null {
+export function optionalDate(value: string | null | undefined): string | null {
   const trimmed = (value ?? "").trim();
   if (trimmed === "") return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
@@ -173,7 +173,7 @@ function optionalDate(value: string | null | undefined): string | null {
 }
 
 // A blank time means no time was given. Any other value must be HH:MM on a 24-hour clock.
-function optionalTime(value: string | null | undefined): string | null {
+export function optionalTime(value: string | null | undefined): string | null {
   const trimmed = (value ?? "").trim();
   if (trimmed === "") return null;
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(trimmed)) {

@@ -19,6 +19,7 @@ import * as demoCandidate from "./demo-candidate.ts";
 import * as interfaceLanguage from "./interface-language.ts";
 import * as interviewAi from "./interview-ai.ts";
 import * as interviewerNotes from "./interviewer-notes.ts";
+import * as interviewPlan from "./interview-plan.ts";
 import * as interviews from "./interviews.ts";
 import * as nameGuess from "./name-guess.ts";
 import * as roleQuestions from "./role-questions.ts";
@@ -71,6 +72,7 @@ export {
 export type { InterviewerNote, NewInterviewerNotes } from "./interviewer-notes.ts";
 export type { InterviewAiStep } from "./interview-ai.ts";
 export type { Interview, InterviewFilter, InterviewTime, NewInterview } from "./interviews.ts";
+export type { InterviewPlan, InterviewPlanRequest, InterviewPlanSettings, PlannedSlot, SlotRefusal } from "./interview-plan.ts";
 export type { NewRoleQuestion, RoleQuestion, RoleQuestionList } from "./role-questions.ts";
 export type { NewSavedQuestion, QuestionMark, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
 export type {
@@ -102,6 +104,9 @@ export interface Core {
   rescheduleInterview(id: string, input: interviews.InterviewTime): interviews.Interview;
   deleteInterview(id: string): void;
   getDefaultInterview(candidateId: string): interviews.Interview | null;
+  // Planning Interviews for several Candidates at once: only the times; each is saved with addInterview.
+  suggestInterviewPlan(): interviewPlan.InterviewPlanSettings;
+  planInterviewTimes(input: interviewPlan.InterviewPlanRequest): interviewPlan.InterviewPlan;
   addInterviewerNotes(input: interviewerNotes.NewInterviewerNotes): interviewerNotes.InterviewerNote[];
   editInterviewerNote(id: string, text: string): interviewerNotes.InterviewerNote;
   tagInterviewerNote(id: string, interviewId: string | null): interviewerNotes.InterviewerNote;
@@ -264,6 +269,8 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     rescheduleInterview: (id, input) => interviews.rescheduleInterview(db, today, id, input),
     deleteInterview: (id) => interviews.deleteInterview(db, id),
     getDefaultInterview: (candidateId) => interviews.getDefaultInterview(db, today, candidateId),
+    suggestInterviewPlan: () => interviewPlan.suggestInterviewPlan(today),
+    planInterviewTimes: (input) => interviewPlan.planInterviewTimes(input),
     addInterviewerNotes: (input) => interviewerNotes.addInterviewerNotes(db, now, input),
     editInterviewerNote: (id, text) => interviewerNotes.editInterviewerNote(db, id, text),
     tagInterviewerNote: (id, interviewId) => interviewerNotes.tagInterviewerNote(db, id, interviewId),
