@@ -13,6 +13,7 @@
     "dev": "concurrently -k -n server,client \"node --watch src/web/server.ts\" \"vite\"",
     "mcp": "node src/mcp/server.ts",
     "demo": "node src/web/load-demo.ts",
+    "evaluate": "node src/evaluation/run.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."

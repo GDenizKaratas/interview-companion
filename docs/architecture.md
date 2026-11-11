@@ -12,6 +12,8 @@ Interview Companion is one TypeScript project that runs on the Interviewer's mac
 - **web** is a local server and a browser interface. It calls core.
 - **mcp** is an MCP server. It calls the same core.
 
+A fourth folder, `src/evaluation`, holds the hand-run real-model evaluation (`npm run evaluate`, see `docs/evaluation/README.md`). It is not part of the app. It calls core only through its public interface, and, like the tests and `demo/make-cv.ts`, may use core's testing helpers to build its fictional CVs; lint enforces this.
+
 Because web and mcp only call core, a rule such as "no AI Notes before the Speaker Mapping is confirmed" exists in one place.
 
 ```mermaid

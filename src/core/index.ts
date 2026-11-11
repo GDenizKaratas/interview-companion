@@ -51,6 +51,8 @@ export type {
   TranscriptEvidence,
 } from "./evidence-search.ts";
 export { evidenceSources } from "./evidence-search.ts";
+// The real model, for the hand-run evaluation (#18). The app gets it through openCore.
+export { claudeModel, claudeProvider } from "./claude-provider.ts";
 export {
   AiProviderError,
   InvalidInputError,

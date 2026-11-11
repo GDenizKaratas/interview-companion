@@ -16,7 +16,8 @@ import { AiProviderError } from "./errors.ts";
 // Anthropic SDK. It is not covered by automated tests: tests use the fake provider, and the
 // real model is evaluated separately (#18). Core checks every quote it returns.
 
-const model = "claude-opus-5-5";
+// Exported so the real-model evaluation can name the model in its report.
+export const claudeModel = "claude-opus-5-5";
 
 // The model's answer, in the shape the JSON schema below asks for.
 const answerSchema = z.object({
@@ -167,7 +168,7 @@ export const claudeProvider: AiProviderFactory = (apiKey) => {
     try {
       message = await client.beta.messages
         .stream({
-          model,
+          model: claudeModel,
           max_tokens: 32000,
           // If Claude declines for a safety reason, the API retries on a fallback model it picks.
           betas: ["server-side-fallback-2026-07-01"],
