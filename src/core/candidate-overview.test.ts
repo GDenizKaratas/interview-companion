@@ -115,6 +115,35 @@ describe("Dated Interviews of all Candidates", () => {
     expect(dated[1]!.interview).toEqual(core.listInterviews(can.id).find((i) => i.id === morningCan.id));
   });
 
+  it("marks the Interviews of today, and those from today to the Sunday of this week", () => {
+    // 2026-11-10 is a Tuesday; the week ends on Sunday the 15th.
+    const add = (date: string, time?: string) => core.addInterview({ candidateId: candidate.id, date, time }).id;
+    const yesterday = add("2026-11-09");
+    const todayEarly = add("2026-11-10", "00:01");
+    const todayUntimed = add("2026-11-10");
+    const sunday = add("2026-11-15", "18:00");
+    const nextMonday = add("2026-11-16");
+
+    const marks = new Map(core.listDatedInterviews().map((d) => [d.interview.id, [d.today, d.thisWeek]]));
+
+    expect(marks.get(yesterday)).toEqual([false, false]);
+    expect(marks.get(todayEarly)).toEqual([true, true]);
+    expect(marks.get(todayUntimed)).toEqual([true, true]);
+    expect(marks.get(sunday)).toEqual([false, true]);
+    expect(marks.get(nextMonday)).toEqual([false, false]);
+  });
+
+  it("ends this week today when today is a Sunday", () => {
+    core.close();
+    core = openCore(join(dir, "test.sqlite"), { today: () => "2026-11-15" });
+    const onSunday = core.addInterview({ candidateId: candidate.id, date: "2026-11-15" });
+    const onMonday = core.addInterview({ candidateId: candidate.id, date: "2026-11-16" });
+
+    const marks = new Map(core.listDatedInterviews().map((d) => [d.interview.id, d.thisWeek]));
+
+    expect([marks.get(onSunday.id), marks.get(onMonday.id)]).toEqual([true, false]);
+  });
+
   it("is empty when no Interview has a date", () => {
     core.addInterview({ candidateId: candidate.id });
 

@@ -633,7 +633,7 @@ button.with-icon svg {
   width: min(34rem, calc(100vw - 2rem));
 }
 
-.confirm-dialog.wide .confirm-dialog-subject {
+.confirm-dialog.wide > .confirm-dialog-subject {
   max-height: min(28rem, 70vh);
   padding: 0;
   background: none;
@@ -800,7 +800,24 @@ button.with-icon svg {
   background: var(--accent-strong);
 }
 
-/* A day with Interviews opens the list of all of them. */
+/* A day with Interviews opens the list of all of them. Its number is a button that looks like the others. */
+button.calendar-date {
+  align-self: flex-start;
+  padding: 0;
+  font-weight: 600;
+  line-height: inherit;
+  text-decoration: underline dotted;
+  color: var(--text);
+  background: none;
+  border: none;
+}
+
+button.calendar-date:hover:not(:disabled) {
+  color: var(--accent-strong);
+  background: none;
+}
+
+
 .calendar-day.busy {
   cursor: pointer;
 }

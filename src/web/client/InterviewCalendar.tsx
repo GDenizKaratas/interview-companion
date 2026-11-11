@@ -10,8 +10,8 @@ import { useText } from "./text.tsx";
 
 type Range = "today" | "week" | "planned";
 
-// A month of every Candidate's Interviews, and under it what comes next: today, this week, or
-// everything Planned. Interviews that have taken place are faded; Planned ones stand out.
+// A month of every Candidate's Interviews, and under it a list the Interviewer switches between
+// today, this week, and everything Planned. Interviews that have taken place are faded; Planned ones stand out.
 // Core decides the order within a day and whether an Interview is Planned; this only places them.
 export function InterviewCalendar({ interviews, undated }: { interviews: DatedInterview[]; undated: number }) {
   const { text, languageCode } = useText();
@@ -27,11 +27,10 @@ export function InterviewCalendar({ interviews, undated }: { interviews: DatedIn
     const day = entry.interview.date!;
     byDay.set(day, [...(byDay.get(day) ?? []), entry]);
   }
-  // This week ends on Sunday; weeks start on Monday.
-  const weekEnd = addDays(today, (7 - utcDate(today).getUTCDay()) % 7);
+  // Core says which Interviews are today, this week, and Planned.
   const ranges: Record<Range, DatedInterview[]> = {
-    today: byDay.get(today) ?? [],
-    week: interviews.filter(({ interview }) => interview.date! >= today && interview.date! <= weekEnd),
+    today: interviews.filter((entry) => entry.today),
+    week: interviews.filter((entry) => entry.thisWeek),
     planned: interviews.filter(({ interview }) => interview.planned),
   };
   // Opens on the nearest range that has something to show.
@@ -90,10 +89,17 @@ export function InterviewCalendar({ interviews, undated }: { interviews: DatedIn
               className={classes.join(" ")}
               role="gridcell"
               onClick={(event) => {
-                if (dayEntries.length > 0 && !(event.target as Element).closest("a")) setOpenDay(day);
+                if (dayEntries.length > 0 && !(event.target as Element).closest("a, button")) setOpenDay(day);
               }}
             >
-              <span className="calendar-date">{Number(day.slice(8))}</span>
+              {dayEntries.length > 0 ? (
+                // A button, so the list of the day also opens from the keyboard.
+                <button type="button" className="calendar-date" title={t.openDay} aria-label={`${longDay(languageCode, day)}: ${t.openDay}`} onClick={() => setOpenDay(day)}>
+                  {Number(day.slice(8))}
+                </button>
+              ) : (
+                <span className="calendar-date">{Number(day.slice(8))}</span>
+              )}
               {/* Every Interview is listed; outside full screen, CSS shows two and the "+n" button. */}
               {dayEntries.map((entry) => (
                 <a
@@ -120,13 +126,12 @@ export function InterviewCalendar({ interviews, undated }: { interviews: DatedIn
         <span className="legend-swatch past" /> {t.legendPast}
         <span className="legend-swatch planned" /> {t.legendPlanned}
       </p>
-      <div className="calendar-ranges" role="tablist" aria-label={t.rangesLabel}>
+      <div className="calendar-ranges" role="group" aria-label={t.rangesLabel}>
         {(["today", "week", "planned"] as const).map((key) => (
           <button
             key={key}
             type="button"
-            role="tab"
-            aria-selected={range === key}
+            aria-pressed={range === key}
             className={range === key ? "range-tab chosen" : "range-tab"}
             onClick={() => setChosenRange(key)}
           >

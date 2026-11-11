@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { AddButton } from "./AddButton.tsx";
 import { AddCandidateDialog } from "./AddCandidateDialog.tsx";
 import { api, type CandidateOverview, type DatedInterview, type Interview } from "./api.ts";
@@ -6,6 +6,7 @@ import { CvPreviewDialog } from "./CvPreviewDialog.tsx";
 import { localDay, shortDay } from "./dates.ts";
 import { ExpandableCard } from "./ExpandableCard.tsx";
 import { NoKeyGuide } from "./NoKeyGuide.tsx";
+import { ImportCandidate, type ImportCandidateHandle } from "./ImportCandidate.tsx";
 import { InterviewCalendar } from "./InterviewCalendar.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
@@ -30,6 +31,8 @@ export function CandidateList() {
   const [roleQuestionsOpen, setRoleQuestionsOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  // Opens the file chooser of the import, which lives on this page so it outlasts the add dialog.
+  const importCandidate = useRef<ImportCandidateHandle>(null);
 
   useEffect(() => {
     loadCandidates();
@@ -52,14 +55,18 @@ export function CandidateList() {
   }
 
   const t = text.home;
-  // Candidates with a Planned Interview, the one who is met soonest first. Core gives the order.
+  // Candidates met today or with a Planned Interview, the one who is met soonest first. Core
+  // gives the order, and says which Interviews are today or Planned. Today's stay all day, so
+  // the list does not lose a Candidate when their Interview's time passes.
   const byId = new Map(candidates?.map((overview) => [overview.candidate.id, overview]));
-  const plannedIds = [...new Set(dated?.filter(({ interview }) => interview.planned).map(({ candidate }) => candidate.id))];
+  const plannedIds = [...new Set(dated?.filter((entry) => entry.today || entry.interview.planned).map(({ candidate }) => candidate.id))];
   const planned = plannedIds.flatMap((id) => byId.get(id) ?? []);
   // Opens on who comes next; with nothing Planned, on everyone, so the page is never empty.
   const view = chosenView ?? (planned.length > 0 ? "planned" : "all");
   const needle = folded(search.trim());
-  const shown = (view === "planned" ? planned : (candidates ?? [])).filter(
+  // A search looks through every Candidate, whichever view is chosen: someone who is in the app
+  // is always found.
+  const shown = (view === "planned" && needle === "" ? planned : (candidates ?? [])).filter(
     ({ candidate }) => needle === "" || folded(candidate.name).includes(needle) || folded(candidate.role).includes(needle),
   );
   const undated = candidates?.reduce((n, overview) => n + overview.interviews.filter((i) => i.date === null).length, 0) ?? 0;
@@ -80,6 +87,7 @@ export function CandidateList() {
             <AddButton onClick={() => setAdding(true)}>{text.candidates.add}</AddButton>
           </span>
         </header>
+        <ImportCandidate ref={importCandidate} />
         {loadError && <p className="error">{text.candidates.loadFailed}</p>}
         {candidates && candidates.length === 0 && <p className="empty">{text.candidates.empty}</p>}
         {candidates && candidates.length > 0 && (
@@ -113,7 +121,7 @@ export function CandidateList() {
         {candidates && candidates.length > 0 && shown.length === 0 && (
           <p className="empty">
             {needle !== "" ? t.noMatch : t.noPlanned}{" "}
-            {view === "planned" && (
+            {view === "planned" && needle === "" && (
               <button type="button" className="link-button" onClick={() => setChosenView("all")}>
                 {t.showAll}
               </button>
@@ -140,6 +148,10 @@ export function CandidateList() {
           <AddCandidateDialog
             roles={roles}
             onClose={() => setAdding(false)}
+            onImport={() => {
+              importCandidate.current?.chooseFile();
+              setAdding(false);
+            }}
             onAdded={() => {
               setAdding(false);
               // The new Candidate has no Planned Interview yet, so they show among all Candidates.

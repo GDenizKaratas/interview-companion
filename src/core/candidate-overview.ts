@@ -63,17 +63,28 @@ export function getCandidateOverview(db: DatabaseSync, today: Today, candidateId
 export interface DatedInterview {
   candidate: Candidate;
   interview: Interview;
+  // The Interview is today, whether it is still Planned or has taken place.
+  today: boolean;
+  // The Interview is between today and the Sunday that ends this week, both included.
+  thisWeek: boolean;
 }
 
 // Every Candidate's Interviews that have a date, earliest first. Within a day, those without a
 // time come after the timed ones; Interviews at the same time are in the order of their
 // Candidates' names. The Planned ones, in this order, are what comes next for the Interviewer.
 export function listDatedInterviews(db: DatabaseSync, today: Today): DatedInterview[] {
+  const { day } = today();
+  const sunday = sundayOnOrAfter(day);
   return listCandidates(db)
     .flatMap((candidate) =>
       listInterviews(db, today, candidate.id)
         .filter((interview) => interview.date !== null)
-        .map((interview) => ({ candidate, interview })),
+        .map((interview) => ({
+          candidate,
+          interview,
+          today: interview.date === day,
+          thisWeek: interview.date! >= day && interview.date! <= sunday,
+        })),
     )
     .sort(
       (a, b) =>
@@ -82,6 +93,13 @@ export function listDatedInterviews(db: DatabaseSync, today: Today): DatedInterv
         byText(a.interview.time ?? "~", b.interview.time ?? "~") ||
         a.candidate.name.localeCompare(b.candidate.name, "tr"),
     );
+}
+
+// The Sunday that ends the week of this day; weeks start on Monday.
+function sundayOnOrAfter(day: string): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + ((7 - date.getUTCDay()) % 7));
+  return date.toISOString().slice(0, 10);
 }
 
 // Days and times are compared character by character, not by the rules of a language.

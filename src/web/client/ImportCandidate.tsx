@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useImperativeHandle, useRef, useState, type ChangeEvent, type Ref } from "react";
 import { api, ApiError, type CandidateImport, type ExistingCandidate } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { interviewNameOf } from "./interview-names.ts";
@@ -16,13 +16,20 @@ type Step =
   | { step: "report"; result: CandidateImport }
   | { step: "failed"; error: unknown };
 
-// The Candidate list's Import button: choose a Candidate export, decide what happens to a
-// Candidate who is already here, and see what was not saved before opening the Workspace.
-export function ImportCandidate({ className = "quiet", label }: { className?: string; label?: string }) {
+// Importing a Candidate export on the Candidate list: choose the file, decide what happens to a
+// Candidate who is already here, and see what was not saved before opening the Workspace. It
+// has no button of its own; the page opens its file chooser through the ref.
+export interface ImportCandidateHandle {
+  chooseFile: () => void;
+}
+
+export function ImportCandidate({ ref }: { ref: Ref<ImportCandidateHandle> }) {
   const { text } = useText();
   const t = text.importCandidate;
   const input = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<Step>({ step: "idle" });
+
+  useImperativeHandle(ref, () => ({ chooseFile: () => input.current?.click() }), []);
 
   async function importFile(file: File, ifExists?: ExistingCandidate) {
     setState({ step: "importing" });
@@ -46,9 +53,11 @@ export function ImportCandidate({ className = "quiet", label }: { className?: st
   return (
     <>
       <input ref={input} type="file" accept="application/zip,.zip" hidden onChange={handleChosen} />
-      <button type="button" className={className} disabled={state.step === "importing"} onClick={() => input.current?.click()}>
-        {state.step === "importing" ? t.importing : (label ?? t.open)}
-      </button>
+      {state.step === "importing" && (
+        <p className="muted" role="status">
+          {t.importing}
+        </p>
+      )}
       {state.step === "failed" && (
         <ModalDialog
           title={t.failedTitle}

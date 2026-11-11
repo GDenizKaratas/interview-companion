@@ -2,14 +2,24 @@ import { useId, useRef, useState, type ChangeEvent, type FormEvent } from "react
 import { AddButton } from "./AddButton.tsx";
 import { api, ApiError } from "./api.ts";
 import { cvRefusalMessage } from "./cv-refusal.ts";
-import { ImportCandidate } from "./ImportCandidate.tsx";
 import type { Text } from "./languages.ts";
 import { ModalDialog } from "./ModalDialog.tsx";
 import { useText } from "./text.tsx";
 
 // The form that adds a Candidate, over the Candidate list: name, role, and an optional CV.
-// A Candidate export can be imported from here too. It closes once the Candidate is saved.
-export function AddCandidateDialog({ roles, onAdded, onClose }: { roles: string[]; onAdded: () => void; onClose: () => void }) {
+// It also offers importing a Candidate export instead. It closes once the Candidate is saved.
+export function AddCandidateDialog({
+  roles,
+  onAdded,
+  onImport,
+  onClose,
+}: {
+  roles: string[];
+  onAdded: () => void;
+  // The Interviewer wants to import a Candidate export instead.
+  onImport: () => void;
+  onClose: () => void;
+}) {
   const { text } = useText();
   const formId = useId();
   const rolesId = useId();
@@ -110,7 +120,9 @@ export function AddCandidateDialog({ roles, onAdded, onClose }: { roles: string[
         {saveError !== undefined && <p className="error">{refusalMessage(text, saveError)}</p>}
       </form>
       <p className="import-instead">
-        <ImportCandidate className="link-button" label={text.importCandidate.fromFile} />
+        <button type="button" className="link-button" onClick={onImport}>
+          {text.importCandidate.fromFile}
+        </button>
       </p>
     </ModalDialog>
   );
