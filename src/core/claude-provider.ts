@@ -10,6 +10,7 @@ import type {
   ProposedQuestionEvidence,
   QuestionRequest,
 } from "./ai-provider.ts";
+import { neutralityRules, privateMatters } from "./ai-writing-rules.ts";
 import { AiProviderError } from "./errors.ts";
 
 // The Claude implementation of the AI provider. It is the only file that knows about the
@@ -247,19 +248,6 @@ export const claudeProvider: AiProviderFactory = (apiKey) => {
     },
   };
 };
-
-// What no AI text about a Candidate may do, said in every prompt the app sends. The app helps the
-// Interviewer remember what was said; it does not form an opinion of the person.
-const neutralityRules = [
-  "- No adjective or adverb that praises or faults the candidate or an answer, such as strong, weak,",
-  "  clearly, vaguely, impressive, confident, or struggled.",
-  "- Do not infer what the candidate feels, knows, or can do beyond the words said. Keep the candidate's",
-  "  own hedges and scope, such as \"I think\", \"we\", or \"the team did\": do not turn them into certainty or \"I\".",
-];
-
-// Private matters are never written down by the AI, but a question that touched on one is not
-// hidden from the Interviewer: it is listed, and the detail is left out of what the AI writes.
-const privateMatters = "health, pregnancy, family, age, religion, origin, politics, military service, or other private matters";
 
 function askedSystemPrompt(language: string): string {
   return [

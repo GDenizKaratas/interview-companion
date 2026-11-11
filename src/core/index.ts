@@ -57,6 +57,8 @@ export type {
 export { evidenceSources } from "./evidence-search.ts";
 // The real model, for the hand-run evaluation (#18). The app gets it through openCore.
 export { claudeModel, claudeProvider } from "./claude-provider.ts";
+// What no AI text about a Candidate may do: the same text for the app's model and the AI client.
+export { neutralityRules, privateMatters, writingRulesInOneSentence } from "./ai-writing-rules.ts";
 export {
   AiProviderError,
   InvalidInputError,
