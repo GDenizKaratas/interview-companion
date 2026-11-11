@@ -180,7 +180,11 @@ describe("Importing a Candidate", () => {
     const [first] = source.listInterviews(candidate.id);
     const transcript = source.getTranscript(first!.id)!;
     const roles = Object.fromEntries(transcript.speakers.map((s) => [s.id, s.role!]));
-    source.confirmSpeakerMapping(first!.id, Object.fromEntries(transcript.speakers.map((s) => [s.id, "other" as const])));
+    // Swapped and put back: a mapping needs a Candidate and an Interviewer, so "everyone is Other" is refused.
+    const swapped = Object.fromEntries(
+      transcript.speakers.map((s) => [s.id, s.role === "candidate" ? ("interviewer" as const) : s.role === "interviewer" ? ("candidate" as const) : s.role!]),
+    );
+    source.confirmSpeakerMapping(first!.id, swapped);
     source.confirmSpeakerMapping(first!.id, roles);
     expect(source.listAiNotes(first!.id).every((note) => note.stale)).toBe(true);
     const before = contentOf(source, candidate.id);
@@ -433,6 +437,19 @@ describe("Checks on import", () => {
     ]);
     expect(target.getCv(imported.candidate.id)).toBeUndefined();
     expect(target.listAiNotes(target.listInterviews(imported.candidate.id)[0]!.id)).toHaveLength(5);
+  });
+
+  it("imports a Transcript whose exported Speaker Mapping core now refuses, reports it, and leaves the speakers unconfirmed", async () => {
+    const candidate = await elif();
+    const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);
+    // An export made before a mapping needed an Interviewer: every speaker but the Candidate is Other.
+    const older = JSON.parse(JSON.stringify(manifest).replaceAll('"role":"interviewer"', '"role":"other"'));
+
+    const imported = await target.importCandidate(repack(files, older));
+
+    expect(imported.problems[0]).toEqual({ kind: "speakerMapping", interviewNumber: 1, text: "transcript-elif-kaya.vtt" });
+    const [interview] = target.listInterviews(imported.candidate.id);
+    expect(target.getTranscript(interview!.id)?.speakerMappingConfirmedAt).toBeNull();
   });
 
   it("reads each Transcript again like an upload, and reports one that is refused, with its AI work", async () => {

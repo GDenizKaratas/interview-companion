@@ -496,7 +496,15 @@ function rebuildTranscript(
     }
     mapping[speaker.id] = role;
   }
-  confirmSpeakerMapping(db, at(exported.speakerMappingConfirmedAt), interviewId, mapping);
+  // An export made before a mapping needed one Candidate and an Interviewer may hold one core now
+  // refuses. The Transcript is kept and its speakers wait to be confirmed again.
+  try {
+    confirmSpeakerMapping(db, at(exported.speakerMappingConfirmedAt), interviewId, mapping);
+  } catch (error) {
+    if (!(error instanceof InvalidInputError)) throw error;
+    problems.push({ kind: "speakerMapping", interviewNumber: number, text: fileName });
+    return false;
+  }
   return true;
 }
 
