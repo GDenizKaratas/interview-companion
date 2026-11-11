@@ -338,6 +338,9 @@ const text = {
     cvPage: "CV, page {page}",
     segment: "{interview}, segment {segment}",
     unknownInterview: "an Interview that is not this Candidate's, segment {segment}",
+    notCandidateWords: "not the Candidate's words, {role}",
+    speakersNotConfirmed: "speakers not confirmed",
+    roleOf: { interviewer: "the Interviewer's", other: "another speaker's" },
   },
   interviews: {
     label: "Interview",

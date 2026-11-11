@@ -203,6 +203,7 @@ const readOperations = [
   "searchEvidence",
   "getCandidateBrief",
   "aiClientWritesAllowed",
+  "getInterfaceLanguage",
 ] as const satisfies readonly (keyof Core)[];
 
 export type ReadOnlyCore = Pick<Core, (typeof readOperations)[number]>;

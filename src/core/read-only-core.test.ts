@@ -31,6 +31,7 @@ describe("Read-only view of core", () => {
       "getCandidateBrief",
       "getCandidateOverview",
       "getCv",
+      "getInterfaceLanguage",
       "getTranscript",
       "listAiNotes",
       "listAskedQuestions",

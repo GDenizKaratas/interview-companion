@@ -475,7 +475,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
       },
     },
     ({ candidate }) => ({
-      messages: [{ role: "user", content: { type: "text", text: withStartKey(candidatePrompt(candidate)) } }],
+      messages: [{ role: "user", content: { type: "text", text: withStartKey(candidatePrompt(candidate, core.getInterfaceLanguage())) } }],
     }),
   );
   // Running a prompt is the user's own act, so its text starts Interview Companion: it carries a

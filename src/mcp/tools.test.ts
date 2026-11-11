@@ -467,6 +467,13 @@ describe("MCP server", () => {
     expect(await promptText({})).toContain("ask me which Candidate");
   });
 
+  it("the candidate prompt asks for answers in the app's interface language, so a name alone gets a Turkish answer", async () => {
+    expect(await promptText({ candidate: "Mert" })).toContain("Answer in Turkish unless I write in another language.");
+
+    core.setInterfaceLanguage("en");
+    expect(await promptText({ candidate: "Mert" })).toContain("Answer in English unless I write in another language.");
+  });
+
   async function promptText(args: Record<string, string>): Promise<string> {
     const { messages } = await client.getPrompt({ name: "candidate", arguments: args });
     expect(messages).toHaveLength(1);
