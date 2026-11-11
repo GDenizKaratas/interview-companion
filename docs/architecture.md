@@ -83,7 +83,7 @@ erDiagram
 
 Notes on the model:
 
-- A **Speaker** is a label from the file plus a role (Candidate, Interviewer, Other, or not yet assigned). The Speaker Mapping is confirmed once per Transcript.
+- A **Speaker** is a label from the file plus a role (Candidate, Interviewer, Other, or not yet assigned). The Speaker Mapping is confirmed once per Transcript. A mapping has exactly one Candidate and, when there are two or more speakers, at least one Interviewer.
 - **Evidence** stores the exact quote and where it is: a Transcript segment, or a CV page.
 - An **AI Note** has a Review State and a Stale flag. A Corrected note keeps the original AI text.
 - A **Saved Question** is a copy. It does not point back to a Suggested Question that could later disappear, and a copy of a Role Question does not change when the role's list changes.

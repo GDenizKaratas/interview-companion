@@ -225,6 +225,20 @@ export function confirmSpeakerMapping(
   if (speakerIds.some((id) => !(speakerRoles as readonly string[]).includes(roles[id]!))) {
     throw new InvalidInputError("speakerMapping", "format", "A speaker's role must be Candidate, Interviewer, or Other.");
   }
+  // An Interview is a conversation between the Candidate and at least one Interviewer. Without a
+  // Candidate nothing could be said to be the Candidate's words, and without an Interviewer no
+  // question would have anyone who asked it. A Transcript with a single speaker is the Candidate's alone.
+  const given = speakerIds.map((id) => roles[id]!);
+  if (!given.includes("candidate")) {
+    throw new InvalidInputError("candidate", "required", "One speaker must be the Candidate.");
+  }
+  // An Interview is one Candidate's, so two speakers cannot both be the Candidate.
+  if (given.filter((role) => role === "candidate").length > 1) {
+    throw new InvalidInputError("candidate", "format", "Only one speaker can be the Candidate.");
+  }
+  if (speakerIds.length > 1 && !given.includes("interviewer")) {
+    throw new InvalidInputError("interviewer", "required", "One speaker must be the Interviewer.");
+  }
   // Confirming the same roles again changes nothing, so the time stays and AI Notes do not turn
   // Stale. A first confirmation always counts.
   const current = getTranscript(db, interviewId)!;

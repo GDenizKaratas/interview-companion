@@ -16,18 +16,18 @@ export function NotesPanel({
 }: {
   candidateId: string;
   interviews: Interview[];
-  // The Interview chosen in the Workspace header, or null for all.
+  // The Interview chosen in this card's own filter, or null for all.
   selectedInterviewId: string | null;
-  // Switches the Workspace header to all Interviews.
+  // Switches this card's filter to all Interviews.
   onShowAll: () => void;
 }) {
   const { text } = useText();
   const [notes, setNotes] = useState<InterviewerNote[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
   const [draft, setDraft] = useState("");
-  // The Interview new notes are tagged with. It follows the header's selection.
+  // The Interview new notes are tagged with. It follows the card's filter.
   const [tag, setTag] = useState<string | null>(selectedInterviewId);
-  // When the header's selection changes, the tag for new notes follows it (React's way of
+  // When the card's filter changes, the tag for new notes follows it (React's way of
   // adjusting state when a prop changes, without an extra render from an effect).
   const [followedSelection, setFollowedSelection] = useState(selectedInterviewId);
   // The Interview a just-saved or re-tagged note went to, when the current filter hides it.
@@ -265,7 +265,7 @@ function NoteItem({
             {text.panels.interviewerNotes.edit}
           </button>
         )}
-        <button type="button" className="link-button" onClick={() => setConfirmingDelete(true)}>
+        <button type="button" className="link-button danger-text" onClick={() => setConfirmingDelete(true)}>
           {text.panels.interviewerNotes.delete}
         </button>
       </div>

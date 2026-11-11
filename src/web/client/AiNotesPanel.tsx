@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AiNoteItem } from "./AiNoteItem.tsx";
 import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
+import { ConnectAi } from "./ConnectAi.tsx";
 import { api, ApiError, type AiNote, type Interview, type Transcript } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { fill, type Text } from "./languages.ts";
@@ -102,9 +103,7 @@ function InterviewAiNotes({
       {apiKeySaved === false && (
         <div className="ai-notes-empty">
           <p className="empty">{t.noApiKey}</p>
-          <button type="button" className="quiet" onClick={() => setSettingsOpen(true)}>
-            {t.addApiKey}
-          </button>
+          <ConnectAi onAddApiKey={() => setSettingsOpen(true)} />
         </div>
       )}
       {apiKeySaved && transcript !== undefined && (

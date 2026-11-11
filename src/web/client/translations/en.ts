@@ -44,6 +44,10 @@ const text = {
     ai: "The last step needs AI. There are two ways:",
     close: "Close",
   },
+  connectAi: {
+    addApiKey: "Add an API key",
+    or: "or",
+  },
   mcpGuide: {
     open: "Use with MCP",
     title: "Use AI without an API key (MCP)",
@@ -538,6 +542,11 @@ const text = {
       loadFailed: "The CV could not be loaded.",
       viewFailed: "The PDF could not be shown.",
     },
+    // The choice in the head of the Questions and My Notes cards: which Interview's items show.
+    interviewFilter: {
+      label: "Which Interview to show",
+      all: "All",
+    },
     // The dropdown that tags an Interviewer Note or a Saved Question with an Interview.
     interviewTag: {
       label: "Interview",
@@ -546,7 +555,7 @@ const text = {
     interviewerNotes: {
       title: "My Notes",
       empty: "No personal notes yet.",
-      placeholder: "Write a note, Enter to save…",
+      placeholder: "Write a note about the Interview, Enter to save…",
       hint: "Each line becomes its own note.",
       savedAt: "Saved at",
       edit: "Edit",
@@ -582,6 +591,11 @@ const text = {
       speakers: {
         title: "Speakers",
         confirmed: "confirmed",
+        notConfirmed: "Speakers not confirmed",
+        clickToConfirm: "Click to confirm",
+        needCandidate: "One speaker must be the Candidate.",
+        oneCandidate: "Only one speaker can be the Candidate.",
+        needInterviewer: "One speaker must be the Interviewer.",
         edit: "Edit",
         gate: "Confirm who is speaking before notes are taken. Give each speaker a role.",
         roles: { candidate: "Candidate", interviewer: "Interviewer", other: "Other" },
@@ -624,7 +638,6 @@ const text = {
         run: "Ready. AI reads this Transcript and pulls out the questions you asked and what the Candidate said, each with its quote.",
       },
       goToTranscript: "Go to the Transcript",
-      addApiKey: "Add API key",
       run: "Pull out questions and notes",
       running: "Reading the Transcript…",
       runningNotes: "Questions are out; writing the notes…",
@@ -645,7 +658,6 @@ const text = {
       noInterview: "Add an Interview first. Asked questions are found in its Transcript.",
       selectInterview: "Select an Interview above to see the questions asked in it.",
       noApiKey: "Add an API key to find the asked questions here, or let your own AI client do it: see “Use with MCP”.",
-      addApiKey: "Add API key",
       noTranscript: "Import this Interview's Transcript to find the questions asked.",
       confirmSpeakersFirst: "Confirm who is speaking first.",
       notYet: "Every question you asked in this Interview, each with a short summary of the answer.",
@@ -684,7 +696,6 @@ const text = {
       noInterview: "Add an Interview first. AI Notes are made from its Transcript.",
       selectInterview: "Select an Interview above to see or generate its AI Notes.",
       noApiKey: "Add an API key to generate AI Notes here, or let your own AI client do it: see “Use with MCP”.",
-      addApiKey: "Add API key",
       noTranscript: "Import this Interview's Transcript to generate AI Notes.",
       confirmSpeakersFirst: "Confirm who is speaking before generating AI Notes.",
       generate: "Take notes",
@@ -770,8 +781,9 @@ const text = {
       // {interview} is replaced by the Interview's name.
       hiddenByFilter: "Saved under {interview}. Questions of other Interviews are hidden while one is selected.",
       showAll: "Show all questions",
+      view: "View",
+      viewHint: "Opens the question and the Candidate's answer",
       // {interview} is replaced by the Interview's name.
-      askedIn: "Asked in {interview}",
       aiFoundAskedIn: "It is in the Transcript of {interview}",
       notFoundIn: "Not found in the Transcript of {interview}",
       notFoundHint: "Not found in this Transcript. It may have been asked in other words.",
@@ -797,7 +809,6 @@ const text = {
         regenerate: "Suggest again",
         generating: "Suggesting…",
         noApiKey: "Add an API key to get question suggestions here.",
-        addApiKey: "Add API key",
         empty: "No suggestions yet.",
         // {count} is replaced by a number.
         dropped: "Suggestions dropped because a quote was not found word for word in the CV or a Transcript: {count}.",

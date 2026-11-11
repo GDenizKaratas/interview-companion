@@ -182,11 +182,11 @@ describe("MCP server", () => {
       fileName: "t.txt",
       bytes: new TextEncoder().encode("Ayşe: Which queue did you use?\nAda: We used Redis with BullMQ."),
     });
-    const roles = (interviewer: "interviewer" | "other") =>
+    const roles = (candidateLabel: string) =>
       Object.fromEntries(
-        transcript.speakers.map((speaker) => [speaker.id, speaker.label === "Ada" ? "candidate" : interviewer] as const),
+        transcript.speakers.map((speaker) => [speaker.id, speaker.label === candidateLabel ? "candidate" : "interviewer"] as const),
       );
-    core.confirmSpeakerMapping(interview.id, roles("interviewer"));
+    core.confirmSpeakerMapping(interview.id, roles("Ada"));
     core.saveApiKey("sk-ant-test-key");
     proposed = [
       { statement: "Used Redis.", evidence: [{ segmentNumber: 2, quote: "Redis" }] },
@@ -196,7 +196,9 @@ describe("MCP server", () => {
     core.correctAiNote(first!.id, "Used Redis with BullMQ.");
     core.dismissAiNote(second!.id);
     clock = new Date("2026-11-10T10:00:00Z");
-    core.confirmSpeakerMapping(interview.id, roles("other"));
+    // The mapping is swapped and put back: a real change, after which the notes are Stale.
+    core.confirmSpeakerMapping(interview.id, roles("Ayşe"));
+    core.confirmSpeakerMapping(interview.id, roles("Ada"));
 
     expect(await call("get_ai_notes", { interviewId: interview.id })).toEqual([
       {

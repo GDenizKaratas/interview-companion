@@ -4,7 +4,7 @@ import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
 import { api, type Interview, type InterviewAiStep } from "./api.ts";
 import { AskedQuestionsPanel } from "./AskedQuestionsPanel.tsx";
 import { fill } from "./languages.ts";
-import { openMcpGuide } from "./McpGuideDialog.tsx";
+import { ConnectAi } from "./ConnectAi.tsx";
 import { useText } from "./text.tsx";
 
 interface AiCardProps {
@@ -208,14 +208,7 @@ function InterviewAiCard({
         ) : step === "connectAi" ? (
           <>
             <p>{t.next.connectAi}</p>
-            <span className="ai-next-actions">
-              <button type="button" className="secondary" onClick={() => setSettingsOpen(true)}>
-                {t.addApiKey}
-              </button>
-              <button type="button" className="link-button" onClick={() => window.dispatchEvent(new Event(openMcpGuide))}>
-                {text.mcpGuide.open}
-              </button>
-            </span>
+            <ConnectAi onAddApiKey={() => setSettingsOpen(true)} />
           </>
         ) : (
           <>

@@ -110,6 +110,39 @@ describe("Speaker Mapping", () => {
     expect(transcript?.speakerMappingConfirmedAt).toBeNull();
   });
 
+  it("refuses a mapping in which nobody is the Candidate, or nobody is the Interviewer, and keeps the earlier mapping", () => {
+    const ids = idsByLabel(importThreeSpeakers());
+    const confirmed = core.confirmSpeakerMapping(interview.id, { [ids.Ayşe!]: "interviewer", [ids.Ece!]: "candidate", [ids.Gözlemci!]: "other" });
+
+    // No Interviewer: the questions would have nobody who asked them.
+    expect(() => core.confirmSpeakerMapping(interview.id, { [ids.Ayşe!]: "other", [ids.Ece!]: "candidate", [ids.Gözlemci!]: "other" })).toThrow(
+      expect.objectContaining({ name: "InvalidInputError", field: "interviewer", rule: "required" }),
+    );
+    // Nobody is the Candidate: nothing could be said to be the Candidate's words.
+    expect(() => core.confirmSpeakerMapping(interview.id, { [ids.Ayşe!]: "interviewer", [ids.Ece!]: "interviewer", [ids.Gözlemci!]: "other" })).toThrow(
+      expect.objectContaining({ name: "InvalidInputError", field: "candidate", rule: "required" }),
+    );
+
+    expect(core.getTranscript(interview.id)).toEqual(confirmed);
+  });
+
+  it("refuses a mapping with two Candidates, since an Interview is one Candidate's", () => {
+    const ids = idsByLabel(importThreeSpeakers());
+
+    expect(() => core.confirmSpeakerMapping(interview.id, { [ids.Ayşe!]: "interviewer", [ids.Ece!]: "candidate", [ids.Gözlemci!]: "candidate" })).toThrow(
+      expect.objectContaining({ name: "InvalidInputError", field: "candidate", rule: "format" }),
+    );
+    expect(core.getTranscript(interview.id)?.speakerMappingConfirmedAt).toBeNull();
+  });
+
+  it("accepts a Transcript with one speaker as the Candidate's alone", () => {
+    const transcript = core.importTranscript(interview.id, { fileName: "t.txt", bytes: new TextEncoder().encode("Ece: Ödeme servislerini yazdım.") });
+
+    const confirmed = core.confirmSpeakerMapping(interview.id, { [transcript.speakers[0]!.id]: "candidate" });
+
+    expect(speakersOf(confirmed)).toEqual(["Ece: candidate, verified"]);
+  });
+
   it("refuses a role that is not Candidate, Interviewer, or Other", () => {
     const ids = idsByLabel(importThreeSpeakers());
     // Roles arrive from the browser as JSON, so core cannot trust their type.
