@@ -43,6 +43,9 @@ export function AiNoteItem({ note, segmentTimes, onShowEvidence, onChanged }: Ai
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Escape") {
+      // Inside the note's dialog, the first Escape only leaves the correction; it does not close the dialog.
+      event.preventDefault();
+      event.stopPropagation();
       setEditing(false);
       setError(undefined);
     }
