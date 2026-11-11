@@ -71,7 +71,6 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
         onClose();
       }}
     >
-      <DialogCloseButton onClose={onClose} />
       <h2 id="ai-settings-title">{t.title}</h2>
       <p className="settings-status">{saved === undefined ? "" : saved ? `✔ ${t.saved}` : t.notSaved}</p>
       <form className="settings-form" onSubmit={(event) => void save(event)}>
@@ -132,6 +131,7 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
           <p>{t.confirmRemoveDetail}</p>
         </ConfirmDialog>
       )}
+      <DialogCloseButton onClose={onClose} />
     </dialog>
   );
 }

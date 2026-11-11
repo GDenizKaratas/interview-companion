@@ -27,6 +27,7 @@ interface ModalDialogProps {
 export function ModalDialog({ title, kind, children, actions, onCancel, wide, large }: ModalDialogProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const pressedOutside = useRef(false);
 
   useEffect(() => {
     dialog.current?.showModal();
@@ -42,17 +43,23 @@ export function ModalDialog({ title, kind, children, actions, onCancel, wide, la
         event.stopPropagation();
         onCancel();
       }}
-      onClick={(event) => kind === "info" && clickedOutside(event) && onCancel()}
+      // Only a click that both starts and ends on the dimmed page closes the dialog, so selecting
+      // text and letting go outside it does not.
+      onMouseDown={(event) => {
+        pressedOutside.current = isOutside(event);
+      }}
+      onClick={(event) => kind === "info" && pressedOutside.current && isOutside(event) && onCancel()}
     >
-      {kind !== "question" && <DialogCloseButton onClose={onCancel} />}
       <h2 id={titleId}>{title}</h2>
       {children && <div className="confirm-dialog-subject">{children}</div>}
       <div className="confirm-dialog-actions">{actions}</div>
+      {/* Last in the dialog, so opening it puts the focus in the first field, not on the ×. */}
+      {kind !== "question" && <DialogCloseButton onClose={onCancel} />}
     </dialog>
   );
 }
 
-// The × at the top right of a dialog. It stays in place while the dialog's content scrolls.
+// The × at the top right of a dialog.
 export function DialogCloseButton({ onClose }: { onClose: () => void }) {
   const { text } = useText();
   return (
@@ -62,11 +69,10 @@ export function DialogCloseButton({ onClose }: { onClose: () => void }) {
   );
 }
 
-// True for a click on the dimmed page around a dialog. A dialog's own padding is part of the
-// dialog, so the click's place is compared with the dialog's box instead of its target. A click
-// that started as a key press on a button has no place and never counts.
-export function clickedOutside(event: MouseEvent<HTMLDialogElement>): boolean {
-  if (event.target !== event.currentTarget || event.detail === 0) return false;
+// True for a mouse event on the dimmed page around a dialog. A dialog's own padding is part of
+// the dialog, so the pointer's place is compared with the dialog's box instead of the target.
+function isOutside(event: MouseEvent<HTMLDialogElement>): boolean {
+  if (event.target !== event.currentTarget) return false;
   const box = event.currentTarget.getBoundingClientRect();
   return event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
 }
