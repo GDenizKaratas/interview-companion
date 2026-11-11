@@ -168,11 +168,13 @@ export function PlanInterviewsDialog({
   const choosing = phase.kind === "choosing";
   const ready = current !== undefined && chosen.length > 0 && current.refused === 0;
 
+  // The range and the count that do not fit also stay as last answered, so the line does not flicker.
+  const lastRange = current ?? shownPlan;
   const summary =
     chosen.length === 0
       ? t.noneChosen
-      : current?.from && current.to
-        ? fill(chosen.length === 1 ? t.chosenOne : t.chosen, { count: String(chosen.length), from: current.from, to: current.to })
+      : lastRange?.from && lastRange.to
+        ? fill(chosen.length === 1 ? t.chosenOne : t.chosen, { count: String(chosen.length), from: lastRange.from, to: lastRange.to })
         : fill(t.chosenNoRange, { count: String(chosen.length) });
 
   const content =
@@ -201,7 +203,8 @@ export function PlanInterviewsDialog({
             {t.minutesLabel}
             <input
               type="number"
-              min={1}
+              // The arrows move by five minutes; any whole number can be typed.
+              min={5}
               step={5}
               inputMode="numeric"
               value={settings?.minutes ?? ""}
@@ -227,8 +230,8 @@ export function PlanInterviewsDialog({
           <>
             <p className="add-many-summary" aria-live="polite">
               <span>{summary}</span>
-              {current && current.refused > 0 && (
-                <span className="add-many-bad">{fill(t.doNotFit, { count: String(current.refused) })}</span>
+              {chosen.length > 0 && lastRange && lastRange.refused > 0 && (
+                <span className="add-many-bad">{fill(t.doNotFit, { count: String(lastRange.refused) })}</span>
               )}
               {choosing && chosen.length < rows.length && (
                 <button type="button" className="link-button" onClick={chooseAll}>
