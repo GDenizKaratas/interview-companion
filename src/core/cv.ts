@@ -2,10 +2,17 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
-import { createCandidate, deleteCandidate, requireCandidate, type Candidate, type NewCandidate } from "./candidates.ts";
+import {
+  createCandidate,
+  deleteCandidate,
+  isCandidateAdded,
+  requireCandidate,
+  type Candidate,
+  type NewCandidate,
+} from "./candidates.ts";
 import { inTransaction } from "./database.ts";
 import type { Now } from "./interviewer-notes.ts";
-import { InvalidInputError } from "./errors.ts";
+import { InvalidInputError, PreconditionError } from "./errors.ts";
 import { readPdfText, UnreadablePdfError, type PdfTextPage } from "./pdf-text.ts";
 
 export interface CvPage {
@@ -35,6 +42,9 @@ interface CvRow {
 
 export interface NewCandidateWithCv extends NewCandidate {
   cv: CvFile;
+  // When true, a Candidate with the same name and role already in the app is not added a second
+  // time. Adding many Candidates from their CVs asks this, unless the Interviewer chose "add anyway".
+  onlyIfNew?: boolean;
 }
 
 // A CV file whose text has been read and accepted, ready to be stored.
@@ -69,7 +79,14 @@ export async function createCandidateWithCv(
   input: NewCandidateWithCv,
 ): Promise<Candidate> {
   const cv = await acceptCv(input.cv);
-  return storeCv(db, folder, now, cv, () => createCandidate(db, input));
+  return storeCv(db, folder, now, cv, () => {
+    // Checked in the same transaction as the insert, so two files of one person added one after
+    // the other cannot both pass.
+    if (input.onlyIfNew && isCandidateAdded(db, input.name, input.role)) {
+      throw new PreconditionError("candidateExists", `${input.name.trim()} is already in the app with this role.`);
+    }
+    return createCandidate(db, { name: input.name, role: input.role });
+  });
 }
 
 // Reads the text of each page, or refuses a file that is missing, is not a readable PDF, or has no text.

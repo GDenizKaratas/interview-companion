@@ -35,7 +35,8 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
 
   api.get("/candidates", (c) => c.json(core.listCandidates()));
 
-  // A JSON body adds a Candidate by hand. A form with a "cv" file adds the Candidate and the CV together.
+  // A JSON body adds a Candidate by hand. A form with a "cv" file adds the Candidate and the CV
+  // together; with "onlyIfNew" set to "true", a Candidate already in the app is refused (409).
   api.post("/candidates", async (c) => {
     if (!isForm(c)) {
       const fields = await jsonFields(c);
@@ -46,9 +47,19 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
     const form = await c.req.parseBody();
     const input = { name: stringField(form, "name"), role: stringField(form, "role") };
     const cv = await fileField(form, "cv");
+    const onlyIfNew = stringField(form, "onlyIfNew") === "true";
     return respondOrRefuse(c, async () =>
-      c.json(cv ? await core.createCandidateWithCv({ ...input, cv }) : core.createCandidate(input), 201),
+      c.json(cv ? await core.createCandidateWithCv({ ...input, cv, onlyIfNew }) : core.createCandidate(input), 201),
     );
+  });
+
+  // Checks one CV before a Candidate is added from it, sent as a form with a "cv" file, the
+  // "role", and, once the Interviewer has corrected it, the "name". Nothing is stored.
+  api.post("/candidate-cv-checks", async (c) => {
+    const form = await c.req.parseBody();
+    const cv = (await fileField(form, "cv")) ?? { fileName: "", bytes: new Uint8Array() };
+    const name = typeof form.name === "string" ? form.name : undefined;
+    return c.json(await core.checkCandidateCv({ role: stringField(form, "role"), cv, name }));
   });
 
   // The Candidate as one zip, downloaded as a file named after them.

@@ -8,8 +8,13 @@ const headingWords = new Set(["cv", "resume", "curriculum", "vitae", "ozgecmis"]
 // first page that is not a heading, or else a name made from the file name. Nothing is saved;
 // the Interviewer checks and corrects it.
 export async function guessCandidateName(file: CvFile): Promise<string> {
-  const fromText = largestText(await firstPageLines(file));
-  return fromText !== undefined && looksLikeName(fromText) ? fromText : nameFromFileName(file.fileName);
+  return guessNameFromLines(await firstPageLines(file), file.fileName);
+}
+
+// The same guess for a CV whose first page has already been read.
+export function guessNameFromLines(lines: PdfTextLine[], fileName: string): string {
+  const fromText = withoutBracketedNotes(largestText(lines));
+  return fromText !== undefined && looksLikeName(fromText) ? fromText : nameFromFileName(fileName);
 }
 
 async function firstPageLines(file: CvFile): Promise<PdfTextLine[]> {
@@ -30,6 +35,12 @@ function largestText(lines: PdfTextLine[]): string | undefined {
 }
 
 // A name is a few words of letters: no digits, no e-mail address, no sentence.
+// A name line often ends with a note in brackets, such as pronouns or a connection degree:
+// "Ece Yalın (She/Her)". The note is not part of the name.
+function withoutBracketedNotes(text: string | undefined): string | undefined {
+  return text?.replace(/\s*\([^)]*\)/g, "").trim();
+}
+
 function looksLikeName(text: string): boolean {
   return /\p{L}/u.test(text) && !/[\d@:/]/.test(text) && text.split(/\s+/).length <= 5 && text.length <= 60;
 }

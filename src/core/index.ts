@@ -7,6 +7,7 @@ import * as askedQuestions from "./asked-questions.ts";
 import type { AiProviderFactory, ProposedAiNote, ProposedAskedQuestion, ProposedQuestion } from "./ai-provider.ts";
 import * as aiSettings from "./ai-settings.ts";
 import * as candidateBrief from "./candidate-brief.ts";
+import * as candidateCvCheck from "./candidate-cv-check.ts";
 import * as candidateTransfer from "./candidate-transfer.ts";
 import * as candidateOverview from "./candidate-overview.ts";
 import * as candidates from "./candidates.ts";
@@ -40,6 +41,7 @@ export type {
 export type { AskedQuestion, AskedQuestionGeneration, AskedQuestions, SavedQuestionCheck,
   SavedQuestionState, SegmentQuote } from "./asked-questions.ts";
 export type { BriefEvidence, CandidateBrief, NewBriefEvidence, NewCandidateBrief } from "./candidate-brief.ts";
+export type { CandidateCvCheck, CandidateCvStatus, CandidateCvToCheck } from "./candidate-cv-check.ts";
 export type { CandidateOverview, InterviewOverview, DatedInterview } from "./candidate-overview.ts";
 export type { CandidateExport, CandidateImport, ExistingCandidate, ImportOptions, ImportProblem } from "./candidate-transfer.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
@@ -123,6 +125,7 @@ export interface Core {
   getCv(candidateId: string): cv.Cv | undefined;
   readCvFile(candidateId: string): cv.CvFile | undefined;
   guessCandidateName(file: cv.CvFile): Promise<string>;
+  checkCandidateCv(input: candidateCvCheck.CandidateCvToCheck): Promise<candidateCvCheck.CandidateCvCheck>;
   importTranscript(interviewId: string, file: transcripts.TranscriptFile): transcripts.Transcript;
   getTranscript(interviewId: string): transcripts.Transcript | undefined;
   listTranscriptFormats(): transcripts.TranscriptFormat[];
@@ -281,6 +284,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     getCv: (candidateId) => cv.getCv(db, candidateId),
     readCvFile: (candidateId) => cv.readCvFile(db, cvFolder, candidateId),
     guessCandidateName: (file) => nameGuess.guessCandidateName(file),
+    checkCandidateCv: (input) => candidateCvCheck.checkCandidateCv(db, input),
     importTranscript: (interviewId, file) => transcripts.importTranscript(db, now, interviewId, file),
     getTranscript: (interviewId) => transcripts.getTranscript(db, interviewId),
     listTranscriptFormats: () => transcripts.listTranscriptFormats(),

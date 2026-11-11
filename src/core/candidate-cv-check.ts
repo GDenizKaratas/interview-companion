@@ -1,0 +1,58 @@
+import type { DatabaseSync } from "node:sqlite";
+import { isCandidateAdded } from "./candidates.ts";
+import { acceptCv, type CvFile } from "./cv.ts";
+import { InvalidInputError, type InputRule } from "./errors.ts";
+import { guessNameFromLines } from "./name-guess.ts";
+
+export interface CandidateCvToCheck {
+  role: string;
+  cv: CvFile;
+  // The name as the Interviewer corrected it. When left out, the name is read from the CV.
+  name?: string;
+}
+
+// What can be done with one CV, in the order the rules apply: a file that breaks a rule as a CV
+// is refused; a CV with no name needs one; a Candidate with the name and role is already added;
+// else it is ready to add.
+export type CandidateCvStatus = "ready" | "needsName" | "alreadyAdded" | "refused";
+
+// What the Interviewer needs to know about one CV before a Candidate is added from it.
+export interface CandidateCvCheck {
+  // The name the Candidate would get: the one given, or else the one read from the CV's text. It
+  // is empty when none could be read there.
+  name: string;
+  // The one status the interface shows, so it works nothing out itself.
+  status: CandidateCvStatus;
+  // The rule the file breaks as a CV, or null when it can be added.
+  refusal: InputRule | null;
+  // Whether a Candidate with this name and role is already in the app.
+  alreadyAdded: boolean;
+}
+
+// Checks one CV for adding a Candidate from it, and saves nothing. The file is refused for the
+// same reasons as when a CV is added.
+export async function checkCandidateCv(db: DatabaseSync, input: CandidateCvToCheck): Promise<CandidateCvCheck> {
+  const { firstPageLines, refusal } = await readCv(input.cv);
+  // The name is read from the CV's own text only. A file name is not trusted here: among many
+  // files, names such as "Profile (12).pdf" would become Candidates' names without being noticed,
+  // so a CV with no name in it is left for the Interviewer to name.
+  const name = (input.name ?? guessNameFromLines(firstPageLines, "")).trim();
+  const alreadyAdded = refusal === null && isCandidateAdded(db, name, input.role);
+  return { name, status: statusOf(refusal, name, alreadyAdded), refusal, alreadyAdded };
+}
+
+function statusOf(refusal: InputRule | null, name: string, alreadyAdded: boolean): CandidateCvStatus {
+  if (refusal !== null) return "refused";
+  if (name === "") return "needsName";
+  return alreadyAdded ? "alreadyAdded" : "ready";
+}
+
+async function readCv(file: CvFile) {
+  try {
+    const cv = await acceptCv(file);
+    return { firstPageLines: cv.pages[0]?.lines ?? [], refusal: null };
+  } catch (error) {
+    if (error instanceof InvalidInputError && error.field === "cv") return { firstPageLines: [], refusal: error.rule };
+    throw error;
+  }
+}

@@ -128,6 +128,22 @@ export function isSameRole(a: string, b: string): boolean {
   return left.length === right.length && left.every((letter, i) => sameLetter(letter, right[i]!));
 }
 
+// Whether a Candidate with this name and role is already in the app. Names are compared as roles
+// are: spaces trimmed and collapsed, and letter case ignored. An empty name or role matches no one.
+export function isCandidateAdded(db: DatabaseSync, name: string, role: string): boolean {
+  const cleanName = collapseSpaces(name.trim());
+  const cleanRole = collapseSpaces(role.trim());
+  if (cleanName === "" || cleanRole === "") return false;
+  const rows = db.prepare("SELECT name, role FROM candidate").all() as unknown as { name: string; role: string }[];
+  return rows.some((row) => isSameRole(row.role, cleanRole) && isSameName(collapseSpaces(row.name), cleanName));
+}
+
+// Two Candidate names are the same by the rule for roles: only letter case may differ, letter by
+// letter, so "IŞIL DEMİR" read from a CV is the "Işıl Demir" already added.
+function isSameName(a: string, b: string): boolean {
+  return isSameRole(a, b);
+}
+
 function collapseSpaces(value: string): string {
   return value.replace(/\s+/g, " ");
 }
