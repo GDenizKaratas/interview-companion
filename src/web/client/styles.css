@@ -463,6 +463,53 @@ button.link-button:hover:not(:disabled) {
   color: var(--muted);
 }
 
+.confirm-dialog-subject p.guide-note + p.guide-note {
+  margin-top: 0.4rem;
+}
+
+/* A link under a step's hint, such as the guide on getting a Transcript. */
+.step button.link-button.step-link {
+  align-self: flex-start;
+  margin-top: 0.15rem;
+  text-align: left;
+}
+
+/* How do I get a Transcript: one route at a time, chosen above its steps. */
+.guide-routes {
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.confirm-dialog-subject p.guide-route-needs {
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+/* A quiet box for what the Interviewer owes the Candidate, below the steps. */
+.guide-box {
+  margin-top: 1.1rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.85rem;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.guide-box h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+}
+
+.guide-box ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.confirm-dialog-subject .guide-box p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+}
+
 /* Under the Candidate table: which page of rows is shown. */
 .pager {
   display: flex;

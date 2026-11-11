@@ -6,6 +6,7 @@ import { MarkedText } from "./MarkedText.tsx";
 import { SpeakerMapping } from "./SpeakerMapping.tsx";
 import { interviewName } from "./interview-names.ts";
 import { fill } from "./languages.ts";
+import { openTranscriptGuide } from "./TranscriptGuideDialog.tsx";
 import { useText } from "./text.tsx";
 import { formatNames, formatTime, transcriptRefusalMessage } from "./transcript-text.ts";
 
@@ -105,6 +106,11 @@ function InterviewTranscript({
   }
 
   const chooseFile = () => fileInput.current?.click();
+  const guideLink = (
+    <button type="button" className="link-button" onClick={() => window.dispatchEvent(new Event(openTranscriptGuide))}>
+      {text.transcriptGuide.open}
+    </button>
+  );
   // Core decides what is accepted; the file box only suggests the files it can read.
   const accept = formats.flatMap((format) => format.extensions).join(",");
   const labels = new Map(transcript?.speakers.map((speaker) => [speaker.id, speaker]));
@@ -118,6 +124,7 @@ function InterviewTranscript({
           <p className="empty">{t.empty}</p>
           <AddButton onClick={chooseFile}>{t.import}</AddButton>
           {formats.length > 0 && <p className="hint">{fill(t.supported, { formats: formatNames(text, formats) })}</p>}
+          {guideLink}
         </div>
       )}
       {importing && <p className="empty">{t.importing}</p>}
@@ -131,6 +138,7 @@ function InterviewTranscript({
             <button type="button" className="quiet" onClick={chooseFile} disabled={importing}>
               {t.replace}
             </button>
+            {guideLink}
           </div>
           {/* Keyed by import, so a replaced Transcript never keeps roles chosen for the old speakers. */}
           <SpeakerMapping
