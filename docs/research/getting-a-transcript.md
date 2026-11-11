@@ -7,6 +7,7 @@ The question: the app reads a WebVTT file (`.vtt`) with speaker names, or plain 
 ## Short answer
 
 - **Google Meet transcripts are offered in a short list of languages, and Turkish is not on it.** "Download it from Google Meet" is not an answer for a Turkish Interview today. See [google-meet-transcripts.md](google-meet-transcripts.md) and the check of 2026-11-11 below.
+- **For a Turkish Interview on Google Meet, Tactiq is the route the guide gives** (checked 2026-11-11 for #105): it lists Turkish for Meet, has a free plan of 10 transcripts a month, and exports a TXT file. It is a third party that keeps the transcript. See "Tactiq for Google Meet" below.
 - **Microsoft Teams on a work or school account, and Zoom on a paid plan, transcribe Turkish** and give a `.vtt` with speaker names.
 - **With no paid plan**, no meeting tool gives a transcript with speaker names. The realistic route is to record the call and transcribe the recording on one's own computer with a tool that labels speakers. A note-taker service that joins the call also works, but it sends the Candidate's voice to another company.
 
@@ -21,7 +22,8 @@ The question: the app reads a WebVTT file (`.vtt`) with speaker names, or plain 
 | MacWhisper (Whisper on a Mac) | Whisper covers about 100 languages [10] | Free, or Pro for a one-time price [10] | "Automatic Speaker Recognition" [10] | `.srt`, `.vtt`, `.txt`, and others [10] | Stays on the Mac [10] |
 | whisper.cpp, WhisperX (command line) | As Whisper | Free | whisper.cpp: no. WhisperX: generic labels such as `SPEAKER_00` [13][14] | `.srt` (WhisperX) | Stays on the computer |
 | Fireflies (note-taker) | Yes [15] | Download needs a paid plan [16] | Yes | `.pdf`, `.docx`, `.srt`, and others; no `.vtt` [16] | The vendor's cloud |
-| Fathom, tl;dv, tactiq (note-takers) | Turkish is listed [17][18][19] | Not confirmed | Not confirmed | Not confirmed | The vendor's cloud |
+| Tactiq (note-taker in the browser) | "Turkish (Turkey)" is listed for Google Meet [19] | Free: "10 transcripts / mo"; Pro $8 a month, billed annually [30] | Yes: "each line gets tagged to the person who spoke it" [32] | TXT, read by the app's plain-text reader if its lines are `Name: text` (not confirmed) [31] | Tactiq |
+| Fathom, tl;dv (note-takers) | Turkish is listed [17][18] | Not confirmed | Not confirmed | Not confirmed | The vendor's cloud |
 | Live captions of Windows or Chrome | Windows: no. Chrome: Turkish is listed [20][21] | None | No, and captions are not stored [20][21] | None | Stays on the device |
 
 ## What the app reads today
@@ -52,14 +54,28 @@ This is what the sources say. It is not legal advice.
 
 ## Check of Google Meet's languages, 2026-11-11
 
-Re-read on 2026-11-11 for #93: https://support.google.com/meet/answer/12849897 says "Meeting transcripts are available in: English, French, German, Italian, Japanese, Korean, Portuguese, Spanish". Turkish is not listed. Turkish appears in Meet only for translated captions and speech translation, which give no transcript file. The guide says this calmly: Google's help page lists eight languages for now, and Turkish is not on the list yet; use another route for a Turkish Interview.
+Re-read on 2026-11-11 for #93: https://support.google.com/meet/answer/12849897 says "Meeting transcripts are available in: English, French, German, Italian, Japanese, Korean, Portuguese, Spanish". Turkish is not listed. Turkish appears in Meet for live captions and translation, which give no transcript file (see "Tactiq for Google Meet" below). Since #105 the guide's Meet tab says Meet's own transcript has no Turkish yet, gives Tactiq for those who stay on Meet, and points to Teams and Zoom.
+
+## Tactiq for Google Meet, 2026-11-11
+
+Checked for #105.
+
+- Languages: Tactiq's help page lists "Turkish (Turkey)" among 63 languages for Google Meet [19].
+- Price: the Free plan has "10 transcripts / mo"; Pro is $8 a month per user, billed annually [30].
+- Security: the pricing page claims "ISO 27001 Certification", "SOC 2 Type II Attestation", and "GDPR Compliant" [30]. These are Tactiq's own claims, not checked here.
+- Where the data goes: Tactiq, a third party, keeps the transcripts. For a Candidate this matters for consent and, if Tactiq stores it outside Türkiye, for sending data abroad under Law No. 6698 (Article 9 above). The guide tells the Interviewer to tell the Candidate.
+- Export: a TXT export holds "Meeting name, date, and duration", "Speaker names", "Highlights (if any)", and "The full transcript of the meeting" [31].
+- Line layout: Tactiq says "each line gets tagged to the person who spoke it" [32]. No Tactiq page read here shows a sample line or says that each line carries a time. The plain-text reader now accepts an optional time before `Name: text` ("00:01:23", "00:01:23.456", "1:23", "[00:01:23]", "(00:01:23)") so a timed line imports with its time. A header line such as `Date: ...` would be read as a speaker; the Interviewer marks it Other at the Speaker Mapping. One real export with fictional content is needed to confirm the import.
+
+Google Meet's live captions, read the same day [33]: Turkish is listed with no beta label, and "All users can use captions in these languages"; "The captions are turned on only for you". Meet shows captions live and does not save them.
 
 ## Could not be confirmed
 
 - The exact licences Teams needs for transcription, and whether a free Teams account can transcribe.
 - The real line layout of a Teams or Zoom `.vtt`, of a Teams `.docx`, and of a `.vtt` exported by Buzz or MacWhisper with speaker labels.
 - Whether MacWhisper's speaker recognition needs the Pro version.
-- The export formats and free-plan rules of tl;dv, Fathom, and tactiq, and where each note-taker stores its data.
+- The export formats and free-plan rules of tl;dv and Fathom, and where each note-taker stores its data.
+- The exact line layout of Tactiq's TXT export, whether its lines carry times, and in which country Tactiq stores transcripts.
 - Otter's language list from Otter itself; other sources say it has no Turkish.
 - Prices of the cloud speech services, and whether each separates speakers for Turkish.
 - An independent measure of how accurate any of these is on Turkish.
@@ -97,3 +113,7 @@ All read on 2026-11-11.
 27. https://learn.microsoft.com/en-us/azure/ai-services/speech-service/language-support
 28. https://platform.claude.com/docs/en/build-with-claude/overview
 29. https://k2-fsa.github.io/sherpa/onnx/speaker-diarization/index.html
+30. https://tactiq.io/buy
+31. https://help.tactiq.io/en/articles/9784666-how-to-export-your-tactiq-meeting-transcript
+32. https://tactiq.io/learn/how-to-separate-speakers-in-a-meeting-transcript
+33. https://support.google.com/meet/answer/15077804

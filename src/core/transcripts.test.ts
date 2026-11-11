@@ -71,6 +71,43 @@ describe("Plain-text Transcript import", () => {
     ]);
   });
 
+  it("reads a time written before the speaker, in the common forms, as the segment's start", () => {
+    const transcript = core.importTranscript(
+      interview.id,
+      textFile(
+        "tactiq.txt",
+        [
+          "00:01:23 Ayşe: Merhaba, hoş geldiniz.",
+          "00:01:25.500 İlker: Teşekkürler.",
+          "1:30 Ayşe: Son işinizden bahseder misiniz?",
+          "[00:02:05] İlker: Ödeme servisini yazdım.",
+          "(01:02:03,250) Ayşe: Çok güzel.",
+          "İlker: Bu satırda saat yok.",
+        ].join("\n"),
+      ),
+    );
+
+    expect(timedSegmentsOf(transcript)).toEqual([
+      ["Ayşe", "Merhaba, hoş geldiniz.", 83_000, null],
+      ["İlker", "Teşekkürler.", 85_500, null],
+      ["Ayşe", "Son işinizden bahseder misiniz?", 90_000, null],
+      ["İlker", "Ödeme servisini yazdım.", 125_000, null],
+      ["Ayşe", "Çok güzel.", 3_723_250, null],
+      ["İlker", "Bu satırda saat yok.", null, null],
+    ]);
+  });
+
+  it("keeps a time inside a turn as words, and a time before unlabelled text as part of the turn before", () => {
+    const transcript = core.importTranscript(
+      interview.id,
+      textFile("t.txt", "Ayşe: Saat 10:30'da başlayalım.\n10:45 sonra ara verelim"),
+    );
+
+    expect(timedSegmentsOf(transcript)).toEqual([
+      ["Ayşe", "Saat 10:30'da başlayalım.\n10:45 sonra ara verelim", null, null],
+    ]);
+  });
+
   it("leaves every speaker unverified after import", () => {
     const transcript = core.importTranscript(
       interview.id,

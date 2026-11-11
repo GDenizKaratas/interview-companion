@@ -536,6 +536,17 @@ button.link-button:hover:not(:disabled) {
   font-weight: 600;
 }
 
+/* The name of a route inside a tab, such as Tactiq under Google Meet. */
+.confirm-dialog-subject h3.guide-route-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+/* Teams and Zoom named inside a sentence, each opening its own tab. */
+.guide-other-tools button.link-button {
+  font-size: inherit;
+}
+
 /* A quiet box for what the Interviewer owes the Candidate, below the steps. */
 .guide-box {
   margin-top: 1.1rem;
