@@ -345,6 +345,30 @@ describe("MCP server", () => {
     expect(text).toMatch(/markedWrong/);
   });
 
+  it("brief holds the AI client to the app's own writing rules, and marks what rests on an AI Note nobody checked", async () => {
+    core.allowAiClientWrites(true);
+    const text = await fetchBriefPrompt();
+
+    // The same rules the app gives its own model: no praise or fault, no inference, hedges kept, nothing private.
+    expect(text).toMatch(/praises or faults/i);
+    expect(text).toMatch(/hedges/i);
+    expect(text).toMatch(/health, pregnancy, family, age, religion/i);
+    // An Unreviewed AI Note is a draft: what rests only on one is marked as such in the brief.
+    expect(text).toMatch(/Unreviewed/);
+    expect(text).toMatch(/has not checked/i);
+    // Open topics are what was not talked about, never what the Candidate lacks.
+    expect(text).toMatch(/not a list of what the Candidate lacks/i);
+  });
+
+  it("the tools that save AI work say the same writing rules in their descriptions", async () => {
+    const { tools } = await client.listTools();
+    for (const name of ["save_ai_notes", "save_asked_questions", "save_suggested_questions"]) {
+      const description = tools.find((tool) => tool.name === name)!.description!;
+      expect(description, name).toMatch(/praises or faults/i);
+      expect(description, name).toMatch(/health, pregnancy, family, age, religion/i);
+    }
+  });
+
   it("brief only reads while saving from the AI client is off, and says where to turn it on", async () => {
     const text = await fetchBriefPrompt();
 
