@@ -110,6 +110,28 @@ describe("Checking a CV before a Candidate is added from it", () => {
 
     expect((await core.checkCandidateCv({ role, cv })).alreadyAdded).toBe(true);
   });
+
+  it("refuses to add a Candidate already in the app when asked to add only a new one, and saves nothing", async () => {
+    // Two files of the same person, both checked before either was added, are both marked ready.
+    const first = { fileName: "Ece_Yalin.pdf", bytes: cvOf("Ece Yalın") };
+    const second = { fileName: "Ece_Yalin (1).pdf", bytes: cvOf("Ece Yalın") };
+    await core.createCandidateWithCv({ name: "Ece Yalın", role, cv: first, onlyIfNew: true });
+
+    const refused = core.createCandidateWithCv({ name: "ECE  YALIN", role: "backend engineer", cv: second, onlyIfNew: true });
+
+    await expect(refused).rejects.toMatchObject({ reason: "candidateExists" });
+    expect(core.listCandidates()).toHaveLength(1);
+    expect(storedPdfFiles()).toHaveLength(1);
+  });
+
+  it("adds a Candidate already in the app when the Interviewer chose to add them anyway", async () => {
+    const cv = { fileName: "Ece_Yalin.pdf", bytes: cvOf("Ece Yalın") };
+    await core.createCandidateWithCv({ name: "Ece Yalın", role, cv });
+
+    await core.createCandidateWithCv({ name: "Ece Yalın", role, cv });
+
+    expect(core.listCandidates()).toHaveLength(2);
+  });
 });
 
 describe("Adding many Candidates from their CVs", () => {
