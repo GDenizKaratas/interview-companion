@@ -32,6 +32,7 @@ import type {
   RoleQuestionList,
   SavedQuestion,
   SavedQuestionCheck,
+  SavedQuestionState,
   SpeakerRole,
   SuggestedQuestion,
   SuggestedQuestionGeneration,
@@ -40,7 +41,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -94,6 +95,7 @@ function sendJson(method: string, body: unknown): RequestInit {
 export const api = {
   listCandidates: () => request<Candidate[]>("/candidates"),
   listCandidateOverviews: () => request<CandidateOverview[]>("/candidate-overviews"),
+  getCandidateOverview: (id: string) => request<CandidateOverview>(`/candidates/${encodeURIComponent(id)}/overview`),
   listDatedInterviews: () => request<DatedInterview[]>("/dated-interviews"),
   getMcpSetup: () => request<{ command: string | null }>("/mcp-setup"),
   listCandidateRoles: () => request<string[]>("/candidate-roles"),
@@ -199,6 +201,8 @@ export const api = {
     request<AskedQuestionGeneration>(`/interviews/${encodeURIComponent(interviewId)}/asked-questions`, { method: "POST" }),
   listSavedQuestionChecks: (candidateId: string) =>
     request<SavedQuestionCheck[]>(`/candidates/${encodeURIComponent(candidateId)}/saved-question-checks`),
+  listSavedQuestionStates: (candidateId: string) =>
+    request<SavedQuestionState[]>(`/candidates/${encodeURIComponent(candidateId)}/saved-question-states`),
   getCandidateBrief: (candidateId: string) =>
     request<CandidateBrief | null>(`/candidates/${encodeURIComponent(candidateId)}/candidate-brief`),
   listSuggestedQuestions: (candidateId: string) =>

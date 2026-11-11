@@ -311,3 +311,21 @@ export function listSavedQuestionChecks(db: DatabaseSync, today: Today, candidat
       })),
   );
 }
+
+// Where a Saved Question stands across all of the Candidate's Interviews: asked in at least one;
+// looked for in at least one Transcript and not found in any; or planned, when no Transcript has
+// been checked for it yet.
+export interface SavedQuestionState {
+  savedQuestionId: string;
+  state: "asked" | "notFound" | "planned";
+}
+
+// One state for every Saved Question, in the Interviewer's order.
+export function listSavedQuestionStates(db: DatabaseSync, today: Today, candidateId: string): SavedQuestionState[] {
+  const checks = listSavedQuestionChecks(db, today, candidateId);
+  return listSavedQuestions(db, candidateId).map((question) => {
+    const own = checks.filter((check) => check.savedQuestionId === question.id);
+    const state = own.some((check) => check.askedQuestion !== null) ? "asked" : own.length > 0 ? "notFound" : "planned";
+    return { savedQuestionId: question.id, state };
+  });
+}

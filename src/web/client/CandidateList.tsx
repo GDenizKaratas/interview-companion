@@ -216,7 +216,7 @@ function CandidateRow({ overview, onViewCv }: { overview: CandidateOverview; onV
         ) : (
           <span className="muted shortcut-none">{t.noCv}</span>
         )}
-        <a className="shortcut-link" href={path} onClick={linkTo(path)} title={t.openQuestions}>
+        <a className="shortcut-link" href={`${path}#questions`} onClick={linkTo(`${path}#questions`)} title={t.openQuestions}>
           <QuestionIcon />
           {fill(t.questions, { count: String(overview.savedQuestionCount) })}
         </a>

@@ -55,7 +55,8 @@ const text = {
     },
   },
   workspace: {
-    back: "← Candidates",
+    back: "Back to Candidates",
+    more: "More: export or delete this Candidate",
     loading: "Loading…",
     notFound: "This Candidate does not exist.",
     loadFailed: "The Workspace could not be loaded. Check that the app is still running.",
@@ -65,14 +66,13 @@ const text = {
     delete: "Delete",
     cancel: "Cancel",
     deleteCandidateFailed: "The Candidate could not be deleted.",
-    openBrief: "Brief",
+    openBrief: "Candidate Brief",
     openBriefHint: "The Candidate Brief your AI client saved",
     copyBriefCommand: "Copy brief command",
     copyBriefCommandHint: "Copies the command for Claude Code. Paste it there to write and save this Candidate's brief.",
     briefCommandCopied: "Copied",
     briefCommandCopyFailed: "Could not copy",
     exportCandidate: "Export",
-    exportCandidateHint: "Download everything about this Candidate as one zip",
   },
   exportCandidate: {
     title: "Export this Candidate",
@@ -138,7 +138,7 @@ const text = {
   },
   interviews: {
     label: "Interview",
-    all: "All",
+    all: "All Interviews",
     ordinal: {
       "1": "First Interview",
       "2": "Second Interview",
@@ -155,9 +155,19 @@ const text = {
     numbered: "Interview {number}",
     noDate: "no date",
     planned: "planned",
-    add: "New Interview",
-    dateLabel: "Date (optional)",
-    timeLabel: "Time (optional)",
+    add: "Interview",
+    addTitle: "New Interview",
+    edit: "Change or delete this Interview",
+    saveChanges: "Save",
+    delete: "Delete Interview",
+    confirmDelete: "Delete this Interview?",
+    deleteDetails:
+      "Its Transcript is deleted, with the AI Notes, the asked questions, and the Suggested Questions made from it. Your notes and questions tagged with this Interview stay and lose the tag. This cannot be undone.",
+    deleteFailed: "The Interview could not be deleted.",
+    whenHint: "Leave both empty if the Interview has no date yet. A time needs a date.",
+    timeNeedsDate: "Choose a date for this time, or remove the time.",
+    dateLabel: "Date",
+    timeLabel: "Time",
     invalidTime: "The time must be between 00:00 and 23:59.",
     save: "Add Interview",
     cancel: "Cancel",
@@ -259,15 +269,14 @@ const text = {
   },
   search: {
     label: "Search the CV and Transcripts",
-    placeholder: "Search for a word, such as Redis",
-    submit: "Search",
+    placeholder: "Search the CV and Transcripts, then press Enter",
     searching: "Searching…",
     closeResults: "Close the results",
     clear: "Clear",
     sourcesLabel: "Sources",
-    sources: { all: "CV and Transcripts", cv: "CV only", transcripts: "Transcripts only" },
+    sources: { all: "CV and Transcripts", cv: "CV", transcripts: "Transcripts" },
     candidateOnly: "Only what the Candidate said",
-    candidateOnlyHint: "Uses only Transcripts with a confirmed Speaker Mapping.",
+    candidateOnlyHint: "Leaves out what the Interviewer said. Works only in Transcripts whose speakers are confirmed.",
     // {places} is replaced by where the word was found, such as "CV · First interview".
     foundIn: "Found in: {places}",
     cv: "CV",
@@ -286,6 +295,7 @@ const text = {
   panels: {
     expand: "Open full screen",
     collapse: "Close full screen",
+    sources: { title: "Sources" },
     cv: {
       title: "CV",
       empty: "No CV uploaded.",
@@ -477,6 +487,10 @@ const text = {
     },
     questions: {
       title: "Questions",
+      savedTab: "My questions",
+      // {asked} and {total} are replaced by numbers.
+      askedCount: "{asked} of {total} asked",
+      states: { asked: "Asked", notFound: "Looked for in a Transcript and not found", planned: "Planned" },
       empty: "No questions saved.",
       placeholder: "Write a question, Enter to save…",
       newLabel: "New question",
@@ -500,7 +514,7 @@ const text = {
       showAll: "Show all questions",
       // {interview} is replaced by the Interview's name.
       askedIn: "Asked in {interview}",
-      notFoundIn: "Not found in {interview}",
+      notFoundIn: "Not found in the Transcript of {interview}",
       notFoundHint: "Not found in this Transcript. It may have been asked in other words.",
       suggestions: {
         open: "Suggest questions",

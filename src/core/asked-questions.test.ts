@@ -292,6 +292,44 @@ describe("Saved Questions in the Asked Questions", () => {
 
   it("refuses an unknown Candidate", () => {
     expect(() => core.listSavedQuestionChecks("no-such-candidate")).toThrow(NotFoundError);
+    expect(() => core.listSavedQuestionStates("no-such-candidate")).toThrow(NotFoundError);
+  });
+
+  it("gives every Saved Question one state: asked, not found, or planned", async () => {
+    ready();
+    const asked = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    const notAsked = core.addSavedQuestion({ candidateId: candidate.id, text: "Testleri nasıl yazdınız?" });
+    expect(core.listSavedQuestionStates(candidate.id).map((s) => s.state)).toEqual(["planned", "planned"]);
+    fake.askedQuestions = [backgroundJobs, { ...payments, savedQuestionId: asked.id }];
+    await core.findAskedQuestions(interview.id);
+    // Written after the questions were looked for, so no Transcript was checked for it.
+    const later = core.addSavedQuestion({ candidateId: candidate.id, text: "Kuyrukları nasıl izlediniz?" });
+
+    expect(core.listSavedQuestionStates(candidate.id)).toEqual([
+      { savedQuestionId: asked.id, state: "asked" },
+      { savedQuestionId: notAsked.id, state: "notFound" },
+      { savedQuestionId: later.id, state: "planned" },
+    ]);
+  });
+
+  it("counts a Saved Question as asked when any Interview has it, and as planned again when that Interview is deleted", async () => {
+    ready();
+    const question = core.addSavedQuestion({ candidateId: candidate.id, text: "Ödeme servisini kim yazdı?" });
+    fake.askedQuestions = [{ ...payments, savedQuestionId: question.id }];
+    await core.findAskedQuestions(interview.id);
+    // A second Interview in which the question is looked for and not found.
+    const first = interview;
+    interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-05" });
+    confirmRoles(importTranscript());
+    fake.askedQuestions = [backgroundJobs];
+    await core.findAskedQuestions(interview.id);
+    expect(core.listSavedQuestionStates(candidate.id)).toEqual([{ savedQuestionId: question.id, state: "asked" }]);
+
+    core.deleteInterview(first.id);
+    expect(core.listSavedQuestionStates(candidate.id)).toEqual([{ savedQuestionId: question.id, state: "notFound" }]);
+
+    core.deleteInterview(interview.id);
+    expect(core.listSavedQuestionStates(candidate.id)).toEqual([{ savedQuestionId: question.id, state: "planned" }]);
   });
 });
 

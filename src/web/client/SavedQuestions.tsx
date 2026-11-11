@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { api, ApiError, type AskedQuestion, type Interview, type SavedQuestion, type SavedQuestionCheck } from "./api.ts";
+import { api, ApiError, type AskedQuestion, type Interview, type SavedQuestion, type SavedQuestionCheck, type SavedQuestionState } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { onEnter } from "./enter-key.ts";
 import { ExchangeDialog } from "./ExchangeDialog.tsx";
@@ -27,8 +27,8 @@ interface SavedQuestionsProps {
   onShowInTranscript: (interviewId: string, segmentNumber: number) => void;
 }
 
-// The Interviewer's own question list for one Candidate, with the collapsed Suggested Questions
-// under it. Core keeps the order; after every change the list is fetched again, so the screen
+// The Questions card: the Interviewer's own question list for one Candidate, and the Suggested
+// Questions in a second tab. Each question shows whether it was asked, not found, or is planned. Core keeps the order; after every change the list is fetched again, so the screen
 // always shows what core has saved. Core applies the header's Interview filter, as for My Notes.
 export function SavedQuestions({
   candidateId,
@@ -67,6 +67,11 @@ export function SavedQuestions({
   }
   // Where each question was asked, or not found, in the Interviews whose Asked Questions were found.
   const [checks, setChecks] = useState<SavedQuestionCheck[]>([]);
+  // Core's one state for each question: asked, not found, or planned.
+  const [states, setStates] = useState<SavedQuestionState[]>([]);
+  const [tab, setTab] = useState<"saved" | "suggested">("saved");
+  // Suggested Questions load only once their tab has been opened.
+  const [suggestionsOpened, setSuggestionsOpened] = useState(false);
   // The exchange opened from "Asked in …".
   const [exchange, setExchange] = useState<AskedQuestion | undefined>();
   // Only the newest list request may fill the list, so a slow answer for an earlier selection
@@ -110,6 +115,10 @@ export function SavedQuestions({
     api.listSavedQuestionChecks(candidateId).then(
       (loaded) => current && setChecks(loaded),
       () => current && setChecks([]),
+    );
+    api.listSavedQuestionStates(candidateId).then(
+      (loaded) => current && setStates(loaded),
+      () => current && setStates([]),
     );
     return () => {
       current = false;
@@ -175,14 +184,52 @@ export function SavedQuestions({
 
   const hiddenInterview = interviews.find((interview) => interview.id === hiddenInterviewId);
 
+  // Counted over the questions on screen, so the line agrees with the list under it.
+  const stateOf = (question: SavedQuestion) => states.find((state) => state.savedQuestionId === question.id)?.state ?? "planned";
+  const askedCount = questions?.filter((question) => stateOf(question) === "asked").length ?? 0;
+
   return (
     <>
+      <div className="card-tabs" role="group" aria-label={t.title}>
+        {(["saved", "suggested"] as const).map((key) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={tab === key}
+            className={tab === key ? "ai-tab selected" : "ai-tab"}
+            onClick={() => {
+              setTab(key);
+              if (key === "suggested") setSuggestionsOpened(true);
+            }}
+          >
+            {key === "saved" ? t.savedTab : t.suggestions.open}
+          </button>
+        ))}
+        {tab === "saved" && questions && questions.length > 0 && (
+          <span className="asked-count">{fill(t.askedCount, { asked: String(askedCount), total: String(questions.length) })}</span>
+        )}
+      </div>
+      <div className="tab-pane" hidden={tab !== "suggested"}>
+        {suggestionsOpened && (
+          <SuggestedQuestions
+            candidateId={candidateId}
+            interviews={interviews}
+            sourceVersion={sourceVersion}
+            onAccepted={() => {
+              void reload();
+              // The new question needs its state, too.
+              setChangeCount((count) => count + 1);
+            }}
+          />
+        )}
+      </div>
+      <div className="tab-pane" hidden={tab !== "saved"}>
       <textarea
         className="question-input"
         aria-label={t.newLabel}
         placeholder={t.placeholder}
         title={t.hint}
-        rows={2}
+        rows={1}
         value={draft}
         disabled={saving}
         onChange={(e) => setDraft(e.target.value)}
@@ -230,6 +277,7 @@ export function SavedQuestions({
               isLast={index === questions.length - 1}
               interviews={interviews}
               checks={checks.filter((check) => check.savedQuestionId === question.id)}
+              state={stateOf(question)}
               onOpenExchange={setExchange}
               onMove={(position) => change(() => api.moveSavedQuestion(question.id, position, shownFilter)).then(() => {})}
               onEdit={(newText) => change(() => api.editSavedQuestion(question.id, newText))}
@@ -241,12 +289,7 @@ export function SavedQuestions({
           ))}
         </ol>
       )}
-      <SuggestedQuestions
-        candidateId={candidateId}
-        interviews={interviews}
-        sourceVersion={sourceVersion}
-        onAccepted={() => void reload()}
-      />
+      </div>
       {exchange && (
         <ExchangeDialog
           askedQuestion={exchange}
@@ -282,6 +325,7 @@ interface QuestionItemProps {
   question: SavedQuestion;
   interviews: Interview[];
   checks: SavedQuestionCheck[];
+  state: SavedQuestionState["state"];
   onOpenExchange: (askedQuestion: AskedQuestion) => void;
   position: number;
   isFirst: boolean;
@@ -293,7 +337,7 @@ interface QuestionItemProps {
   busy: boolean;
 }
 
-function QuestionItem({ question, interviews, checks, onOpenExchange, position, isFirst, isLast, onMove, onEdit, onTag, onDelete, busy }: QuestionItemProps) {
+function QuestionItem({ question, interviews, checks, state, onOpenExchange, position, isFirst, isLast, onMove, onEdit, onTag, onDelete, busy }: QuestionItemProps) {
   const { text } = useText();
   const t = text.panels.questions;
   const [editing, setEditing] = useState<string | undefined>();
@@ -310,7 +354,10 @@ function QuestionItem({ question, interviews, checks, onOpenExchange, position, 
   }
 
   return (
-    <li className="question">
+    <li className={`question ${state}`}>
+      <span className="question-state" title={t.states[state]} aria-label={t.states[state]}>
+        <StateIcon state={state} />
+      </span>
       {editing === undefined ? (
         <span className="question-text">{question.text}</span>
       ) : (
@@ -332,6 +379,11 @@ function QuestionItem({ question, interviews, checks, onOpenExchange, position, 
               {t.cancel}
             </button>
           </span>
+        </span>
+      )}
+      {state === "planned" && (
+        <span className="question-checks">
+          <span className="pill planned">{t.states.planned}</span>
         </span>
       )}
       <span className="question-meta">
@@ -383,6 +435,22 @@ function QuestionItem({ question, interviews, checks, onOpenExchange, position, 
         </span>
       )}
     </li>
+  );
+}
+
+// A filled circle with a check for asked, a dashed one for looked for and not found, an empty one for planned.
+function StateIcon({ state }: { state: SavedQuestionState["state"] }) {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      {state === "asked" ? (
+        <>
+          <circle cx="8" cy="8" r="7" fill="currentColor" />
+          <path d="M4.6 8.3l2.2 2.2 4.6-4.8" fill="none" stroke="#ffffff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      ) : (
+        <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray={state === "notFound" ? "2.4 2.2" : undefined} />
+      )}
+    </svg>
   );
 }
 

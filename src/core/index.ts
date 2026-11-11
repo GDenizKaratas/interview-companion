@@ -36,7 +36,8 @@ export type {
   ProposedQuestionEvidence,
   QuestionRequest,
 } from "./ai-provider.ts";
-export type { AskedQuestion, AskedQuestionGeneration, AskedQuestions, SavedQuestionCheck, SegmentQuote } from "./asked-questions.ts";
+export type { AskedQuestion, AskedQuestionGeneration, AskedQuestions, SavedQuestionCheck,
+  SavedQuestionState, SegmentQuote } from "./asked-questions.ts";
 export type { BriefEvidence, CandidateBrief, NewBriefEvidence, NewCandidateBrief } from "./candidate-brief.ts";
 export type { CandidateOverview, InterviewOverview, DatedInterview } from "./candidate-overview.ts";
 export type { CandidateExport, CandidateImport, ExistingCandidate, ImportOptions, ImportProblem } from "./candidate-transfer.ts";
@@ -140,6 +141,7 @@ export interface Core {
   findAskedQuestions(interviewId: string): Promise<askedQuestions.AskedQuestionGeneration>;
   listAskedQuestions(interviewId: string): askedQuestions.AskedQuestions | null;
   listSavedQuestionChecks(candidateId: string): askedQuestions.SavedQuestionCheck[];
+  listSavedQuestionStates(candidateId: string): askedQuestions.SavedQuestionState[];
   saveAskedQuestionsFromClient(interviewId: string, askedQuestions: ProposedAskedQuestion[]): askedQuestions.AskedQuestionGeneration;
   confirmAiNote(id: string): aiNotes.AiNote;
   correctAiNote(id: string, correction: string): aiNotes.AiNote;
@@ -295,6 +297,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     saveAskedQuestionsFromClient: (interviewId, proposed) =>
       askedQuestions.saveAskedQuestionsFromClient(db, now, interviewId, proposed),
     listSavedQuestionChecks: (candidateId) => askedQuestions.listSavedQuestionChecks(db, today, candidateId),
+    listSavedQuestionStates: (candidateId) => askedQuestions.listSavedQuestionStates(db, today, candidateId),
     confirmAiNote: (id) => aiNotes.confirmAiNote(db, id),
     correctAiNote: (id, correction) => aiNotes.correctAiNote(db, id, correction),
     dismissAiNote: (id) => aiNotes.dismissAiNote(db, id),

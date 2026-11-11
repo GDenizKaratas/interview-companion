@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { briefCommand } from "./brief-command.ts";
 import { useText } from "./text.tsx";
 
-// A Workspace bar button that copies the brief command for this Candidate, so the Interviewer
+// The button in the Candidate Brief dialog that copies the brief command for this Candidate, so the Interviewer
 // only pastes it into Claude Code. It says Copied for a moment, or that copying failed.
 export function CopyBriefCommand({ candidateName }: { candidateName: string }) {
   const { text } = useText();
