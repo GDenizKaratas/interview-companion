@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { api, ApiError, type AskedQuestion, type Interview, type SavedQuestion, type SavedQuestionCheck } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
+import { onEnter } from "./enter-key.ts";
 import { ExchangeDialog } from "./ExchangeDialog.tsx";
 import { interviewName } from "./interview-names.ts";
 import { InterviewTagSelect } from "./InterviewTagSelect.tsx";
+import { RoleQuestionsDialog } from "./RoleQuestionsDialog.tsx";
 import { SuggestedQuestions } from "./SuggestedQuestions.tsx";
 import { fill, type Text } from "./languages.ts";
 import { useText } from "./text.tsx";
 
 interface SavedQuestionsProps {
   candidateId: string;
+  // The Candidate's role, whose Role Questions can be opened and added from here.
+  role: string;
   interviews: Interview[];
   // The Interview chosen in the Workspace header, or null for all.
   selectedInterviewId: string | null;
@@ -28,6 +32,7 @@ interface SavedQuestionsProps {
 // always shows what core has saved. Core applies the header's Interview filter, as for My Notes.
 export function SavedQuestions({
   candidateId,
+  role,
   interviews,
   selectedInterviewId,
   onShowAll,
@@ -67,6 +72,9 @@ export function SavedQuestions({
   // Only the newest list request may fill the list, so a slow answer for an earlier selection
   // cannot show the wrong Interview's questions.
   const latestLoad = useRef(0);
+  // How many of the role's questions were never copied to this Candidate.
+  const [missingRoleQuestions, setMissingRoleQuestions] = useState(0);
+  const [roleQuestionsOpen, setRoleQuestionsOpen] = useState(false);
 
   // If core's new list leaves out a question that was just added or re-tagged, the filter hides
   // it, and the panel says where it went instead of letting the question seem to vanish.
@@ -107,6 +115,19 @@ export function SavedQuestions({
       current = false;
     };
   }, [candidateId, askedVersion, changeCount]);
+
+  // Read again after every change here and whenever the Role Questions dialog closes.
+  useEffect(() => {
+    if (roleQuestionsOpen) return;
+    let current = true;
+    api.listMissingRoleQuestions(candidateId).then(
+      (missing) => current && setMissingRoleQuestions(missing.length),
+      () => current && setMissingRoleQuestions(0),
+    );
+    return () => {
+      current = false;
+    };
+  }, [candidateId, changeCount, roleQuestionsOpen]);
 
   async function add() {
     setSaving(true);
@@ -170,7 +191,23 @@ export function SavedQuestions({
       />
       <div className="question-entry-meta">
         <InterviewTagSelect interviews={interviews} value={tag} onChange={setTag} />
+        <button type="button" className="link-button role-questions-open" onClick={() => setRoleQuestionsOpen(true)}>
+          {text.roleQuestions.open}
+        </button>
       </div>
+      {missingRoleQuestions > 0 && (
+        <p className="notice" role="status">
+          {fill(text.roleQuestions.missingForCandidate, { count: String(missingRoleQuestions) })}{" "}
+          <button
+            type="button"
+            className="link-button"
+            disabled={busy}
+            onClick={() => void change(() => api.addMissingRoleQuestions(candidateId).then(() => {}))}
+          >
+            {text.roleQuestions.addMissing}
+          </button>
+        </p>
+      )}
       {addError !== undefined && <p className="error">{refusalMessage(t, addError, t.saveFailed)}</p>}
       {changeError !== undefined && <p className="error">{refusalMessage(t, changeError, t.changeFailed)}</p>}
       {hiddenInterview && (
@@ -215,6 +252,15 @@ export function SavedQuestions({
           askedQuestion={exchange}
           onOpenInTranscript={() => onShowInTranscript(exchange.interviewId, exchange.firstSegment)}
           onClose={() => setExchange(undefined)}
+        />
+      )}
+      {roleQuestionsOpen && (
+        <RoleQuestionsDialog
+          initialRole={role}
+          onClose={() => {
+            setRoleQuestionsOpen(false);
+            void reload();
+          }}
         />
       )}
       {toDelete && (
@@ -290,7 +336,7 @@ function QuestionItem({ question, interviews, checks, onOpenExchange, position, 
       )}
       <span className="question-meta">
         <InterviewTagSelect interviews={interviews} value={question.interviewId} onChange={onTag} />
-        <span className="question-origin">{question.origin === "written" ? t.writtenByYou : t.fromSuggestion}</span>
+        <span className="question-origin">{originLabel(t, question)}</span>
       </span>
       {checks.length > 0 && (
         <span className="question-checks">
@@ -340,15 +386,9 @@ function QuestionItem({ question, interviews, checks, onOpenExchange, position, 
   );
 }
 
-// Enter saves; Shift+Enter adds a line break. Enter while composing (for example with an
-// input method editor) is left alone.
-function onEnter(run: () => void) {
-  return (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault();
-      run();
-    }
-  };
+function originLabel(t: Text["panels"]["questions"], question: SavedQuestion): string {
+  if (question.origin === "role") return t.fromRole;
+  return question.origin === "written" ? t.writtenByYou : t.fromSuggestion;
 }
 
 // Core decides whether a question is valid; this only says why, in the current language.

@@ -5,8 +5,9 @@ import { inTransaction } from "./database.ts";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
 import { interviewFilterCondition, requireInterviewOf, type InterviewFilter } from "./interviews.ts";
 
-// Where a Saved Question came from: written by the Interviewer, or copied from a Suggested Question.
-export type QuestionOrigin = "written" | "suggestion";
+// Where a Saved Question came from: written by the Interviewer, copied from a Suggested Question,
+// or copied from a Role Question.
+export type QuestionOrigin = "written" | "suggestion" | "role";
 
 export interface SavedQuestion {
   id: string;
@@ -29,11 +30,14 @@ interface SavedQuestionRow {
   candidate_id: string;
   interview_id: string | null;
   text: string;
-  origin: QuestionOrigin;
+  // The stored origin is written or suggestion; from_role marks a copy of a Role Question, whose
+  // stored origin is written.
+  origin: Exclude<QuestionOrigin, "role">;
+  from_role: 0 | 1;
   created_at: string;
 }
 
-const columns = "id, candidate_id, interview_id, text, origin, created_at";
+const columns = "id, candidate_id, interview_id, text, origin, from_role, created_at";
 
 // Adds a hand-written question at the end of the Candidate's list.
 export function addSavedQuestion(db: DatabaseSync, input: NewSavedQuestion): SavedQuestion {
@@ -44,7 +48,7 @@ export function addSavedQuestion(db: DatabaseSync, input: NewSavedQuestion): Sav
 }
 
 // Adds a question at the end of the Candidate's list. Core uses it to copy an accepted
-// Suggested Question; the copy does not point back to the suggestion.
+// Suggested Question or a Role Question; the copy does not point back to where it came from.
 export function insertSavedQuestion(
   db: DatabaseSync,
   candidateId: string,
@@ -57,14 +61,15 @@ export function insertSavedQuestion(
     id: randomUUID(),
     candidate_id: candidateId,
     interview_id: interviewId,
-    text: requireText(text),
-    origin,
+    text: requireQuestionText(text),
+    origin: origin === "role" ? "written" : origin,
+    from_role: origin === "role" ? 1 : 0,
     created_at: createdAt,
   };
   db.prepare(
     `INSERT INTO saved_question (${columns}, position)
-     VALUES (?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position) + 1, 0) FROM saved_question WHERE candidate_id = ?))`,
-  ).run(row.id, row.candidate_id, row.interview_id, row.text, row.origin, row.created_at, row.candidate_id);
+     VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position) + 1, 0) FROM saved_question WHERE candidate_id = ?))`,
+  ).run(row.id, row.candidate_id, row.interview_id, row.text, row.origin, row.from_role, row.created_at, row.candidate_id);
   return toSavedQuestion(row);
 }
 
@@ -82,7 +87,7 @@ export function listSavedQuestions(db: DatabaseSync, candidateId: string, filter
 // Changes only the text; the place in the list and the origin stay.
 export function editSavedQuestion(db: DatabaseSync, id: string, text: string): SavedQuestion {
   const question = findSavedQuestion(db, id);
-  const edited = { ...question, text: requireText(text) };
+  const edited = { ...question, text: requireQuestionText(text) };
   db.prepare("UPDATE saved_question SET text = ? WHERE id = ?").run(edited.text, id);
   return edited;
 }
@@ -107,16 +112,13 @@ export function deleteSavedQuestion(db: DatabaseSync, id: string): void {
 // right after the one before it at the end; questions the filter hides keep their places.
 export function moveSavedQuestion(db: DatabaseSync, id: string, position: number, filter: InterviewFilter = {}): void {
   const question = findSavedQuestion(db, id);
-  const shown = listSavedQuestions(db, question.candidateId, filter).map((q) => q.id);
+  let shown = listSavedQuestions(db, question.candidateId, filter).map((q) => q.id);
   if (!shown.includes(id)) {
     throw new InvalidInputError("position", "format", "A question hidden by the Interview filter cannot be moved.");
   }
-  if (!Number.isInteger(position) || position < 0 || position >= shown.length) {
-    throw new InvalidInputError("position", "format", "A question can only move to a place inside its list.");
-  }
-  if (shown.indexOf(id) === position) return;
-  shown.splice(shown.indexOf(id), 1);
-  shown.splice(position, 0, id);
+  const from = shown.indexOf(id);
+  shown = moveInList(shown, id, position);
+  if (from === position) return;
   const order = listSavedQuestions(db, question.candidateId).map((q) => q.id);
   order.splice(order.indexOf(id), 1);
   const next = shown[position + 1];
@@ -124,6 +126,17 @@ export function moveSavedQuestion(db: DatabaseSync, id: string, position: number
   order.splice(at, 0, id);
   const update = db.prepare("UPDATE saved_question SET position = ? WHERE id = ?");
   inTransaction(db, () => order.forEach((questionId, index) => update.run(index, questionId)));
+}
+
+// The ids with one moved to a new place, 0 being the top. Refuses a place outside the list.
+// Shared by every list of questions the Interviewer orders by hand.
+export function moveInList(ids: string[], id: string, position: number): string[] {
+  if (!Number.isInteger(position) || position < 0 || position >= ids.length) {
+    throw new InvalidInputError("position", "format", "A question can only move to a place inside its list.");
+  }
+  const moved = ids.filter((other) => other !== id);
+  moved.splice(position, 0, id);
+  return moved;
 }
 
 function findSavedQuestion(db: DatabaseSync, id: string): SavedQuestion {
@@ -134,8 +147,9 @@ function findSavedQuestion(db: DatabaseSync, id: string): SavedQuestion {
   return toSavedQuestion(row as unknown as SavedQuestionRow);
 }
 
-// Spaces and empty lines around the text are removed; line breaks inside it are kept.
-function requireText(text: string): string {
+// Spaces and empty lines around the text are removed; line breaks inside it are kept. Shared by
+// every question the Interviewer writes.
+export function requireQuestionText(text: string): string {
   const trimmed = text.trim();
   if (trimmed === "") {
     throw new InvalidInputError("text", "required", "A question needs text.");
@@ -149,7 +163,7 @@ function toSavedQuestion(row: SavedQuestionRow): SavedQuestion {
     candidateId: row.candidate_id,
     interviewId: row.interview_id,
     text: row.text,
-    origin: row.origin,
+    origin: row.from_role === 1 ? "role" : row.origin,
     createdAt: row.created_at,
   };
 }

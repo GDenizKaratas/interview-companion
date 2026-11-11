@@ -29,6 +29,8 @@ export function ConfirmDialog({ title, children, confirmLabel, cancelLabel, onCo
       aria-labelledby="confirm-dialog-title"
       onCancel={(event) => {
         event.preventDefault();
+        // Escape here must not also close a dialog this one was opened from.
+        event.stopPropagation();
         onCancel();
       }}
     >

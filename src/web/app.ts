@@ -289,6 +289,50 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
     });
   });
 
+  // One role's questions; the role is matched the way Candidate roles are.
+  api.get("/role-questions", (c) => respondOrRefuse(c, () => c.json(core.listRoleQuestions(c.req.query("role") ?? ""))));
+
+  api.post("/role-questions", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.addRoleQuestion({ role: stringField(fields, "role"), text: stringField(fields, "text") }), 201),
+    );
+  });
+
+  api.put("/role-questions/:id", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => c.json(core.editRoleQuestion(c.req.param("id"), stringField(fields, "text"))));
+  });
+
+  api.put("/role-questions/:id/position", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => {
+      core.moveRoleQuestion(c.req.param("id"), typeof fields.position === "number" ? fields.position : Number.NaN);
+      return c.body(null, 204);
+    });
+  });
+
+  api.delete("/role-questions/:id", (c) =>
+    respondOrRefuse(c, () => {
+      core.deleteRoleQuestion(c.req.param("id"));
+      return c.body(null, 204);
+    }),
+  );
+
+  // Gives every Candidate with the role the role questions never copied to them.
+  api.post("/role-questions/copies", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => c.json({ candidates: core.addRoleQuestionsToCandidates(stringField(fields, "role")) }));
+  });
+
+  api.get("/candidates/:id/missing-role-questions", (c) =>
+    respondOrRefuse(c, () => c.json(core.listMissingRoleQuestions(c.req.param("id")))),
+  );
+
+  api.post("/candidates/:id/missing-role-questions", (c) =>
+    respondOrRefuse(c, () => c.json(core.addMissingRoleQuestions(c.req.param("id")))),
+  );
+
   // The brief an AI client saved through MCP, with each quote checked now; null when there is none.
   api.get("/candidates/:id/candidate-brief", (c) =>
     respondOrRefuse(c, () => c.json(core.getCandidateBrief(c.req.param("id")))),

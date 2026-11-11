@@ -24,6 +24,8 @@ import type {
   NewInterview,
   NewInterviewerNotes,
   Precondition,
+  RoleQuestion,
+  RoleQuestionList,
   SavedQuestion,
   SavedQuestionCheck,
   SpeakerRole,
@@ -34,7 +36,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateOverview, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, SavedQuestion, SavedQuestionCheck, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateOverview, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -165,6 +167,19 @@ export const api = {
   // position is in the list as shown with the Interview filter interviewId.
   moveSavedQuestion: (id: string, position: number, interviewId: string | null) =>
     request<void>(`/saved-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position, interviewId })),
+  listRoleQuestions: (role: string) => request<RoleQuestionList>(`/role-questions?${new URLSearchParams({ role })}`),
+  addRoleQuestion: (role: string, text: string) => request<RoleQuestion>("/role-questions", sendJson("POST", { role, text })),
+  editRoleQuestion: (id: string, text: string) =>
+    request<RoleQuestion>(`/role-questions/${encodeURIComponent(id)}`, sendJson("PUT", { text })),
+  moveRoleQuestion: (id: string, position: number) =>
+    request<void>(`/role-questions/${encodeURIComponent(id)}/position`, sendJson("PUT", { position })),
+  deleteRoleQuestion: (id: string) => request<void>(`/role-questions/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  addRoleQuestionsToCandidates: (role: string) =>
+    request<{ candidates: number }>("/role-questions/copies", sendJson("POST", { role })),
+  listMissingRoleQuestions: (candidateId: string) =>
+    request<RoleQuestion[]>(`/candidates/${encodeURIComponent(candidateId)}/missing-role-questions`),
+  addMissingRoleQuestions: (candidateId: string) =>
+    request<SavedQuestion[]>(`/candidates/${encodeURIComponent(candidateId)}/missing-role-questions`, { method: "POST" }),
   listAskedQuestions: (interviewId: string) =>
     request<AskedQuestions | null>(`/interviews/${encodeURIComponent(interviewId)}/asked-questions`),
   findAskedQuestions: (interviewId: string) =>

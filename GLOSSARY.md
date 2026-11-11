@@ -71,8 +71,12 @@ A question AI proposed on the Interviewer's request, with a reason and, when ava
 _Avoid_: Recommendation, generated question
 
 **Saved Question**:
-A question on the Interviewer's own list, either written by hand or copied from a Suggested Question on acceptance, optionally tied to one Interview. Regenerating suggestions never changes it.
+A question on the Interviewer's own list, either written by hand, copied from a Suggested Question on acceptance, or copied from a Role Question, optionally tied to one Interview. Regenerating suggestions never changes it.
 _Avoid_: Accepted question, follow-up
+
+**Role Question**:
+A question on the Interviewer's list for one role, such as "Kıdemli Backend Mühendisi". When a Candidate with that role is added, each Role Question is copied into their Saved Questions and marked as a role question. Later changes to the role's list never change a Candidate's existing copies.
+_Avoid_: Template question, standard question, default question
 
 **AI client**:
 An AI application the Interviewer runs outside the app, such as Claude Code or Claude Desktop, connected to it through MCP. It can read; when the Interviewer allows it, it can also save AI Notes, Asked Questions, and Suggested Questions, which core checks like the app's own.
