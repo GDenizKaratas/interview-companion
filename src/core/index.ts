@@ -63,6 +63,8 @@ export { evidenceSources } from "./evidence-search.ts";
 export { claudeModel, claudeProvider } from "./claude-provider.ts";
 // What no AI text about a Candidate may do: the same text for the app's model and the AI client.
 export { neutralityRules, privateMatters, writingRulesInOneSentence } from "./ai-writing-rules.ts";
+// How much AI work one save may hold, from any source. The MCP tools show the same numbers.
+export { aiWorkLimits } from "./ai-work-limits.ts";
 export {
   AiProviderError,
   InvalidInputError,
@@ -197,9 +199,11 @@ const readOperations = [
   "listAiNotes",
   "listAskedQuestions",
   "listSavedQuestionChecks",
+  "listSavedQuestionStates",
   "searchEvidence",
   "getCandidateBrief",
   "aiClientWritesAllowed",
+  "getInterfaceLanguage",
 ] as const satisfies readonly (keyof Core)[];
 
 export type ReadOnlyCore = Pick<Core, (typeof readOperations)[number]>;
@@ -284,7 +288,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listInterviewerNotes: (candidateId, filter) => interviewerNotes.listInterviewerNotes(db, candidateId, filter),
     getInterfaceLanguage: () => interfaceLanguage.getInterfaceLanguage(db),
     setInterfaceLanguage: (language) => interfaceLanguage.setInterfaceLanguage(db, language),
-    addSavedQuestion: (input) => savedQuestions.addSavedQuestion(db, input),
+    addSavedQuestion: (input) => savedQuestions.addSavedQuestion(db, now, input),
     listSavedQuestions: (candidateId, filter) => savedQuestions.listSavedQuestions(db, candidateId, filter),
     editSavedQuestion: (id, text) => savedQuestions.editSavedQuestion(db, id, text),
     tagSavedQuestion: (id, interviewId) => savedQuestions.tagSavedQuestion(db, id, interviewId),

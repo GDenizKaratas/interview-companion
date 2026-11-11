@@ -2,8 +2,11 @@ import { DatabaseSync } from "node:sqlite";
 
 // Each entry upgrades the schema by one version. The database file stores the
 // number of entries already applied in PRAGMA user_version. Never edit an entry
-// that has shipped; add a new one instead.
-const migrations: string[] = [
+// that has shipped; add a new one instead. An entry is SQL, or a function for a change that
+// depends on whether the database existed before this start.
+type Migration = string | ((db: DatabaseSync, created: boolean) => void);
+
+const migrations: Migration[] = [
   `CREATE TABLE candidate (
      id TEXT PRIMARY KEY,
      name TEXT NOT NULL,
@@ -223,6 +226,12 @@ const migrations: string[] = [
   // The Interviewer's mark that an Asked Question's summary is wrong. Only the Interviewer sets or
   // clears it; finding the Asked Questions again replaces them, and the marks go with them.
   `ALTER TABLE asked_question ADD COLUMN marked_wrong INTEGER NOT NULL DEFAULT 0 CHECK (marked_wrong IN (0, 1));`,
+  // Saving from the AI client is on by default now, and turning it off is stored as "no". Before,
+  // no value meant off, so a database that already existed keeps saving off unless the
+  // Interviewer had turned it on.
+  (db, created) => {
+    if (!created) db.exec("INSERT OR IGNORE INTO setting (key, value) VALUES ('ai_client_writes', 'no')");
+  },
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file
@@ -236,7 +245,7 @@ export function openDatabase(path: string): { db: DatabaseSync; created: boolean
   // deleted Candidate cannot be read back from the file afterwards.
   db.exec("PRAGMA secure_delete = ON;");
   const created = schemaVersion(db) === 0;
-  migrate(db);
+  migrate(db, created);
   return { db, created };
 }
 
@@ -244,10 +253,12 @@ function schemaVersion(db: DatabaseSync): number {
   return (db.prepare("PRAGMA user_version").get() as { user_version: number }).user_version;
 }
 
-function migrate(db: DatabaseSync): void {
+function migrate(db: DatabaseSync, created: boolean): void {
   for (let version = schemaVersion(db); version < migrations.length; version++) {
     inTransaction(db, () => {
-      db.exec(migrations[version]!);
+      const migration = migrations[version]!;
+      if (typeof migration === "string") db.exec(migration);
+      else migration(db, created);
       db.exec(`PRAGMA user_version = ${version + 1}`);
     });
   }

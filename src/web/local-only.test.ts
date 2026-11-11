@@ -73,6 +73,7 @@ describe("Only this computer's own pages can use the local server", () => {
   });
 
   it("refuses another site's change to the API key and to AI-client saving", async () => {
+    core.allowAiClientWrites(false);
     const headers = { Host: "localhost:3000", Origin: "https://evil.example", "Content-Type": "application/json" };
     const key = await app.request("http://localhost:3000/api/ai/api-key", {
       method: "PUT",

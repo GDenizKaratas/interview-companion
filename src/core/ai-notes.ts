@@ -9,6 +9,7 @@ import { InvalidInputError, NotFoundError, PreconditionError } from "./errors.ts
 import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { requireInterview } from "./interviews.ts";
+import { aiWorkLimits, fitsLimits } from "./ai-work-limits.ts";
 import { containsQuote } from "./quotes.ts";
 
 export type ReviewState = "unreviewed" | "confirmed" | "corrected" | "dismissed";
@@ -82,7 +83,8 @@ export function saveCheckedAiNotes(
   return acceptNotes(db, now, requireConfirmedTranscript(db, interviewId), proposed, source);
 }
 
-// Keeps the proposed notes that pass the quote check and saves them, Unreviewed.
+// Keeps the proposed notes that pass the quote check, up to the limit of one save, and saves
+// them, Unreviewed. Every way in (the app, the AI client, an import) comes through here.
 function acceptNotes(
   db: DatabaseSync,
   now: Now,
@@ -91,7 +93,7 @@ function acceptNotes(
   source: AiSource,
 ): AiNoteGeneration {
   const candidateSegments = segmentsOf(transcript, "candidate");
-  const backed = proposed.filter((note) => isBacked(note, candidateSegments));
+  const backed = proposed.filter((note) => isBacked(note, candidateSegments)).slice(0, aiWorkLimits.aiNotes);
   // An answer with nothing usable does not cost the Interviewer the notes they already have.
   if (backed.length > 0) saveNotes(db, now, transcript.interviewId, backed, source);
   return { notes: listAiNotes(db, transcript.interviewId), dropped: proposed.length - backed.length };
@@ -102,6 +104,7 @@ function acceptNotes(
 // the segment it cites, which must be the Candidate's. A note that fails any part is dropped whole.
 function isBacked(note: ProposedAiNote, candidateSegments: Map<number, string>): boolean {
   if (note.statement.trim() === "" || note.evidence.length === 0) return false;
+  if (!fitsLimits([note.statement, ...note.evidence.map((e) => e.quote)], note.evidence.length)) return false;
   return note.evidence.every((evidence) => {
     return containsQuote(candidateSegments.get(evidence.segmentNumber), evidence.quote);
   });

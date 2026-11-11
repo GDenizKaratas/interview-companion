@@ -4105,3 +4105,9 @@ button.ai-note-row.dismissed {
   background: none;
   border: none;
 }
+
+/* A brief quote that is not the Candidate's own words, or whose speakers are not confirmed. */
+.evidence-speaker {
+  color: var(--warn);
+  font-size: 0.82rem;
+}

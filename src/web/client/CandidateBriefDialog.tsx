@@ -146,6 +146,13 @@ function BriefEvidenceList({ evidence, interviews, text }: { evidence: BriefEvid
               {e.found ? t.found : t.notFound}
             </span>{" "}
             <q>{e.quote}</q> <span className="hint">({sourceName(text, e, interviews)})</span>
+            {/* Core says whose words a Transcript quote is; the reader is told when they are not the Candidate's. */}
+            {e.found && e.source === "transcript" && e.speakerRole !== "candidate" && (
+              <span className="evidence-speaker">
+                {" · "}
+                {e.speakerRole === null ? t.speakersNotConfirmed : fill(t.notCandidateWords, { role: t.roleOf[e.speakerRole] })}
+              </span>
+            )}
           </li>
         ))}
       </ol>

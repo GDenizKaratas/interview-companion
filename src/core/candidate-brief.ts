@@ -5,7 +5,9 @@ import { requireCandidate } from "./candidates.ts";
 import { inTransaction } from "./database.ts";
 import { InvalidInputError } from "./errors.ts";
 import type { Now } from "./interviewer-notes.ts";
+import { aiWorkLimits } from "./ai-work-limits.ts";
 import { containsQuote } from "./quotes.ts";
+import type { SpeakerRole } from "./transcripts.ts";
 
 // The Candidate Brief an AI client wrote and saved through MCP. The app does not write it and
 // cannot check its statements; it can only check that each quote the brief cites is still in the
@@ -22,8 +24,13 @@ export interface NewCandidateBrief {
 export type NewBriefEvidence = ProposedQuestionEvidence & { number: number };
 
 // found is true when the quote is, word for word, in that CV page or Transcript segment of this
-// Candidate as they are now.
-export type BriefEvidence = NewBriefEvidence & { found: boolean };
+// Candidate as they are now. It is about the words only, not about who said them: a Transcript
+// quote also has speakerRole, the role of the segment's speaker in the confirmed Speaker Mapping,
+// or null while the mapping is not confirmed or the segment is not found. Only a quote with the
+// candidate role is what the Candidate said.
+export type BriefEvidence =
+  | (Extract<NewBriefEvidence, { source: "cv" }> & { found: boolean })
+  | (Extract<NewBriefEvidence, { source: "transcript" }> & { found: boolean; speakerRole: SpeakerRole | null });
 
 export interface CandidateBrief {
   candidateId: string;
@@ -45,11 +52,21 @@ export function saveCandidateBriefFromClient(
 }
 
 // Saves the brief, replacing the Candidate's earlier one, without checking the AI client switch.
-// Also used for an imported Candidate.
+// Also used for an imported Candidate, so the limits below hold for every way in. A brief is one
+// document: one that is too large is refused whole, not cut.
 export function saveCandidateBrief(db: DatabaseSync, now: Now, candidateId: string, brief: NewCandidateBrief): CandidateBrief {
   requireCandidate(db, candidateId);
   const text = brief.text.trim();
   if (text === "") throw new InvalidInputError("text", "required", "A Candidate Brief needs text.");
+  if (text.length > aiWorkLimits.briefText) {
+    throw new InvalidInputError("text", "format", `A Candidate Brief can be at most ${aiWorkLimits.briefText} characters.`);
+  }
+  if (brief.evidence.length > aiWorkLimits.briefEvidence) {
+    throw new InvalidInputError("evidence", "format", `A Candidate Brief can cite at most ${aiWorkLimits.briefEvidence} quotes.`);
+  }
+  if (brief.evidence.some((evidence) => evidence.quote.length > aiWorkLimits.text)) {
+    throw new InvalidInputError("evidence", "format", `A quote can be at most ${aiWorkLimits.text} characters.`);
+  }
   const numbers = new Set(brief.evidence.map((evidence) => evidence.number));
   if (numbers.size !== brief.evidence.length) {
     throw new InvalidInputError("evidence", "format", "Each Evidence number can be used only once.");
@@ -95,8 +112,12 @@ export function getCandidateBrief(db: DatabaseSync, candidateId: string): Candid
   // data, so a quote that names another Candidate's Interview is never found.
   const cvPage = db.prepare("SELECT text FROM cv_page WHERE candidate_id = ? AND number = ?");
   const segment = db.prepare(
-    `SELECT transcript_segment.text FROM transcript_segment
+    `SELECT transcript_segment.text,
+            CASE WHEN transcript.speaker_mapping_confirmed_at IS NULL THEN NULL ELSE transcript_speaker.role END AS role
+     FROM transcript_segment
      JOIN interview ON interview.id = transcript_segment.interview_id
+     JOIN transcript ON transcript.interview_id = transcript_segment.interview_id
+     JOIN transcript_speaker ON transcript_speaker.id = transcript_segment.speaker_id
      WHERE interview.candidate_id = ? AND transcript_segment.interview_id = ? AND transcript_segment.number = ?`,
   );
   const evidence = rows.map((e): BriefEvidence => {
@@ -104,7 +125,9 @@ export function getCandidateBrief(db: DatabaseSync, candidateId: string): Candid
       const page = cvPage.get(candidateId, e.cv_page) as { text: string } | undefined;
       return { number: e.number, source: "cv", page: e.cv_page!, quote: e.quote, found: containsQuote(page?.text, e.quote) };
     }
-    const segmentRow = segment.get(candidateId, e.interview_id, e.segment_number) as { text: string } | undefined;
+    const segmentRow = segment.get(candidateId, e.interview_id, e.segment_number) as
+      | { text: string; role: SpeakerRole | null }
+      | undefined;
     return {
       number: e.number,
       source: "transcript",
@@ -112,6 +135,7 @@ export function getCandidateBrief(db: DatabaseSync, candidateId: string): Candid
       segmentNumber: e.segment_number!,
       quote: e.quote,
       found: containsQuote(segmentRow?.text, e.quote),
+      speakerRole: segmentRow?.role ?? null,
     };
   });
   return { candidateId, text: row.text, savedAt: row.saved_at, evidence };

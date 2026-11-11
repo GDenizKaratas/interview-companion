@@ -164,7 +164,7 @@ function addDemoContent(db: DatabaseSync, today: Today, now: Now): Candidate {
     "Bir BullMQ işi üç kez başarısız olursa ne oluyor?",
     "Yük arttığında ilk darboğazı nerede gördün?",
   ]) {
-    addSavedQuestion(db, { candidateId: id, text });
+    addSavedQuestion(db, now, { candidateId: id, text });
   }
   return candidate;
 }
@@ -354,7 +354,7 @@ const demoSet: DemoSetCandidate[] = [
 function addSetCandidate(db: DatabaseSync, today: Today, now: Now, demo: DemoSetCandidate): Candidate {
   const candidate = insertCandidate(db, demo.id, { name: demo.name, role: demo.role });
   // Saved Questions come first, so the ready-made Asked Questions can be linked to them.
-  for (const text of demo.questions) addSavedQuestion(db, { candidateId: candidate.id, text });
+  for (const text of demo.questions) addSavedQuestion(db, now, { candidateId: candidate.id, text });
   for (const plan of demo.interviews) {
     const date = plan.days === null ? undefined : shiftDays(today().day, plan.days);
     const interview = addInterview(db, today, { candidateId: candidate.id, date, time: plan.time });
@@ -385,7 +385,7 @@ function addSetCandidate(db: DatabaseSync, today: Today, now: Now, demo: DemoSet
   for (const text of demo.markedAsked ?? []) setSavedQuestionAsked(db, today, savedIds.get(text)!, true);
   if (demo.nextQuestions) {
     const next = listInterviews(db, today, candidate.id).find((interview) => interview.planned);
-    for (const text of demo.nextQuestions) addSavedQuestion(db, { candidateId: candidate.id, interviewId: next?.id, text });
+    for (const text of demo.nextQuestions) addSavedQuestion(db, now, { candidateId: candidate.id, interviewId: next?.id, text });
   }
   return candidate;
 }

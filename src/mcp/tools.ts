@@ -5,12 +5,18 @@ import { briefPrompt } from "./brief-prompt.ts";
 import { candidatePrompt } from "./candidate-prompt.ts";
 import { serverInstructions } from "./server-instructions.ts";
 import { createStartKeys, notStartedMessage, startKeySentence } from "./start-key.ts";
-import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, writingRulesInOneSentence, type AiClientCore } from "../core/index.ts";
+import { aiWorkLimits, evidenceSources, InvalidInputError, NotFoundError, PreconditionError, writingRulesInOneSentence, type AiClientCore } from "../core/index.ts";
 
-// Bounds on what the AI client can save in one call, so a runaway client cannot flood the
-// Workspace. They are generous for a real Interview.
-const limits = { notes: 40, askedQuestions: 60, suggestions: 25, evidence: 8, briefEvidence: 100 };
-const textLimits = { long: 2000, brief: 50_000 };
+// Bounds on what one save may hold. Core applies them to every save, whoever wrote it; the
+// schemas show the same numbers so the AI client knows them before it calls.
+const limits = {
+  notes: aiWorkLimits.aiNotes,
+  askedQuestions: aiWorkLimits.askedQuestions,
+  suggestions: aiWorkLimits.suggestedQuestions,
+  evidence: aiWorkLimits.quotesPerItem,
+  briefEvidence: aiWorkLimits.briefEvidence,
+};
+const textLimits = { long: aiWorkLimits.text, brief: aiWorkLimits.briefText };
 
 const briefNumber = z.number().int().positive().describe("The number in square brackets in the text, such as 1 for [1].");
 
@@ -128,12 +134,21 @@ export function createMcpServer(core: AiClientCore): McpServer {
       description:
         "Get the Interviewer's own list of questions for a Candidate, in the order the Interviewer arranged them. " +
         "origin says where each came from: written by the Interviewer, copied from a suggestion, or copied from the " +
-        "questions the Interviewer keeps for the Candidate's role. mark is the Interviewer's own word on whether " +
-        "the question was asked: asked, notAsked, or null when they have not marked it.",
+        "questions the Interviewer keeps for the Candidate's role. state is where the question stands, worked " +
+        "out by the app, the same as the Interviewer sees it: asked; notFound (looked for in at least one " +
+        "Transcript and not found); or planned (not asked as far as anyone knows yet: no Transcript was checked " +
+        "for it, or the Interviewer marked it as not asked). decidedBy says whether the Interviewer's own mark " +
+        "(mark: asked or notAsked, null when unmarked) or the Transcripts decided it; transcriptState is what the " +
+        "Transcripts say; differsFromTranscripts is true when the Interviewer's mark says the opposite of a " +
+        "checked Transcript. Use state as it is.",
       inputSchema: { candidateId },
       annotations: readOnly,
     },
-    ({ candidateId }) => toolResult(() => core.listSavedQuestions(candidateId)),
+    ({ candidateId }) =>
+      toolResult(() => {
+        const states = new Map(core.listSavedQuestionStates(candidateId).map(({ savedQuestionId, ...state }) => [savedQuestionId, state]));
+        return core.listSavedQuestions(candidateId).map((question) => ({ ...question, ...states.get(question.id) }));
+      }),
   );
   registerTool(
     "get_ai_notes",
@@ -176,9 +191,9 @@ export function createMcpServer(core: AiClientCore): McpServer {
       description:
         "For one Candidate, where each Saved Question stands in each Interview whose Asked Questions were found: " +
         "askedQuestion is the Asked Question it matched, or null when it was not found in that Transcript. A " +
-        "Saved Question with no entry for an Interview was not checked there. This is what was found in the " +
-        "Transcripts; when the Interviewer marked a question as asked or not asked by hand (mark in " +
-        "get_saved_questions), their mark decides.",
+        "Saved Question with no entry for an Interview was not checked there. This is the detail per Interview " +
+        "of what was found in the Transcripts; each question's state in get_saved_questions already takes " +
+        "these and the Interviewer's mark into account.",
       inputSchema: { candidateId },
       annotations: readOnly,
     },
@@ -383,7 +398,9 @@ export function createMcpServer(core: AiClientCore): McpServer {
     {
       description:
         "Get the Candidate Brief saved for a Candidate by an AI client, or null when there is none. Each Evidence " +
-        "entry has found: whether its quote is, word for word, in that CV page or Transcript segment now.",
+        "entry has found: whether its quote is, word for word, in that CV page or Transcript segment now. A " +
+        "Transcript entry also has speakerRole, who said it in the confirmed Speaker Mapping (null while it is not " +
+        "confirmed): only a quote with the candidate role is what the Candidate said.",
       inputSchema: { candidateId },
       annotations: readOnly,
     },
@@ -458,7 +475,7 @@ export function createMcpServer(core: AiClientCore): McpServer {
       },
     },
     ({ candidate }) => ({
-      messages: [{ role: "user", content: { type: "text", text: withStartKey(candidatePrompt(candidate)) } }],
+      messages: [{ role: "user", content: { type: "text", text: withStartKey(candidatePrompt(candidate, core.getInterfaceLanguage())) } }],
     }),
   );
   // Running a prompt is the user's own act, so its text starts Interview Companion: it carries a

@@ -75,7 +75,7 @@ A question AI proposed on the Interviewer's request, with a reason and, when ava
 _Avoid_: Recommendation, generated question
 
 **Saved Question**:
-A question on the Interviewer's own list, either written by hand, copied from a Suggested Question on acceptance, or copied from a Role Question, optionally tied to one Interview. Regenerating suggestions never changes it. The Interviewer can mark it as asked or as not asked; the mark decides whether it counts as asked, over what was found in the Transcripts, and AI never sets or changes it.
+A question on the Interviewer's own list, either written by hand, copied from a Suggested Question on acceptance, or copied from a Role Question, optionally tied to one Interview. Regenerating suggestions never changes it. The Interviewer can mark it as asked or as not asked; the mark decides whether it counts as asked, over what was found in the Transcripts, and AI never sets or changes it. Core gives each Saved Question one state: asked, not found (looked for in a Transcript and not found), or not asked yet (no Transcript checked for it, or marked as not asked). In code and through MCP the last is the value `planned`; it is not the Planned of an Interview.
 _Avoid_: Accepted question, follow-up
 
 **Role Question**:
@@ -83,7 +83,7 @@ A question on the Interviewer's list for one role, such as "Kıdemli Backend Mü
 _Avoid_: Template question, standard question, default question
 
 **AI client**:
-An AI application the Interviewer runs outside the app, such as Claude Code or Claude Desktop, connected to it through MCP. It can read; when the Interviewer allows it, it can also save AI Notes, Asked Questions, and Suggested Questions, which core checks like the app's own.
+An AI application the Interviewer runs outside the app, such as Claude Code or Claude Desktop, connected to it through MCP. It can read; unless the Interviewer turns saving off, it can also save AI Notes, Asked Questions, and Suggested Questions, which core checks like the app's own.
 _Avoid_: Agent, assistant, bot
 
 **Candidate Brief**:
