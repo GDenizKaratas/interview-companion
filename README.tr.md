@@ -95,6 +95,8 @@ npm start
 
 Sonra tarayıcıda http://localhost:3000 adresini açın. Arayüz Türkçe açılır; dili sağ üstten değiştirirsiniz. `npm run demo` komutunu yeniden çalıştırmak örnek adayları tazeler, sizin adaylarınıza dokunmaz.
 
+**Verileriniz nerede.** Adaylarınız, CV'ler, transkriptler, notlar ve API anahtarı proje klasöründe değil, kendi uygulama verisi klasörünüzde durur: macOS'ta `~/Library/Application Support/Interview Companion`, Windows'ta `%APPDATA%\Interview Companion`, Linux'ta `~/.local/share/interview-companion`. Uygulama açılırken bu klasörü yazar. Bu klasör hiçbir zaman GitHub'a yüklenmez; proje klasörünü silmek onu silmez. Yedeklemek için uygulama kapalıyken klasörü kopyalayın ya da her adayı **Dışa aktar** ile kaydedin. API anahtarını kaybederseniz Anthropic Console'da yenisini oluşturun.
+
 ## Gündemdeki özellikler
 
 Bunlar plandır, söz değildir. Gerekçeler ve kaynaklar [docs/research/what-could-come-next.md](docs/research/what-could-come-next.md) dosyasında (İngilizce).
@@ -115,4 +117,4 @@ Bunlar plandır, söz değildir. Gerekçeler ve kaynaklar [docs/research/what-co
 
 ## Geliştiriciler için
 
-Üç modüllü tek bir TypeScript projesi: `core` bütün kuralları ve veri erişimini tutar; `web` (yerel sunucu ve tarayıcı arayüzü) ve `mcp` (MCP sunucusu) yalnızca `core`'u çağırır. Veriler proje klasöründeki `data/` altında durur (bir SQLite dosyası ve CV dosyaları); başka bir klasör için `DATA_DIR`, başka bir kapı için `PORT` ayarlanır. Uygulamaya yalnızca kendi bilgisayarınızdan (`127.0.0.1`) erişilir. `npm test`, `npm run typecheck` ve `npm run lint` çalıştırılır. Kodda ve belgelerde geçen terimler [GLOSSARY.md](GLOSSARY.md) dosyasında; ayrıntılar [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/adr](docs/adr), [docs/mcp.md](docs/mcp.md) ve [CONTRIBUTING.md](CONTRIBUTING.md) dosyalarında (İngilizce). Lisans: [MIT](LICENSE).
+Üç modüllü tek bir TypeScript projesi: `core` bütün kuralları ve veri erişimini tutar; `web` (yerel sunucu ve tarayıcı arayüzü) ve `mcp` (MCP sunucusu) yalnızca `core`'u çağırır. Veriler (bir SQLite dosyası ve CV dosyaları) yukarıdaki uygulama verisi klasöründe durur; klasör `src/core/data-folder.ts` içinde seçilir. Proje klasöründe `data/interview-companion.sqlite` zaten olan bir kopya onu kullanmaya devam eder. Başka bir klasör için `DATA_DIR`, başka bir kapı için `PORT` ayarlanır. `data/`, `.env` ve `private/` `.gitignore` içindedir. Uygulamaya yalnızca kendi bilgisayarınızdan (`127.0.0.1`) erişilir. `npm test`, `npm run typecheck` ve `npm run lint` çalıştırılır. Kodda ve belgelerde geçen terimler [GLOSSARY.md](GLOSSARY.md) dosyasında; ayrıntılar [docs/architecture.md](docs/architecture.md), [docs/decisions.md](docs/decisions.md), [docs/adr](docs/adr), [docs/mcp.md](docs/mcp.md) ve [CONTRIBUTING.md](CONTRIBUTING.md) dosyalarında (İngilizce). Lisans: [MIT](LICENSE).

@@ -154,7 +154,7 @@ The app shows this setup too: **Use with MCP** in the bar at the top of every pa
 
 You need Node.js 24 or later and a copy of this project with its packages installed (`npm install`). No API key is needed.
 
-In every example, replace `/path/to/interview-companion` with the absolute path of your copy. The server reads the same database as the web app, `data/interview-companion.sqlite` inside the project folder, no matter which folder the client starts it from. To use another folder, set `DATA_DIR`.
+In every example, replace `/path/to/interview-companion` with the absolute path of your copy. The server reads the same database as the web app, `interview-companion.sqlite` in the data folder, no matter which folder the client starts it from. The data folder is your own application-data folder (macOS `~/Library/Application Support/Interview Companion`, Windows `%APPDATA%\Interview Companion`, Linux `$XDG_DATA_HOME/interview-companion` or `~/.local/share/interview-companion`); a copy that already has `data/interview-companion.sqlite` in its project folder keeps using that. The web server prints the folder when it starts. To use another folder, set `DATA_DIR`. On Windows the guide quotes paths with double quotes, which both Command Prompt and PowerShell read.
 
 ### Claude Code in the terminal
 
@@ -181,6 +181,8 @@ The VS Code extension uses the same configuration as Claude Code in the terminal
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`;
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`;
 - other systems: not confirmed, so the button is not offered and the guide shows the manual way.
+
+The Microsoft Store version of Claude Desktop may keep its configuration in another place (not confirmed). If the button says Claude Desktop is not found, or Claude Desktop does not show the server after a restart, use the manual way below: **Edit Config** opens the file Claude Desktop really reads.
 
 It writes only when you click. It keeps every other server and setting in the file; creates the file when the Claude folder is there but the file is not; refuses, changing nothing, when the Claude folder is missing (Claude Desktop not installed) or the file is not valid JSON; saves the earlier file beside it as `claude_desktop_config.json.interview-companion-backup` (overwritten each time); and writes a new file and renames it over the old one, so the file is never half written. Clicking again when the entry is already there changes nothing. The guide shows whether Claude Desktop is connected to this copy, to another copy or data folder, or not at all. **It cannot restart Claude Desktop**: quit it completely and open it again.
 
