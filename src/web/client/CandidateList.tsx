@@ -9,6 +9,7 @@ import { interviewName } from "./interview-names.ts";
 import { candidatePath, linkTo, navigate } from "./navigation.ts";
 import { fill, type Text } from "./languages.ts";
 import { NoKeyGuide } from "./NoKeyGuide.tsx";
+import { RoleQuestionsDialog } from "./RoleQuestionsDialog.tsx";
 import { useText } from "./text.tsx";
 
 // The home page: every Candidate in one table with the form to add one, and beside it the
@@ -20,6 +21,7 @@ export function CandidateList() {
   // The Candidate whose CV is open over the list.
   const [cvOf, setCvOf] = useState<CandidateOverview["candidate"] | undefined>();
   const [roles, setRoles] = useState<string[]>([]);
+  const [roleQuestionsOpen, setRoleQuestionsOpen] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
@@ -109,6 +111,9 @@ export function CandidateList() {
             aria-label={t.filterLabel}
             onChange={(event) => setFilter(event.target.value)}
           />
+          <button type="button" className="quiet" onClick={() => setRoleQuestionsOpen(true)}>
+            {text.roleQuestions.open}
+          </button>
         </header>
         <form className="candidate-form card" onSubmit={handleSubmit}>
           <label>
@@ -172,6 +177,17 @@ export function CandidateList() {
               ))}
             </tbody>
           </table>
+        )}
+        {roleQuestionsOpen && (
+          <RoleQuestionsDialog
+            initialRole={role.trim()}
+            onClose={() => {
+              setRoleQuestionsOpen(false);
+              // A role that now has questions is suggested in the form; copies change question counts.
+              loadRoles();
+              loadCandidates();
+            }}
+          />
         )}
         {cvOf && <CvPreviewDialog candidate={cvOf} onClose={() => setCvOf(undefined)} onChanged={loadCandidates} />}
       </section>

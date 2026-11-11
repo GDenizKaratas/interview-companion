@@ -193,6 +193,25 @@ const migrations: string[] = [
      saved_question_id TEXT NOT NULL REFERENCES saved_question (id) ON DELETE CASCADE,
      PRIMARY KEY (interview_id, saved_question_id)
    ) STRICT;`,
+  // Role Questions: the Interviewer's questions for one role, compared with Candidate roles by the
+  // same rule. role_question_copy records every Candidate a Role Question was copied to, and stays
+  // when the copy is deleted, so a deleted copy is not offered again. A copy is an ordinary Saved
+  // Question marked with from_role; it does not change when the Role Question changes.
+  `CREATE TABLE role_question (
+     id TEXT PRIMARY KEY,
+     role TEXT NOT NULL,
+     text TEXT NOT NULL,
+     position INTEGER NOT NULL,
+     created_at TEXT NOT NULL
+   ) STRICT;
+   CREATE INDEX role_question_role ON role_question (role, position);
+   CREATE TABLE role_question_copy (
+     role_question_id TEXT NOT NULL REFERENCES role_question (id) ON DELETE CASCADE,
+     candidate_id TEXT NOT NULL REFERENCES candidate (id) ON DELETE CASCADE,
+     PRIMARY KEY (role_question_id, candidate_id)
+   ) STRICT;
+   CREATE INDEX role_question_copy_candidate ON role_question_copy (candidate_id);
+   ALTER TABLE saved_question ADD COLUMN from_role INTEGER NOT NULL DEFAULT 0 CHECK (from_role IN (0, 1));`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

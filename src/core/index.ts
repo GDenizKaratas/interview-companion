@@ -18,6 +18,7 @@ import * as interfaceLanguage from "./interface-language.ts";
 import * as interviewerNotes from "./interviewer-notes.ts";
 import * as interviews from "./interviews.ts";
 import * as nameGuess from "./name-guess.ts";
+import * as roleQuestions from "./role-questions.ts";
 import * as savedQuestions from "./saved-questions.ts";
 import * as suggestedQuestions from "./suggested-questions.ts";
 import * as transcripts from "./transcripts.ts";
@@ -59,6 +60,7 @@ export {
 } from "./errors.ts";
 export type { InterviewerNote, NewInterviewerNotes } from "./interviewer-notes.ts";
 export type { Interview, InterviewFilter, NewInterview } from "./interviews.ts";
+export type { NewRoleQuestion, RoleQuestion, RoleQuestionList } from "./role-questions.ts";
 export type { NewSavedQuestion, QuestionOrigin, SavedQuestion } from "./saved-questions.ts";
 export type {
   QuestionFocus,
@@ -94,6 +96,14 @@ export interface Core {
   tagSavedQuestion(id: string, interviewId: string | null): savedQuestions.SavedQuestion;
   deleteSavedQuestion(id: string): void;
   moveSavedQuestion(id: string, position: number, filter?: interviews.InterviewFilter): void;
+  addRoleQuestion(input: roleQuestions.NewRoleQuestion): roleQuestions.RoleQuestion;
+  listRoleQuestions(role: string): roleQuestions.RoleQuestionList;
+  editRoleQuestion(id: string, text: string): roleQuestions.RoleQuestion;
+  moveRoleQuestion(id: string, position: number): void;
+  deleteRoleQuestion(id: string): void;
+  listMissingRoleQuestions(candidateId: string): roleQuestions.RoleQuestion[];
+  addMissingRoleQuestions(candidateId: string): savedQuestions.SavedQuestion[];
+  addRoleQuestionsToCandidates(role: string): number;
   attachCv(candidateId: string, file: cv.CvFile): Promise<cv.Cv>;
   getCv(candidateId: string): cv.Cv | undefined;
   readCvFile(candidateId: string): cv.CvFile | undefined;
@@ -228,6 +238,14 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     tagSavedQuestion: (id, interviewId) => savedQuestions.tagSavedQuestion(db, id, interviewId),
     deleteSavedQuestion: (id) => savedQuestions.deleteSavedQuestion(db, id),
     moveSavedQuestion: (id, position, filter) => savedQuestions.moveSavedQuestion(db, id, position, filter),
+    addRoleQuestion: (input) => roleQuestions.addRoleQuestion(db, input),
+    listRoleQuestions: (role) => roleQuestions.listRoleQuestions(db, role),
+    editRoleQuestion: (id, text) => roleQuestions.editRoleQuestion(db, id, text),
+    moveRoleQuestion: (id, position) => roleQuestions.moveRoleQuestion(db, id, position),
+    deleteRoleQuestion: (id) => roleQuestions.deleteRoleQuestion(db, id),
+    listMissingRoleQuestions: (candidateId) => roleQuestions.listMissingRoleQuestions(db, candidateId),
+    addMissingRoleQuestions: (candidateId) => roleQuestions.addMissingRoleQuestions(db, candidateId),
+    addRoleQuestionsToCandidates: (role) => roleQuestions.addRoleQuestionsToCandidates(db, role),
     attachCv: (candidateId, file) => cv.attachCv(db, cvFolder, now, candidateId, file),
     getCv: (candidateId) => cv.getCv(db, candidateId),
     readCvFile: (candidateId) => cv.readCvFile(db, cvFolder, candidateId),

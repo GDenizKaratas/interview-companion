@@ -80,7 +80,9 @@ export function createMcpServer(core: AiClientCore): McpServer {
     "get_saved_questions",
     {
       description:
-        "Get the Interviewer's own list of questions for a Candidate, in the order the Interviewer arranged them.",
+        "Get the Interviewer's own list of questions for a Candidate, in the order the Interviewer arranged them. " +
+        "origin says where each came from: written by the Interviewer, copied from a suggestion, or copied from the " +
+        "questions the Interviewer keeps for the Candidate's role.",
       inputSchema: { candidateId },
       annotations: readOnly,
     },

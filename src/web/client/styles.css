@@ -1138,7 +1138,34 @@ select.note-tag,
 }
 
 .question-entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   margin-top: 0.2rem;
+}
+
+/* Opens the Role Questions dialog for the Candidate's role, at the far right of the entry line. */
+.role-questions-open {
+  margin-left: auto;
+  font-size: 0.85rem;
+}
+
+/* The Role Questions dialog: room for a list, which scrolls inside the dialog when it is long. */
+.role-questions-dialog {
+  width: min(38rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+.role-questions-role {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.role-questions-dialog .question-list {
+  margin-bottom: 0.75rem;
 }
 
 .question-origin {

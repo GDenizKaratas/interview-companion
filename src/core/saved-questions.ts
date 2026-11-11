@@ -5,8 +5,9 @@ import { inTransaction } from "./database.ts";
 import { InvalidInputError, NotFoundError } from "./errors.ts";
 import { interviewFilterCondition, requireInterviewOf, type InterviewFilter } from "./interviews.ts";
 
-// Where a Saved Question came from: written by the Interviewer, or copied from a Suggested Question.
-export type QuestionOrigin = "written" | "suggestion";
+// Where a Saved Question came from: written by the Interviewer, copied from a Suggested Question,
+// or copied from a Role Question.
+export type QuestionOrigin = "written" | "suggestion" | "role";
 
 export interface SavedQuestion {
   id: string;
@@ -29,11 +30,14 @@ interface SavedQuestionRow {
   candidate_id: string;
   interview_id: string | null;
   text: string;
-  origin: QuestionOrigin;
+  // The stored origin is written or suggestion; from_role marks a copy of a Role Question, whose
+  // stored origin is written.
+  origin: Exclude<QuestionOrigin, "role">;
+  from_role: 0 | 1;
   created_at: string;
 }
 
-const columns = "id, candidate_id, interview_id, text, origin, created_at";
+const columns = "id, candidate_id, interview_id, text, origin, from_role, created_at";
 
 // Adds a hand-written question at the end of the Candidate's list.
 export function addSavedQuestion(db: DatabaseSync, input: NewSavedQuestion): SavedQuestion {
@@ -44,7 +48,7 @@ export function addSavedQuestion(db: DatabaseSync, input: NewSavedQuestion): Sav
 }
 
 // Adds a question at the end of the Candidate's list. Core uses it to copy an accepted
-// Suggested Question; the copy does not point back to the suggestion.
+// Suggested Question or a Role Question; the copy does not point back to where it came from.
 export function insertSavedQuestion(
   db: DatabaseSync,
   candidateId: string,
@@ -58,13 +62,14 @@ export function insertSavedQuestion(
     candidate_id: candidateId,
     interview_id: interviewId,
     text: requireText(text),
-    origin,
+    origin: origin === "role" ? "written" : origin,
+    from_role: origin === "role" ? 1 : 0,
     created_at: createdAt,
   };
   db.prepare(
     `INSERT INTO saved_question (${columns}, position)
-     VALUES (?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position) + 1, 0) FROM saved_question WHERE candidate_id = ?))`,
-  ).run(row.id, row.candidate_id, row.interview_id, row.text, row.origin, row.created_at, row.candidate_id);
+     VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position) + 1, 0) FROM saved_question WHERE candidate_id = ?))`,
+  ).run(row.id, row.candidate_id, row.interview_id, row.text, row.origin, row.from_role, row.created_at, row.candidate_id);
   return toSavedQuestion(row);
 }
 
@@ -149,7 +154,7 @@ function toSavedQuestion(row: SavedQuestionRow): SavedQuestion {
     candidateId: row.candidate_id,
     interviewId: row.interview_id,
     text: row.text,
-    origin: row.origin,
+    origin: row.from_role === 1 ? "role" : row.origin,
     createdAt: row.created_at,
   };
 }
