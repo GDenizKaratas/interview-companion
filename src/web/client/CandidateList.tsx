@@ -4,8 +4,6 @@ import { AddCandidateDialog } from "./AddCandidateDialog.tsx";
 import { api, type CandidateOverview, type DatedInterview, type Interview } from "./api.ts";
 import { CvPreviewDialog } from "./CvPreviewDialog.tsx";
 import { localDay, shortDay } from "./dates.ts";
-import { ExpandableCard } from "./ExpandableCard.tsx";
-import { NoKeyGuide } from "./NoKeyGuide.tsx";
 import { ImportCandidate, type ImportCandidateHandle } from "./ImportCandidate.tsx";
 import { InterviewCalendar } from "./InterviewCalendar.tsx";
 import { interviewName } from "./interview-names.ts";
@@ -69,6 +67,19 @@ export function CandidateList() {
   const shown = (view === "planned" && needle === "" ? planned : (candidates ?? [])).filter(
     ({ candidate }) => needle === "" || folded(candidate.name).includes(needle) || folded(candidate.role).includes(needle),
   );
+  // One page of rows fits the window, so the list never pushes the page down. A search or a
+  // change of view starts again at the first page.
+  const pageSize = usePageSize();
+  const pages = Math.max(1, Math.ceil(shown.length / pageSize));
+  const [page, setPage] = useState(0);
+  const listKey = `${view}|${needle}`;
+  const [pagedKey, setPagedKey] = useState(listKey);
+  if (pagedKey !== listKey) {
+    setPagedKey(listKey);
+    setPage(0);
+  }
+  const currentPage = Math.min(page, pages - 1);
+  const pageRows = shown.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
   const undated = candidates?.reduce((n, overview) => n + overview.interviews.filter((i) => i.date === null).length, 0) ?? 0;
 
   return (
@@ -138,11 +149,22 @@ export function CandidateList() {
               </tr>
             </thead>
             <tbody>
-              {shown.map((overview) => (
+              {pageRows.map((overview) => (
                 <CandidateRow key={overview.candidate.id} overview={overview} onViewCv={() => setCvOf(overview.candidate)} />
               ))}
             </tbody>
           </table>
+        )}
+        {pages > 1 && (
+          <nav className="pager" aria-label={t.pages}>
+            <button type="button" className="icon-button" aria-label={t.previousPage} title={t.previousPage} disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>
+              ‹
+            </button>
+            <span>{fill(t.page, { page: String(currentPage + 1), pages: String(pages) })}</span>
+            <button type="button" className="icon-button" aria-label={t.nextPage} title={t.nextPage} disabled={currentPage === pages - 1} onClick={() => setPage(currentPage + 1)}>
+              ›
+            </button>
+          </nav>
         )}
         {adding && (
           <AddCandidateDialog
@@ -176,12 +198,25 @@ export function CandidateList() {
       </section>
       <aside className="home-side">
         {dated && <InterviewCalendar interviews={dated} undated={undated} />}
-        <ExpandableCard className="panel no-key-card" title={text.noKey.title}>
-          <NoKeyGuide withTitle={false} />
-        </ExpandableCard>
       </aside>
     </main>
   );
+}
+
+// How many rows fit the window under the page's head, at least five. A row is about 4.2rem
+// high, and the bars, the head, the tools, and the pager take about 17rem.
+function usePageSize(): number {
+  const measure = () => {
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 15;
+    return Math.max(5, Math.floor((window.innerHeight - 17 * rem) / (4.2 * rem)));
+  };
+  const [size, setSize] = useState(measure);
+  useEffect(() => {
+    const onResize = () => setSize(measure());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return size;
 }
 
 // One Candidate in the table. The whole row opens the Workspace; the name is the real link,

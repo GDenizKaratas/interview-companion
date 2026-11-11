@@ -8,7 +8,7 @@ From about 1180 pixels wide, the Workspace fills the window and does not scroll;
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│ ❝ Interview Companion   Your interviews, all in one place.     [AI settings] [English ▾] │ navy app bar
+│ ❝ Interview Companion   Your interviews, all in one place.     [?] [Use with an API key] [Use with MCP] [English ▾] │ navy app bar
 ├──────────────────────────────────────────────────────────────────────────────────────────┤
 │ ‹ Deniz Yılmaz Senior Backend Engineer [First Interview · 3 Nov 11:00 ▾] ✎ [+ Interview] │
 │                                              [🔍 Search the CV and Transcripts…] [Candidate Brief] ⋯ │ one bar, one row

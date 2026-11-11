@@ -90,13 +90,13 @@ Everything is stored on your machine in `data/` inside the project folder: one S
 
 | | In the app, with an API key | Through your AI client (MCP), no key |
 |---|---|---|
-| Who calls the model | The app, with your Anthropic API key, saved in AI Settings | Your AI client, such as Claude Code or Claude Desktop, with its own model |
+| Who calls the model | The app, with your Anthropic API key, saved under **Use with an API key** | Your AI client, such as Claude Code or Claude Desktop, with its own model |
 | What you get | AI Notes, Asked Questions, Suggested Questions | A Candidate Brief, and, if you allow saving, AI Notes, Asked Questions, and Suggested Questions |
 | Where quotes are checked | Before anything is saved | AI Notes, Asked Questions, and Suggested Questions: before they are saved, when saving is on. The Candidate Brief: saved as written, and its quotes are marked found or not found each time it is read. |
 
 The app's model is Claude, behind a narrow provider interface; the model and its settings are in `src/core/claude-provider.ts`. Before each request the app says what will be sent, for example "Sends this Interview's Transcript with speaker roles to Claude (Anthropic). Not the CV or your notes."
 
-The AI client route needs no key in the app: the Workspace has a **Copy brief command** button, and you paste the command into Claude Code. With another AI client, such as Claude Desktop, use the server's `brief` prompt in the way that client offers prompts. Saving from the AI client is off until you turn it on in AI Settings ([ADR 0002](docs/adr/0002-two-ai-modes.md), [ADR 0005](docs/adr/0005-ai-client-saves-through-core.md)). Setup for Claude Code and Claude Desktop is in [docs/mcp.md](docs/mcp.md).
+The AI client route needs no key in the app: the Candidate Brief dialog in the Workspace has a **Copy brief command** button, and you paste the command into Claude Code. With another AI client, such as Claude Desktop, use the server's `brief` prompt in the way that client offers prompts. Saving from the AI client is off until you turn it on under **Use with MCP** ([ADR 0002](docs/adr/0002-two-ai-modes.md), [ADR 0005](docs/adr/0005-ai-client-saves-through-core.md)). Setup for Claude Code and Claude Desktop is in [docs/mcp.md](docs/mcp.md).
 
 ## Why MCP?
 

@@ -27,7 +27,7 @@ export function readApiKey(db: DatabaseSync): string | undefined {
 }
 
 // Whether the AI client (through MCP) may save AI Notes and Suggested Questions. Off until the
-// Interviewer turns it on in AI Settings. Only the web interface can change it: the AI client's
+// Interviewer turns it on under "Use with MCP". Only the web interface can change it: the AI client's
 // view of core does not hold the switch.
 const aiClientWritesKey = "ai_client_writes";
 
@@ -45,7 +45,7 @@ export function requireAiClientWrites(db: DatabaseSync): void {
   if (!aiClientWritesAllowed(db)) {
     throw new PreconditionError(
       "aiClientWritesOff",
-      "Saving from the AI client is off. Turn it on in Interview Companion's AI Settings, then try again.",
+      "Saving from the AI client is off. Turn it on in Interview Companion, under “Use with MCP” at the top of the page, then try again.",
     );
   }
 }
