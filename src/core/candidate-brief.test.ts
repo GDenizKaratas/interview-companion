@@ -29,6 +29,7 @@ const briefText = "# Candidate Brief: Ece Yalın, Backend Engineer\n\n## From th
 
 describe("Saving a Candidate Brief", () => {
   it("is refused while saving from the AI client is off", () => {
+    core.allowAiClientWrites(false);
     expect(() => core.saveCandidateBriefFromClient(candidate.id, { text: briefText, evidence: [] })).toThrow(
       expect.objectContaining({ reason: "aiClientWritesOff" }),
     );

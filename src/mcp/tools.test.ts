@@ -123,7 +123,7 @@ describe("MCP server", () => {
     expect(instructions).toContain("The Interviewer decides about the Candidate");
     expect(instructions).toContain("hire or do not hire");
     // What the tools can and cannot change.
-    expect(instructions).toContain("only when the Interviewer has allowed it");
+    expect(instructions).toContain("unless the Interviewer has turned saving off");
     expect(instructions).toContain("Nothing can be deleted");
   });
 
@@ -492,6 +492,7 @@ describe("MCP server", () => {
   });
 
   it("brief only reads while saving from the AI client is off, and says where to turn it on", async () => {
+    core.allowAiClientWrites(false);
     const text = await fetchBriefPrompt();
 
     for (const tool of ["save_ai_notes", "save_asked_questions", "save_suggested_questions", "save_candidate_brief"]) {
@@ -555,6 +556,7 @@ describe("MCP server", () => {
 
   it("save_ai_notes refuses while saving from the AI client is off, and says where to turn it on", async () => {
     const interview = readyInterview();
+    core.allowAiClientWrites(false);
 
     const message = await refusal("save_ai_notes", { interviewId: interview.id, notes: [redisNote] });
 
@@ -578,6 +580,7 @@ describe("MCP server", () => {
   it("save_asked_questions saves through core's checks, and get_asked_questions and get_saved_question_checks read them back", async () => {
     const interview = readyInterview();
     const saved = core.addSavedQuestion({ candidateId: candidate.id, text: "Which queue?" });
+    core.allowAiClientWrites(false);
     const askedQueue = {
       question: "Which queue",
       questionEvidence: { segmentNumber: 1, quote: "Which queue did you use?" },
@@ -631,6 +634,7 @@ describe("MCP server", () => {
   });
 
   it("save_candidate_brief refuses while saving from the AI client is off", async () => {
+    core.allowAiClientWrites(false);
     const message = await refusal("save_candidate_brief", { candidateId: candidate.id, text: "# Brief", evidence: [] });
 
     expect(message).toContain("Use with MCP");
