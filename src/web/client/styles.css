@@ -1,4 +1,4 @@
-/* Design tokens. Colors and type follow TECHNIHQ's brand: navy and a bright blue, Space Grotesk
+/* Design tokens. Colors and type: navy and a bright blue, Space Grotesk
    for headings and Outfit for text. The working area is light, for long reading of CVs and
    Transcripts. Corners stay small: 4px for controls, 6px for cards. */
 :root {
@@ -267,7 +267,7 @@ button.link-button:hover:not(:disabled) {
   background: var(--accent-tint);
 }
 
-/* The app bar: navy, as on TECHNIHQ's site. */
+/* The app bar: navy. */
 .app-bar {
   position: sticky;
   top: 0;
