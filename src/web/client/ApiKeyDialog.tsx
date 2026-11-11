@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { api, ApiError } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
-import { NoKeyGuide } from "./NoKeyGuide.tsx";
 import { useText } from "./text.tsx";
+
+// The window event that opens the MCP guide. The app bar listens for it; it is named here too so
+// this dialog does not import the bar that renders it.
+const openMcpGuideEvent = "open-mcp-guide";
 
 // Fired on window when the API key is saved or removed, so the AI Notes panel can update.
 export const apiKeyChanged = "api-key-changed";
 
-// The AI settings: entering or removing the API key, and what is sent to the model.
+// Using AI with an API key: entering or removing the key, and what is sent to the model.
 // The key is sent to the local server once and is never shown again.
 export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
   const { text } = useText();
@@ -18,16 +21,11 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [confirmingRemove, setConfirmingRemove] = useState(false);
-  const [clientWrites, setClientWrites] = useState<boolean | undefined>();
 
   useEffect(() => {
     dialog.current?.showModal();
     api.getApiKeyStatus().then(
       (status) => setSaved(status.saved),
-      () => setError(t.loadFailed),
-    );
-    api.getAiClientWrites().then(
-      (setting) => setClientWrites(setting.allowed),
       () => setError(t.loadFailed),
     );
   }, [t.loadFailed]);
@@ -47,15 +45,6 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
       setError(refusedAsMissing ? t.required : t.saveFailed);
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function changeClientWrites(allowed: boolean) {
-    setError(undefined);
-    try {
-      setClientWrites((await api.setAiClientWrites(allowed)).allowed);
-    } catch {
-      setError(t.clientWrites.saveFailed);
     }
   }
 
@@ -107,17 +96,21 @@ export function ApiKeyDialog({ onClose }: { onClose: () => void }) {
         <p>{t.whatIsSent}</p>
         <p>{t.notSent}</p>
       </div>
-      {clientWrites !== undefined && (
-        <section className="settings-section" aria-labelledby="client-writes-title">
-          <h3 id="client-writes-title">{t.clientWrites.title}</h3>
-          <label className="settings-check">
-            <input type="checkbox" checked={clientWrites} onChange={(event) => void changeClientWrites(event.target.checked)} />
-            {t.clientWrites.label}
-          </label>
-          <p className="settings-detail">{t.clientWrites.detail}</p>
-        </section>
+      {saved === false && (
+        <p className="settings-detail">
+          {t.noKeyWay}{" "}
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => {
+              onClose();
+              window.dispatchEvent(new Event(openMcpGuideEvent));
+            }}
+          >
+            {text.mcpGuide.open}
+          </button>
+        </p>
       )}
-      {saved === false && <NoKeyGuide className="compact" />}
       {error && <p className="error">{error}</p>}
       <div className="confirm-dialog-actions">
         {saved && (

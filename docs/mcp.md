@@ -1,6 +1,6 @@
 # The MCP server
 
-Interview Companion has an MCP server. With it, an AI client such as Claude Code or Claude Desktop can read your Candidates, Interviewer Notes, Saved Questions, AI Notes, CVs, and Transcripts, search them for Evidence, and write a Candidate Brief, without an API key for Interview Companion. If you allow it in AI Settings, it can also save the AI Notes, Asked Questions, and Suggested Questions it writes into the app, checked like the app's own, and the Candidate Brief, whose quotes the app marks as found or not found ([ADR 0005](adr/0005-ai-client-saves-through-core.md)).
+Interview Companion has an MCP server. With it, an AI client such as Claude Code or Claude Desktop can read your Candidates, Interviewer Notes, Saved Questions, AI Notes, CVs, and Transcripts, search them for Evidence, and write a Candidate Brief, without an API key for Interview Companion. If you allow it under **Use with MCP**, it can also save the AI Notes, Asked Questions, and Suggested Questions it writes into the app, checked like the app's own, and the Candidate Brief, whose quotes the app marks as found or not found ([ADR 0005](adr/0005-ai-client-saves-through-core.md)).
 
 Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 
@@ -45,7 +45,7 @@ A plain web API could serve the same data, for example `GET /candidates/:id/evid
 
 ## The tools
 
-All tools but four only read. The four that write, `save_ai_notes`, `save_asked_questions`, `save_suggested_questions`, and `save_candidate_brief`, refuse until you turn on "Saving from your AI client" in AI Settings. Even then the first three go through the same core code as the app's own AI: a note or suggestion whose quote is not found word for word in its source is dropped, a Transcript is quoted only after its Speaker Mapping is confirmed, and everything arrives Unreviewed, marked as from the AI client. The server gets a view of core, `aiClientCore`, that holds every read and only these four writes. It can read whether saving is on, which the `brief` prompt uses, but it cannot turn the switch, so the client cannot turn writing on itself. Your Interviewer Notes, Saved Questions, Candidates, CVs, and Transcripts cannot be changed through MCP. Saving follows the same replace rules as generating in the app: new AI Notes replace the Interview's Unreviewed ones, whoever wrote them, new Asked Questions replace the Interview's earlier ones, and new suggestions replace those not yet accepted; anything you reviewed or accepted stays. A Candidate Brief is different: it is saved even when a quote is not found, has no Review State, and replaces the Candidate's earlier brief; each quote is marked found or not found every time the brief is read (see below). One call can save at most 40 notes, 60 Asked Questions, or 25 suggestions, each with at most 8 quotes, or one brief of at most 50,000 characters with at most 100 Evidence references.
+All tools but four only read. The four that write, `save_ai_notes`, `save_asked_questions`, `save_suggested_questions`, and `save_candidate_brief`, refuse until you turn on "Saving from your AI client" under **Use with MCP**. Even then the first three go through the same core code as the app's own AI: a note or suggestion whose quote is not found word for word in its source is dropped, a Transcript is quoted only after its Speaker Mapping is confirmed, and everything arrives Unreviewed, marked as from the AI client. The server gets a view of core, `aiClientCore`, that holds every read and only these four writes. It can read whether saving is on, which the `brief` prompt uses, but it cannot turn the switch, so the client cannot turn writing on itself. Your Interviewer Notes, Saved Questions, Candidates, CVs, and Transcripts cannot be changed through MCP. Saving follows the same replace rules as generating in the app: new AI Notes replace the Interview's Unreviewed ones, whoever wrote them, new Asked Questions replace the Interview's earlier ones, and new suggestions replace those not yet accepted; anything you reviewed or accepted stays. A Candidate Brief is different: it is saved even when a quote is not found, has no Review State, and replaces the Candidate's earlier brief; each quote is marked found or not found every time the brief is read (see below). One call can save at most 40 notes, 60 Asked Questions, or 25 suggestions, each with at most 8 quotes, or one brief of at most 50,000 characters with at most 100 Evidence references.
 
 The switch protects the MCP connection. Like everything in the app (ADR 0001), the local web interface has no login, so any program on this computer that can reach it could change the switch; an AI client with a shell is such a program.
 
@@ -77,7 +77,7 @@ Candidate ids come from `list_candidates`; Interview ids come from `get_candidat
 
 In Claude Code it is the command `/mcp__interview-companion__brief <name>`. The **Copy brief command** button in a Candidate's Workspace bar copies it with the Candidate's name, so you only paste it.
 
-The steps depend on the AI Settings switch at the moment the command runs:
+The steps depend on the "Saving from your AI client" switch at the moment the command runs:
 
 - **Saving from the AI client on:** the model reads the Candidate's data; for each Interview with a confirmed Speaker Mapping and no AI Notes yet (or only Stale ones), it reads the Transcript and saves AI Notes with `save_ai_notes`; for each such Interview without Asked Questions (or with Stale ones), it saves them with `save_asked_questions`; it saves Suggested Questions with `save_suggested_questions`; it writes the Candidate Brief and saves it with `save_candidate_brief`. Interviews that already have AI Notes are left as they are.
 - **Saving off:** the model only reads, writes the brief in the chat, and tells you that turning saving on lets the same command save in the app.
@@ -88,7 +88,7 @@ The rules say: every statement about the Candidate cites Evidence by number; quo
 
 ## Setup
 
-The Candidate list in the app shows this setup too, under "Use AI without an API key", with the command for your copy ready to copy. So does "AI settings" while no API key is saved. That command uses `--scope user`, so the server works in every folder, and it passes `DATA_DIR` when the app runs with one.
+The app shows this setup too: **Use with MCP** in the bar at the top of every page, with the command for your copy ready to copy. That command uses `--scope user`, so the server works in every folder, and it passes `DATA_DIR` when the app runs with one.
 
 You need Node.js 24 or later and a copy of this project with its packages installed (`npm install`). No API key is needed.
 
@@ -141,7 +141,7 @@ Claude Desktop does not always see the `PATH` of your terminal. If the server do
 4. Ask the same with "only what the Candidate said". The answer must give only the CV lines and say that the First Interview was not searched because its Speaker Mapping is not confirmed.
 5. Start the app (`npm start`), open Deniz Yılmaz, and confirm the Speaker Mapping of the First Interview: Deniz is the Candidate and Ayşe is the Interviewer. Ask step 4 again: now segment 4 is found, as said by the Candidate.
 6. With saving from the AI client off, choose **Copy brief command** in Deniz Yılmaz's Workspace and paste the command into Claude Code (`/mcp__interview-companion__brief Deniz Yılmaz`). Claude Code only reads, says that saving is off, and writes a brief with the template's sections, Evidence numbers such as [1], a **Reasons and Evidence** list at the end, and the closing line about checking the quotes.
-7. Turn on saving from the AI client in AI Settings and paste the same command again. Claude Code now saves AI Notes for the First Interview, Suggested Questions, and the brief. In the Workspace, check the AI Notes and Suggested Questions, marked as from the AI client, then open **Brief** and check the found and not found marks.
+7. Turn on saving from the AI client under **Use with MCP** and paste the same command again. Claude Code now saves AI Notes for the First Interview, Suggested Questions, and the brief. In the Workspace, check the AI Notes and Suggested Questions, marked as from the AI client, then open **Brief** and check the found and not found marks.
 
 ## Trying it without an AI client
 

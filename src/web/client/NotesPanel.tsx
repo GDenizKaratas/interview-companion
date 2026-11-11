@@ -187,7 +187,7 @@ function NoteItem({
   // Called after a change, with the note as it is now when it still exists.
   onChanged: (note?: InterviewerNote) => void;
 }) {
-  const { text } = useText();
+  const { text, languageCode } = useText();
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(note.text);
   const [error, setError] = useState<string>();
@@ -254,7 +254,7 @@ function NoteItem({
           }
         />
         <time dateTime={note.savedAt} title={text.panels.interviewerNotes.savedAt}>
-          {formatSavedAt(note.savedAt)}
+          {formatSavedAt(note.savedAt, languageCode)}
         </time>
         {editing ? (
           <button type="button" className="link-button" onClick={() => setEditing(false)}>
@@ -286,12 +286,18 @@ function NoteItem({
 }
 
 // "14:02" for a note saved today, "2026-11-03 14:02" otherwise, in this computer's time zone.
-function formatSavedAt(savedAt: string): string {
+function formatSavedAt(savedAt: string, languageCode: string): string {
   const saved = new Date(savedAt);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const day = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const time = `${pad(saved.getHours())}:${pad(saved.getMinutes())}`;
-  return day(saved) === day(new Date()) ? time : `${day(saved)} ${time}`;
+  const today = new Date();
+  const sameDay = saved.toDateString() === today.toDateString();
+  // Today's notes show the time alone; older ones the day first, with the year only when it is another year.
+  return new Intl.DateTimeFormat(languageCode, {
+    day: sameDay ? undefined : "numeric",
+    month: sameDay ? undefined : "short",
+    year: sameDay || saved.getFullYear() === today.getFullYear() ? undefined : "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(saved);
 }
 
 // Core decides whether a note's text is valid; this only says why, in the current language.

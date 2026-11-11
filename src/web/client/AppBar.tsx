@@ -1,14 +1,36 @@
-import { useState } from "react";
-import { ApiKeyDialog } from "./ApiKeyDialog.tsx";
+import { useEffect, useState } from "react";
+import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
+import { api } from "./api.ts";
+import { HowItWorksDialog } from "./HowItWorksDialog.tsx";
+import { McpGuideDialog } from "./McpGuideDialog.tsx";
 import { linkTo } from "./navigation.ts";
 import { languages } from "./languages.ts";
 import { useText } from "./text.tsx";
 
-// The bar at the top of every page: the app's mark, its name, what it is for,
-// the AI settings, and the interface language switch.
+// Fired on window to open the guide for using AI through MCP, from anywhere in the app.
+export const openMcpGuide = "open-mcp-guide";
+
+type Open = "howItWorks" | "apiKey" | "mcp" | undefined;
+
+// The bar at the top of every page: the app's mark and name, how the app works, the two ways
+// to use AI (an API key, or MCP), and the interface language switch.
 export function AppBar() {
   const { text, languageCode, chooseLanguage } = useText();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [open, setOpen] = useState<Open>();
+  const [keySaved, setKeySaved] = useState(false);
+
+  useEffect(() => {
+    const loadKey = () => api.getApiKeyStatus().then((status) => setKeySaved(status.saved), () => {});
+    const showMcp = () => setOpen("mcp");
+    void loadKey();
+    window.addEventListener(apiKeyChanged, loadKey);
+    window.addEventListener(openMcpGuide, showMcp);
+    return () => {
+      window.removeEventListener(apiKeyChanged, loadKey);
+      window.removeEventListener(openMcpGuide, showMcp);
+    };
+  }, []);
+
   return (
     <header className="app-bar">
       <a className="brand" href="/" onClick={linkTo("/")}>
@@ -16,8 +38,15 @@ export function AppBar() {
         <span className="brand-name">{text.appName}</span>
       </a>
       <span className="tagline">{text.tagline}</span>
-      <button type="button" className="bar-button ai-settings-button" onClick={() => setSettingsOpen(true)}>
+      <button type="button" className="bar-button bar-help" aria-label={text.howItWorks.open} title={text.howItWorks.open} onClick={() => setOpen("howItWorks")}>
+        ?
+      </button>
+      <button type="button" className="bar-button" title={keySaved ? text.aiSettings.saved : undefined} onClick={() => setOpen("apiKey")}>
+        {keySaved && <span className="bar-check">✔</span>}
         {text.aiSettings.open}
+      </button>
+      <button type="button" className="bar-button" onClick={() => setOpen("mcp")}>
+        {text.mcpGuide.open}
       </button>
       <select
         className="language-switch"
@@ -31,7 +60,11 @@ export function AppBar() {
           </option>
         ))}
       </select>
-      {settingsOpen && <ApiKeyDialog onClose={() => setSettingsOpen(false)} />}
+      {open === "howItWorks" && (
+        <HowItWorksDialog onUseApiKey={() => setOpen("apiKey")} onUseMcp={() => setOpen("mcp")} onClose={() => setOpen(undefined)} />
+      )}
+      {open === "apiKey" && <ApiKeyDialog onClose={() => setOpen(undefined)} />}
+      {open === "mcp" && <McpGuideDialog onClose={() => setOpen(undefined)} />}
     </header>
   );
 }
