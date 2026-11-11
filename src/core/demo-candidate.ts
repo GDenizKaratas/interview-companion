@@ -25,7 +25,7 @@ export async function loadDemoCandidate(db: DatabaseSync, folder: string, today:
 }
 
 // Loads the demo set for `npm run demo`: the demo Candidate and ten more fictional Candidates, a
-// small hiring process that shows what the app does without any work (decision 347). Like the
+// small hiring process that shows what the app does without any work (decision 375). Like the
 // demo Candidate, each has a fixed id, so loading again replaces the set with a fresh copy and
 // other Candidates are not touched. The first start of the app still loads only the demo Candidate.
 export async function loadDemoCandidates(db: DatabaseSync, folder: string, today: Today, now: Now): Promise<Candidate[]> {
@@ -52,7 +52,7 @@ export async function loadDemoCandidates(db: DatabaseSync, folder: string, today
 
 // The Role Questions of the demo Candidate's role, which most of the set has. Only the ones the
 // role does not have yet are added, so loading again neither repeats them nor touches the
-// Interviewer's own questions or order (decision 348).
+// Interviewer's own questions or order (decision 376).
 const demoRoleQuestions = {
   role: "Kıdemli Backend Mühendisi",
   questions: [
@@ -273,7 +273,7 @@ const demoSet: DemoSetCandidate[] = [
       { days: 6, time: "10:00", notes: ["Teknik müdür de katılacak, sistem tasarımı ağırlıklı"] },
     ],
     // The Workspace that shows everything: AI Notes in every Review State, an Answer Summary marked
-    // wrong, and Saved Questions asked, not found, planned, and decided by hand (decision 347).
+    // wrong, and Saved Questions asked, not found, planned, and decided by hand (decision 375).
     questions: [
       "Kademeli dağıtımda geri dönüş kararını kim veriyor?",
       "Kesintiyi ilk kim fark etti?",

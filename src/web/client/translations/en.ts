@@ -51,73 +51,74 @@ const text = {
   mcpGuide: {
     open: "Use with MCP",
     title: "Use AI without an API key (MCP)",
-    intro: "Claude Code reads this app's data and does the AI work. No API key is needed here.",
+    intro: "Connect Claude Desktop or Claude Code once; it reads what is in this app directly. You copy or upload nothing: whatever you add here later is there the next time you ask.",
     steps: [
-      { title: "Connect once", hint: "Copy the command, paste it into a terminal, press Enter." },
-      { title: "Open a Candidate", hint: "Click Candidate Brief at the top, then Copy brief command." },
-      { title: "Paste into Claude Code", hint: "Press Enter; it does the rest." },
-      { title: "See the result here", hint: "Saved here when the box below is ticked." },
+      { title: "Connect once", hint: "Choose your AI application below and copy the text." },
+      { title: "Ask about a Candidate by name", hint: "Ask anything; the answer comes with its quote and source: in the CV, in an Interview, or not there at all. For example:" },
+      { title: "See it here", hint: "When the box is ticked, the notes, questions, and brief it writes are saved here and show when you open the page again." },
     ],
-    commandLabel: "The command for step 1:",
+    examples: ["What do we know about Mert Aydın?", "Take notes from Mert Aydın's last interview and save them."],
+    clientWrites: "Allow saving here",
+    connectLabel: "Step 1: your AI application",
+    apps: {
+      desktop: {
+        name: "Claude Desktop",
+        hint: "Paste this text into the file that Settings > Developer > Edit Config opens, and save it. Then quit Claude Desktop and open it again.",
+      },
+      code: {
+        name: "Claude Code",
+        hint: "Run this command once in Terminal.",
+      },
+    },
     copy: "Copy",
     copied: "Copied",
-    clientWrites: {
-      title: "Saving from your AI client",
-      label: "Let Claude Code save its results here",
-      detail:
-        "Off: the result stays only in the Claude Code chat. On: AI Notes, asked questions, Suggested Questions, and the Candidate Brief are saved here, and the app looks for every quote in its source. Your notes, your questions, and your Candidates never change.",
-      saveFailed: "The setting could not be loaded or saved.",
-    },
-    technical: "Step 1 is done once and needs Node.js. For Claude Desktop, see docs/mcp.md in the project folder.",
+    safety: "Your AI application reads, and saves what it writes only when the box is ticked. It cannot delete or change Candidates, Interviews, CVs, Transcripts, or your own notes.",
+    saveFailed: "The setting could not be loaded or saved.",
     close: "Close",
   },
   // Every fact here comes from docs/research/getting-a-transcript.md. Add nothing it does not confirm.
   transcriptGuide: {
     open: "How do I get a Transcript?",
     title: "How do I get a Transcript?",
-    reads: "The app reads a .vtt file with speaker names, or text where every line is \"Speaker: text\".",
     routesLabel: "Your meeting tool",
     meetInstead: "See what to do with no paid plan",
     routes: {
       teams: {
         name: "Microsoft Teams",
-        needs: "Needs a work or school account where transcription is allowed. Transcribes Turkish.",
+        needs: "Works in Turkish. Needs a work or school account.",
         steps: [
           { title: "Start transcription", hint: "In the meeting, when the Interview begins." },
-          { title: "Download the .vtt", hint: "After the meeting. By default only the organiser and co-organisers can." },
+          { title: "Download the .vtt", hint: "After the meeting. The meeting's organiser can download it." },
           { title: "Import it here", hint: "With the Import Transcript button." },
         ],
-        notes: ["Whether a free personal Teams account can transcribe is not confirmed."],
+        notes: ["Whether a free personal Teams account can do it is not confirmed."],
       },
       zoom: {
         name: "Zoom",
-        needs: "Needs a paid plan: Pro, Business, Education, or Enterprise. Transcribes Turkish.",
+        needs: "Works in Turkish. Needs a paid plan: Pro, Business, Education, or Enterprise.",
         steps: [
           { title: "Record to the cloud", hint: "With the audio transcript turned on." },
-          { title: "Download the .vtt", hint: "From Recordings & Transcripts, Cloud recordings." },
+          { title: "Download the .vtt", hint: "From the Recordings & Transcripts page." },
           { title: "Import it here", hint: "With the Import Transcript button." },
         ],
-        notes: ["Someone Zoom could not identify comes as \"Unknown Speaker\"."],
+        notes: [] as string[],
       },
       meet: {
         name: "Google Meet",
-        needs: "Google Meet does not transcribe Turkish, on any plan. This route does not work for an Interview in Turkish.",
+        needs: "Google's help page says Meet transcripts are offered in eight languages for now; Turkish is not on the list yet.",
         steps: [] as { title: string; hint: string }[],
-        notes: ["For an Interview in a supported language, the transcript is a Google Doc, which the app may not read yet."],
+        notes: ["For an Interview in Turkish, use Teams, Zoom, or \"No paid plan\"."],
       },
       local: {
         name: "No paid plan",
-        needs: "Needs no paid plan. The recording can stay on your computer.",
+        needs: "Needs no paid plan. The recording stays on your computer.",
         steps: [
-          { title: "Record the call", hint: "Zoom's free plan records to the computer." },
-          { title: "Transcribe it on your computer", hint: "With a tool that labels speakers, for example Buzz (free; not on Intel Macs) or MacWhisper." },
-          { title: "Name the speakers", hint: "Turn speaker labels on, name each speaker, export as .vtt." },
+          { title: "Record the call", hint: "For example with Zoom's free plan, to the computer." },
+          { title: "Transcribe it on your computer", hint: "With a tool that labels speakers: Buzz (free, not on Intel Macs) or MacWhisper." },
+          { title: "Name the speakers", hint: "Then export as .vtt." },
           { title: "Import it here", hint: "With the Import Transcript button." },
         ],
-        notes: [
-          "This route has not been tried with a real file from these tools yet. If the file is refused, check that every line has its speaker's name.",
-          "A note-taker service that joins the call is another way, but the app may not read the file it gives, and it sends the Candidate's voice to another company.",
-        ],
+        notes: ["This route has not been tried with a real file from these tools yet."],
       },
     },
     consent: {
@@ -131,8 +132,7 @@ const text = {
       ],
       notLegalAdvice: "This is not legal advice; ask the person responsible for personal data at your company.",
     },
-    checked:
-      "Checked on 11 November 2026 mostly from each vendor's own pages; plans and languages change. Sources: docs/research/getting-a-transcript.md in the project folder.",
+    checked: "Checked on 11 November 2026; plans and languages may change.",
     close: "Close",
   },
   candidates: {
@@ -625,10 +625,10 @@ const text = {
     },
     // The AI panel holds AI Notes and Asked Questions, one tab each.
     ai: {
-      title: "What was said in the interview",
+      title: "Interview notes",
       label: "AI draft · you check",
-      notesTab: "AI Notes",
-      askedTab: "Asked questions",
+      notesTab: "Notes about the Candidate",
+      askedTab: "Questions and answers",
       promise: "AI takes notes from the Transcript; you evaluate the Candidate.",
       steps: ["Transcript", "Speakers", "AI draft", "You check"],
       noInterview: "Add an Interview first.",
@@ -658,10 +658,10 @@ const text = {
       loadFailed: "The state of this Interview could not be loaded.",
     },
     askedQuestions: {
-      noInterview: "Add an Interview first. Asked questions are found in its Transcript.",
-      selectInterview: "Select an Interview above to see the questions asked in it.",
-      noApiKey: "Add an API key to find the asked questions here, or let your own AI client do it: see “Use with MCP”.",
-      noTranscript: "Import this Interview's Transcript to find the questions asked.",
+      noInterview: "Add an Interview first. Questions and answers are taken from its Transcript.",
+      selectInterview: "Select an Interview above to see its questions and answers.",
+      noApiKey: "Add an API key to take the questions and answers here, or let your own AI client do it: see “Use with MCP”.",
+      noTranscript: "Import this Interview's Transcript to take its questions and answers.",
       confirmSpeakersFirst: "Confirm who is speaking first.",
       notYet: "Every question you asked in this Interview, each with a short summary of the answer.",
       find: "Pull out the questions",
@@ -672,14 +672,14 @@ const text = {
       // {count} is replaced by a number.
       dropped: "Questions left out because a quote was not found word for word: {count}.",
       stale: "The speakers changed after these questions were pulled out. Pull them out again to bring them up to date.",
-      savedQuestion: "saved question",
+      savedQuestion: "from my list",
       fromAiClient: "From your AI client",
-      loadFailed: "The questions asked could not be loaded.",
+      loadFailed: "The questions and answers could not be loaded.",
       // The Interviewer's mark that a summary is wrong. A question marked wrong does not count as asked.
       markWrong: "Mark the summary as wrong",
       summaryIsWrong: "Summary is wrong",
       markedWrong: "Summary marked wrong",
-      markedWrongHint: "Not counted as asked.",
+      markedWrongHint: "Left out of the count in My questions.",
       notWrong: "Remove the mark",
       markFailed: "The mark could not be saved.",
       // {count} is replaced by a number.
@@ -729,6 +729,11 @@ const text = {
       segment: "part {number}",
       fromAiClient: "From your AI client",
       fromAiClientHint: "Written by Claude Code or Claude Desktop through MCP, and checked by the app like any AI Note.",
+      open: "Opens the note and the quotes it rests on",
+      quoteCount: "Quotes: {count}",
+      staleTag: "Speakers changed",
+      dialogTitle: "Note about the Candidate",
+      close: "Close",
       reviewStates: { unreviewed: "Unreviewed", confirmed: "Confirmed", corrected: "Corrected", dismissed: "Dismissed" },
       confirmRegenerate: "Take the AI Notes again?",
       // {count} is replaced by a number.
@@ -784,7 +789,7 @@ const text = {
       // {interview} is replaced by the Interview's name.
       hiddenByFilter: "Saved under {interview}. Questions of other Interviews are hidden while one is selected.",
       showAll: "Show all questions",
-      view: "View",
+      view: "See the answer",
       viewHint: "Opens the question and the Candidate's answer",
       // {interview} is replaced by the Interview's name.
       aiFoundAskedIn: "It is in the Transcript of {interview}",
