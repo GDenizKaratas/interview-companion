@@ -25,6 +25,8 @@ interface SavedQuestionsProps {
   askedVersion: number;
   // Shows one segment of an Interview's Transcript.
   onShowInTranscript: (interviewId: string, segmentNumber: number) => void;
+  // Called after the Interviewer marks an Asked Question as wrong, or takes the mark back, here.
+  onAskedQuestionMarked: () => void;
 }
 
 // The Questions card: the Interviewer's own question list for one Candidate, and the Suggested
@@ -40,6 +42,7 @@ export function SavedQuestions({
   sourceVersion,
   askedVersion,
   onShowInTranscript,
+  onAskedQuestionMarked,
 }: SavedQuestionsProps) {
   const { text } = useText();
   const t = text.panels.questions;
@@ -332,6 +335,11 @@ export function SavedQuestions({
       {exchange && (
         <ExchangeDialog
           askedQuestion={exchange}
+          onMarkChange={(updated) => {
+            setExchange(updated);
+            setChangeCount((count) => count + 1);
+            onAskedQuestionMarked();
+          }}
           onOpenInTranscript={() => onShowInTranscript(exchange.interviewId, exchange.firstSegment)}
           onClose={() => setExchange(undefined)}
         />

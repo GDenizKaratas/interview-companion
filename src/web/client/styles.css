@@ -3039,7 +3039,8 @@ button.cv-shortcut svg {
   border-bottom-color: var(--accent-strong);
 }
 
-/* Each question asked, as one button: the question, then what the Candidate said. */
+/* Each question asked, as one row: a button with the question and what the Candidate said, then
+   the Interviewer's mark that the summary is wrong at its right end. */
 .asked-question-list {
   list-style: none;
   margin: 0.5rem 0 0;
@@ -3050,11 +3051,23 @@ button.cv-shortcut svg {
   border-top: 1px solid var(--line);
 }
 
+.asked-question-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+/* Shown again on request: dimmed, with the warning label still readable. */
+.asked-question-row.wrong .asked-question {
+  opacity: 0.55;
+}
+
 .asked-question {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 0.45rem 0.35rem;
   text-align: left;
   font: inherit;
@@ -3122,8 +3135,68 @@ button.cv-shortcut svg {
 }
 
 .exchange-summary {
-  margin: 0;
+  align-self: stretch;
   line-height: 1.5;
+}
+
+.exchange-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.exchange-summary-text {
+  margin: 0;
+}
+
+.exchange-summary.wrong .exchange-summary-text {
+  opacity: 0.55;
+}
+
+/* The Interviewer's mark that a summary is wrong: a quiet "!" in a circle until it is used, then
+   a warn-coloured label with the action that takes it back. */
+.wrong-mark {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.2rem 0.5rem;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+.asked-question-row .wrong-mark {
+  min-height: 1.9rem;
+  max-width: 45%;
+}
+
+.wrong-mark-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+button.icon-button.wrong-mark-button:hover:not(:disabled) {
+  color: var(--warn);
+  background: var(--warn-tint);
+  border-color: var(--warn-line);
+}
+
+.wrong-label {
+  font-weight: 600;
+  color: var(--warn);
+}
+
+.asked-questions-wrong-line {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 .exchange-summary-label {

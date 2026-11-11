@@ -505,6 +505,13 @@ const translation: TranslationFile = {
         savedQuestion: "kayıtlı soru",
         fromAiClient: "AI uygulamanızdan",
         loadFailed: "Sorulan sorular yüklenemedi.",
+        markWrong: "Yanlış olarak işaretle",
+        markedWrong: "Yanlış olarak işaretlendi",
+        notWrong: "Yanlış değil",
+        markFailed: "İşaret kaydedilemedi.",
+        wrongCount: "{count} soru yanlış olarak işaretlendi",
+        showWrong: "Göster",
+        hideWrong: "Gizle",
       },
       exchange: {
         answer: "AI'nin özeti:",

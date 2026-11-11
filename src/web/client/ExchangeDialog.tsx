@@ -3,6 +3,7 @@ import { api, type AskedQuestion, type Highlight, type Transcript } from "./api.
 import { MarkedText } from "./MarkedText.tsx";
 import { formatTime } from "./transcript-text.ts";
 import { useText } from "./text.tsx";
+import { WrongMark } from "./WrongMark.tsx";
 
 // How many segments before and after the exchange are shown, dimmed, for context.
 const contextSegments = 1;
@@ -10,12 +11,16 @@ const contextSegments = 1;
 // One Asked Question's exchange, cut out of the Transcript: the question, the Answer Summary,
 // and the segments from the question to the end of the answer, with the quoted words marked.
 // The segments around it are dimmed. Escape, the close button, or a click outside closes it.
+// Next to the summary, the Interviewer can mark it as wrong, or take the mark back.
 export function ExchangeDialog({
   askedQuestion,
+  onMarkChange,
   onOpenInTranscript,
   onClose,
 }: {
   askedQuestion: AskedQuestion;
+  // Called with the Asked Question as core gives it after its mark changed.
+  onMarkChange: (updated: AskedQuestion) => void;
   // Shows the whole Transcript at the question.
   onOpenInTranscript: () => void;
   onClose: () => void;
@@ -60,10 +65,13 @@ export function ExchangeDialog({
       </header>
       <div className="panel-body">
         <div className="exchange">
-          <p className="exchange-summary">
-            <span className="exchange-summary-label">{t.answer}</span>
-            {askedQuestion.answerSummary}
-          </p>
+          <div className={askedQuestion.markedWrong ? "exchange-summary wrong" : "exchange-summary"}>
+            <div className="exchange-summary-head">
+              <span className="exchange-summary-label">{t.answer}</span>
+              <WrongMark askedQuestion={askedQuestion} onChange={onMarkChange} />
+            </div>
+            <p className="exchange-summary-text">{askedQuestion.answerSummary}</p>
+          </div>
           {loadFailed && <p className="error">{t.loadFailed}</p>}
           {shown && (
             <ol className="segments exchange-segments">

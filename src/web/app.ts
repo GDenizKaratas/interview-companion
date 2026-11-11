@@ -196,6 +196,15 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   api.post("/interviews/:id/asked-questions", (c) =>
     respondOrRefuse(c, async () => c.json(await core.findAskedQuestions(c.req.param("id")), 201)),
   );
+  // The Interviewer marks an Asked Question as wrong, or takes the mark back: the body is
+  // { wrong: true | false }.
+  api.put("/asked-questions/:id/wrong", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () => {
+      if (typeof fields.wrong !== "boolean") throw new InvalidInputError("wrong", "required", "Say whether the summary is wrong: true or false.");
+      return c.json(core.markAskedQuestionWrong(c.req.param("id"), fields.wrong));
+    });
+  });
   api.get("/candidates/:id/saved-question-checks", (c) =>
     respondOrRefuse(c, () => c.json(core.listSavedQuestionChecks(c.req.param("id")))),
   );
