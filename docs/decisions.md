@@ -409,6 +409,16 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 247 | The key comes only from `ANTHROPIC_API_KEY`. A run where every scenario fails writes no report. Each run is a new file `docs/evaluation/<date>-<model>.md`. | No core operation returns the saved key (decision 135), and a page of zeros is not a result. One file per run keeps runs apart and dated. | Reading the key from the app's database; one file that each run overwrites. |
 | 248 | This ticket ships the scenarios, the script, and the docs with no recorded run: no API key was available where the work was done. The owner chose to run `npm run evaluate` with their key at the end of the project; #62 tracks the run and its report file. | The issue forbids any number without a run behind it, so the docs say plainly that no run exists yet. | Writing expected results by hand. |
 
+## 2026-11-11 — #19 README, privacy notes, and public release
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 249 | The README is the front door: the problem, how it works, quick start from clone to demo with a short walkthrough, core principles, the two ways to use AI, "Why MCP?", architecture, trust and safety (what the code guarantees and what it does not), "Before you use real data", testing, limitations, and roadmap. It links to `docs/` for depth instead of repeating it; only the overview diagram is in both places. | An engineer gets the whole picture on one page, and each detail stays in one place. | A short README with everything in `docs/`; copying `docs/mcp.md` into the README. |
+| 250 | Screenshots are taken from the running app with the demo set, in English, at 1440 by 900 in the light theme, with headless Chrome, and stored in `docs/images/`. They show the Candidate list, a Workspace with a confirmed Transcript and Asked Questions, and the Speaker Mapping step. | Real screenshots of fictional data, as the issue asks, and readable for an English reader. | Mock-ups; screenshots in Turkish. |
+| 251 | `docs/architecture.md` now says it describes the code as it is, and its domain diagram and rule table include Asked Questions, Role Questions, and the Candidate Brief. `docs/plan.md` shows each milestone's status. | "Diagrams match the code" (#19). The old status line said "planned". | Leaving the plan-time documents as they were. |
+| 252 | MIT license with the owner as copyright holder, and a short `CONTRIBUTING.md` that repeats the rules of `CLAUDE.md` for outside contributors. | The issue asks for both; `package.json` already said MIT. | No contribution notes. |
+| 253 | The repository is not made public in this change. It is made public only with the owner's explicit approval at that time. | Acceptance criterion of #19. | Making it public when the PR merges. |
+
 ## Open questions
 
 - The exact layout of a Google Meet transcript downloaded as `.txt` (decision 126, tracked in #33). It needs one real export with fictional content.

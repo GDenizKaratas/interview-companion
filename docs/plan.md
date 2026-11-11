@@ -4,12 +4,12 @@ Each milestone is small, can be tested on its own, and ends with a review before
 
 | Milestone | Status |
 |---|---|
-| 0. Product and architecture | In review |
-| 1. Workspace and notes | Not started |
-| 2. Evidence: CV, Transcript, search | Not started |
-| 3. MCP server | Not started |
-| 4. In-app AI | Not started |
-| 5. Reliability and documentation | Not started |
+| 0. Product and architecture | Done |
+| 1. Workspace and notes | Done |
+| 2. Evidence: CV, Transcript, search | Done |
+| 3. MCP server | Done |
+| 4. In-app AI | Done, except the first real-model evaluation run (#62) |
+| 5. Reliability and documentation | Done; the repository is made public only with the owner's approval |
 
 ## Milestone 0 — Product and architecture
 
