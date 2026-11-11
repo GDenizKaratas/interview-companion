@@ -115,7 +115,8 @@ export function createMcpServer(core: AiClientCore): McpServer {
         "Answer Summary of what the Candidate said, the Interviewer's segment and quote where it was asked " +
         "(questionEvidence), the Candidate's quotes (answerEvidence), and the Saved Question it matches " +
         "(savedQuestionId). null when they were never looked for. stale is true when the Speaker Mapping changed " +
-        "after they were found: do not rely on stale ones.",
+        "after they were found: do not rely on stale ones. markedWrong is true when the Interviewer marked the " +
+        "summary as wrong: leave those out, they do not count as asked. It cannot be set through MCP.",
       inputSchema: {
         interviewId: z.string().min(1).describe("An Interview id, as given by get_candidate."),
       },

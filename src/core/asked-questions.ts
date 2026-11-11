@@ -4,7 +4,7 @@ import type { AiSource } from "./ai-notes.ts";
 import type { AiProviderFactory, ProposedAskedQuestion } from "./ai-provider.ts";
 import { readApiKey, requireAiClientWrites } from "./ai-settings.ts";
 import { inTransaction } from "./database.ts";
-import { PreconditionError } from "./errors.ts";
+import { NotFoundError, PreconditionError } from "./errors.ts";
 import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { candidateOfInterview, listInterviews, requireInterview, type Today } from "./interviews.ts";
@@ -46,6 +46,8 @@ export interface AskedQuestion {
   source: AiSource;
   // True when the Speaker Mapping was confirmed again after the questions were found.
   stale: boolean;
+  // True when the Interviewer marked it as wrong. It is still listed, but it does not count as asked.
+  markedWrong: boolean;
 }
 
 // One Interview's Asked Questions, or null from listAskedQuestions when they were never found.
@@ -216,6 +218,7 @@ interface QuestionRow {
   question_quote: string;
   answer_summary: string;
   saved_question_id: string | null;
+  marked_wrong: number;
 }
 
 // The Interview's Asked Questions in the order they were asked, or null when they were never found.
@@ -230,7 +233,7 @@ export function listAskedQuestions(db: DatabaseSync, interviewId: string): Asked
   if (!run) return null;
   const rows = db
     .prepare(
-      `SELECT id, question, question_segment, question_quote, answer_summary, saved_question_id
+      `SELECT id, question, question_segment, question_quote, answer_summary, saved_question_id, marked_wrong
        FROM asked_question WHERE interview_id = ? ORDER BY position`,
     )
     .all(interviewId) as unknown as QuestionRow[];
@@ -264,9 +267,20 @@ export function listAskedQuestions(db: DatabaseSync, interviewId: string): Asked
         lastSegment: endOfAnswer(Math.max(row.question_segment, ...answerEvidence.map((e) => e.segmentNumber))),
         source: run.source,
         stale,
+        markedWrong: row.marked_wrong === 1,
       };
     }),
   };
+}
+
+// The Interviewer marks an Asked Question as wrong, or takes the mark back. A question marked wrong
+// does not count as asked, so its Saved Question follows the other Interviews. The AI never sets or
+// clears the mark. Refuses an unknown Asked Question with NotFoundError.
+export function markAskedQuestionWrong(db: DatabaseSync, id: string, wrong: boolean): AskedQuestion {
+  const row = db.prepare("SELECT interview_id FROM asked_question WHERE id = ?").get(id) as { interview_id: string } | undefined;
+  if (!row) throw new NotFoundError("Asked Question not found.");
+  db.prepare("UPDATE asked_question SET marked_wrong = ? WHERE id = ?").run(wrong ? 1 : 0, id);
+  return listAskedQuestions(db, row.interview_id)!.askedQuestions.find((question) => question.id === id)!;
 }
 
 // Who found the Interview's Asked Questions and which Saved Questions were checked, for an export,
@@ -283,7 +297,8 @@ export function askedQuestionRunOf(db: DatabaseSync, interviewId: string): { sou
 }
 
 // Where one Saved Question stands in one Interview whose questions were found: the Asked Question
-// it matched, or null when it was not found in that Transcript.
+// it matched, or null when it was not found in that Transcript. An Asked Question the Interviewer
+// marked as wrong matches nothing.
 export interface SavedQuestionCheck {
   savedQuestionId: string;
   interviewId: string;
@@ -306,7 +321,7 @@ export function listSavedQuestionChecks(db: DatabaseSync, today: Today, candidat
       .map(({ interviewId, asked }) => ({
         savedQuestionId: question.id,
         interviewId,
-        askedQuestion: asked.askedQuestions.find((a) => a.savedQuestionId === question.id) ?? null,
+        askedQuestion: asked.askedQuestions.find((a) => a.savedQuestionId === question.id && !a.markedWrong) ?? null,
         stale: asked.stale,
       })),
   );
