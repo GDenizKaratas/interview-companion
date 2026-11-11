@@ -23,6 +23,7 @@ import type {
   Highlight,
   InputRule,
   Interview,
+  InterviewAiStep,
   InterviewerNote,
   NewCandidate,
   NewInterview,
@@ -42,7 +43,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, QuestionMark, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, DatedInterview, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewAiStep, InterviewerNote, QuestionMark, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SavedQuestionState, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -201,6 +202,8 @@ export const api = {
     request<RoleQuestion[]>(`/candidates/${encodeURIComponent(candidateId)}/missing-role-questions`),
   addMissingRoleQuestions: (candidateId: string) =>
     request<SavedQuestion[]>(`/candidates/${encodeURIComponent(candidateId)}/missing-role-questions`, { method: "POST" }),
+  getInterviewAiStep: (interviewId: string) =>
+    request<{ step: InterviewAiStep }>(`/interviews/${encodeURIComponent(interviewId)}/ai-step`),
   listAskedQuestions: (interviewId: string) =>
     request<AskedQuestions | null>(`/interviews/${encodeURIComponent(interviewId)}/asked-questions`),
   findAskedQuestions: (interviewId: string) =>

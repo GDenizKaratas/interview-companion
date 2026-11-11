@@ -2316,6 +2316,14 @@ button.role-choice.chosen:hover:not(:disabled) {
   padding: 0 0.35rem;
 }
 
+/* A note the Interviewer has not checked yet is the AI's draft: a dashed edge on the AI's
+   own tint. Once checked it stands on white with a solid edge, as theirs. */
+.ai-note.unreviewed {
+  background: var(--ai-surface);
+  border-style: dashed;
+  border-color: var(--line-strong);
+}
+
 .ai-note.stale {
   border-color: var(--warn-line);
 }
@@ -2911,4 +2919,173 @@ button.cv-shortcut svg {
 /* Found before the speakers changed: shown, but quieter, with the reason on hover. */
 .question-checks .stale {
   opacity: 0.55;
+}
+
+/* The AI card before there is output: where the Interviewer is, the one next step, who does what. */
+.ai-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.ai-card .empty {
+  margin: 0;
+}
+
+.ai-steps {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.35rem;
+  margin: 0;
+  padding: 0;
+  font-size: 0.74rem;
+  color: var(--faint);
+}
+
+.ai-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.ai-step:not(:last-child)::after {
+  content: "›";
+  margin-left: 0.15rem;
+  color: var(--line-strong);
+}
+
+.ai-step-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+}
+
+.ai-step.past {
+  color: var(--muted);
+}
+
+.ai-step.current {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ai-step.current .ai-step-mark {
+  color: #ffffff;
+  background: var(--navy);
+  border-color: var(--navy);
+}
+
+.ai-next {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+}
+
+.ai-next p {
+  margin: 0;
+}
+
+.ai-next-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* What goes to the model and what stays, as two short rows. */
+.ai-sent {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.25rem 0.5rem;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.ai-sent dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.ai-sent .pill {
+  margin-left: 0;
+  color: var(--muted);
+  background: #e9edf3;
+}
+
+.ai-sent .pill.planned {
+  color: var(--accent-strong);
+  background: var(--accent-tint);
+}
+
+/* Who does what. The Interviewer's box has the heavy edge. */
+.ai-division {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.4rem;
+  margin-top: auto;
+}
+
+.ai-division-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--muted);
+  border-radius: var(--radius-card);
+}
+
+.ai-division-box strong {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+
+.ai-division-box.ai {
+  border: 1px dashed var(--line-strong);
+}
+
+.ai-division-box.you {
+  color: var(--text);
+  background: var(--surface);
+  border: 2px solid var(--navy);
+}
+
+.ai-division-box.you strong {
+  color: var(--navy);
+}
+
+.ai-division-arrow {
+  align-self: center;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+/* One sentence under the AI's lists that says whose judgement counts. */
+.ai-promise {
+  margin: 0.75rem 0 0;
+  padding-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+}
+
+.summary-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent-strong);
 }
