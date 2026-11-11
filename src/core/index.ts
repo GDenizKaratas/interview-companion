@@ -43,7 +43,8 @@ export type { AskedQuestion, AskedQuestionGeneration, AskedQuestions, SavedQuest
   SavedQuestionState, SegmentQuote } from "./asked-questions.ts";
 export type { BriefEvidence, CandidateBrief, NewBriefEvidence, NewCandidateBrief } from "./candidate-brief.ts";
 export type { CandidateCvCheck, CandidateCvStatus, CandidateCvToCheck } from "./candidate-cv-check.ts";
-export type { CandidateOverview, InterviewOverview, DatedInterview } from "./candidate-overview.ts";
+export type { CandidateOverview, CandidateOrder, InterviewOverview, DatedInterview } from "./candidate-overview.ts";
+export { candidateOrders } from "./candidate-overview.ts";
 export type { CandidateExport, CandidateImport, ExistingCandidate, ImportOptions, ImportProblem } from "./candidate-transfer.ts";
 export type { Candidate, NewCandidate, RoleInUse } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
@@ -89,6 +90,7 @@ export interface Core {
   listCandidates(): candidates.Candidate[];
   getCandidate(id: string): candidates.Candidate | undefined;
   getCandidateOverview(candidateId: string): candidateOverview.CandidateOverview;
+  listCandidateOverviews(order?: candidateOverview.CandidateOrder): candidateOverview.CandidateOverview[];
   listDatedInterviews(): candidateOverview.DatedInterview[];
   deleteCandidate(id: string): void;
   exportCandidate(id: string): candidateTransfer.CandidateExport;
@@ -182,6 +184,7 @@ const readOperations = [
   "listCandidates",
   "getCandidate",
   "getCandidateOverview",
+  "listCandidateOverviews",
   "listCandidateRoles",
   "listInterviews",
   "listInterviewerNotes",
@@ -254,6 +257,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listCandidates: () => candidates.listCandidates(db),
     getCandidate: (id) => candidates.getCandidate(db, id),
     getCandidateOverview: (candidateId) => candidateOverview.getCandidateOverview(db, today, candidateId),
+    listCandidateOverviews: (order) => candidateOverview.listCandidateOverviews(db, today, order),
     listDatedInterviews: () => candidateOverview.listDatedInterviews(db, today),
     deleteCandidate: (id) => cv.deleteCandidateAndCv(db, cvFolder, id),
     exportCandidate: (id) => candidateTransfer.exportCandidate(db, cvFolder, today, now, id),

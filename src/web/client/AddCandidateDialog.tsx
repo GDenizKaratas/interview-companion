@@ -158,18 +158,14 @@ export function AddCandidateDialog({
     >
       {wayChoice}
       <form id={formId} className="candidate-form" onSubmit={handleSubmit}>
-        <label>
-          {text.candidates.nameLabel}
-          <input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-        </label>
-        {roleField}
+        {/* The CV comes first: choosing it fills the name, so the Interviewer does not type it. */}
         {/* The browser's own file box speaks the system's language, so it stays hidden behind a button. */}
         <div className="cv-choice">
           <span>{text.candidates.cvLabel}</span>
           <span className="cv-choice-row">
             <input ref={cvInput} type="file" accept="application/pdf,.pdf" multiple hidden onChange={handleCvChosen} />
             {/* Once a file is chosen, the button shows its name; clicking it chooses another. */}
-            <button type="button" className="secondary cv-choose" title={cv?.name} onClick={() => cvInput.current?.click()}>
+            <button type="button" className="secondary cv-choose" title={cv?.name} autoFocus onClick={() => cvInput.current?.click()}>
               {cv ? cv.name : text.candidates.cvChoose}
             </button>
             {cv && (
@@ -177,8 +173,14 @@ export function AddCandidateDialog({
                 {text.candidates.cvRemove}
               </button>
             )}
+            {!cv && <span className="form-hint">{text.candidates.cvFirst}</span>}
           </span>
         </div>
+        <label>
+          {text.candidates.nameLabel}
+          <input value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+        {roleField}
         {cv && saveError === undefined && <p className="form-hint">{text.candidates.cvHint}</p>}
         {saveError !== undefined && <p className="error">{refusalMessage(text, saveError)}</p>}
       </form>

@@ -526,6 +526,15 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 354 | The general pointer style of a button weighs less than any class (`:where`), so only the plain primary button darkens. A button with a look of its own keeps its background unless its own rule says otherwise. | Tabs and list rows with dark or grey words took the primary button's blue under the pointer and could not be read; the owner saw it in two places. | Fixing each button as it is found: the next new button would have the same fault. |
 | 355 | Each step of "Interview Companion in six steps" has a small line drawing. | The owner asked for it, so the steps are told apart at a glance. | Pictures in every step list: the other guides are read for their words. |
 
+## 2026-11-11 — #94: order the Candidate list by a column
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 356 | Core orders the Candidate list (`listCandidateOverviews` with an order): by name in the Turkish alphabet; by the Interview a row shows first (the next Planned one, or else the latest that has taken place), earliest first; or by CV and Saved Questions (with a CV first, then the most questions). Equal Candidates are ordered by name. The page asks core for the list again when the order changes. | The order must hold across pages and be tested; core is where the list's rules are. | Ordering in the browser: the rule would be written outside core and without tests. |
+| 357 | A Candidate with no dated Interview comes last when the list is ordered by Interview, in both directions. | Reversing the order is asked to see the latest Interviews first, not the Candidates who have none; "No Interview yet" is its own view. | Putting them first when reversed: the first page would be rows with nothing in the column. |
+| 358 | One click on a column head orders by it, a second click reverses it, and the head shows the direction. The order is kept in the address as `sort`, with `-` before the column when reversed. With no column chosen, each view keeps its own order (decision from #66: who is met soonest first). With one, every view shows core's order. | The owner asked for one-click ordering; the address keeps it through a reload and the back button, like the role, view, and page. | A third click that clears the order: one more state to explain; choosing a view's own order again is rare. |
+| 359 | In the Add Candidate dialog, for one Candidate, the CV comes first, with the hint that choosing it fills the name; the focus starts on its button. | The owner asked for it: the name comes from the CV, so nobody should type the name and then add the CV. | Leaving the name first: the Interviewer types what the CV would have filled in. |
+
 ## Open questions
 
 - The exact layout of a Google Meet transcript downloaded as `.txt` (decision 126, tracked in #33). It needs one real export with fictional content.
