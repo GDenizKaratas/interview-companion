@@ -3,6 +3,7 @@ import { AiNotesPanel, generationErrorMessage } from "./AiNotesPanel.tsx";
 import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
 import { api, type Interview, type InterviewAiStep } from "./api.ts";
 import { AskedQuestionsPanel } from "./AskedQuestionsPanel.tsx";
+import { fill } from "./languages.ts";
 import { openMcpGuide } from "./McpGuideDialog.tsx";
 import { useText } from "./text.tsx";
 
@@ -64,6 +65,8 @@ function InterviewAiCard({
   // What the one action is doing: nothing, pulling out the questions, or writing the notes.
   const [running, setRunning] = useState<"questions" | "notes" | undefined>();
   const [runError, setRunError] = useState<unknown>();
+  // How many questions and notes the last run left out because a quote was not found word for word.
+  const [dropped, setDropped] = useState({ questions: 0, notes: 0 });
   // Counts runs and API key changes, so the step is asked of core again.
   const [changes, setChanges] = useState(0);
   // Asked Questions come first: after an Interview they are what is needed most.
@@ -91,16 +94,31 @@ function InterviewAiCard({
     };
   }, [interview.id, transcriptVersion, changes]);
 
-  // The one action: the questions first, then the notes. If the first fails, nothing more is
+  // The card opens on the list that has something in it: notes an AI client saved without the
+  // questions would otherwise sit behind a tab that looks as if nothing had been done.
+  useEffect(() => {
+    if (step !== "done") return;
+    let current = true;
+    api.listAskedQuestions(interview.id).then((asked) => current && asked === null && setTab("notes"), () => {});
+    return () => {
+      current = false;
+    };
+  }, [step, interview.id]);
+
+  // The one action: the questions first, then the notes. A run that is still going when another
+  // Interview is selected finishes for its own Interview; what it made shows when that one is opened. If the first fails, nothing more is
   // asked of the model; if the second fails, the questions that were pulled out stay.
   async function run() {
     setRunError(undefined);
+    setDropped({ questions: 0, notes: 0 });
     try {
       setRunning("questions");
-      await api.findAskedQuestions(interview.id);
+      const questions = await api.findAskedQuestions(interview.id);
+      setDropped({ questions: questions.dropped, notes: 0 });
       onFound();
       setRunning("notes");
-      await api.generateAiNotes(interview.id);
+      const notes = await api.generateAiNotes(interview.id);
+      setDropped({ questions: questions.dropped, notes: notes.dropped });
     } catch (error) {
       setRunError(error);
     } finally {
@@ -117,12 +135,27 @@ function InterviewAiCard({
       <>
         <div className="card-tabs" role="group" aria-label={t.title}>
           {(["asked", "notes"] as const).map((key) => (
-            <button key={key} type="button" aria-pressed={tab === key} className={tab === key ? "ai-tab selected" : "ai-tab"} onClick={() => setTab(key)}>
+            <button
+              key={key}
+              type="button"
+              aria-pressed={tab === key}
+              className={tab === key ? "ai-tab selected" : "ai-tab"}
+              onClick={() => {
+                setTab(key);
+                // What the one action reported belongs to that run, not to what is done in a tab afterwards.
+                setRunError(undefined);
+                setDropped({ questions: 0, notes: 0 });
+              }}
+            >
               {key === "asked" ? t.askedTab : t.notesTab}
             </button>
           ))}
         </div>
+        {/* Above the lists, so whose judgement counts is read before any of the AI's lines. */}
+        <p className="ai-promise">{t.promise}</p>
         {runError !== undefined && <p className="error">{generationErrorMessage(text, runError)}</p>}
+        {dropped.questions > 0 && <p className="hint">{fill(text.panels.askedQuestions.dropped, { count: String(dropped.questions) })}</p>}
+        {dropped.notes > 0 && <p className="hint">{fill(text.panels.aiNotes.dropped, { count: String(dropped.notes) })}</p>}
         {tab === "asked" ? (
           <AskedQuestionsPanel
             interviews={interviews}
@@ -134,14 +167,14 @@ function InterviewAiCard({
         ) : (
           <AiNotesPanel interviews={interviews} selectedInterviewId={interview.id} transcriptVersion={transcriptVersion} onShowEvidence={onShowEvidence} />
         )}
-        <p className="ai-promise">{t.promise}</p>
       </>
     );
   }
 
   // Which of the four steps the Interviewer is at: the Transcript, the speakers, the AI's draft, their own check.
   const at = step === "importTranscript" ? 0 : step === "confirmSpeakers" ? 1 : step === "done" ? 3 : 2;
-  const notHeldYet = interview.planned || interview.date === null;
+  // Core says an Interview is Planned. One without a date may have taken place, so it can have a Transcript.
+  const notHeldYet = interview.planned;
 
   return (
     <div className="ai-card">
@@ -199,7 +232,7 @@ function InterviewAiCard({
           <dt>{t.sent}</dt>
           <dd>
             {t.sentItems.map((item) => (
-              <span key={item} className="pill planned">
+              <span key={item} className="pill sent">
                 {item}
               </span>
             ))}

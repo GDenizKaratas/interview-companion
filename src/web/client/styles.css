@@ -2862,9 +2862,19 @@ button.cv-shortcut svg {
   color: var(--navy);
 }
 
+/* Two lines at most, ending in an ellipsis; the whole summary is in the exchange the row opens. */
 .asked-question-summary {
+  display: -webkit-box;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
   font-size: 0.88rem;
   color: var(--muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .asked-question-saved {
@@ -2958,10 +2968,10 @@ button.cv-shortcut svg {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.3rem 0.35rem;
+  gap: 0.3rem 0.25rem;
   margin: 0;
   padding: 0;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   color: var(--faint);
 }
 
@@ -3045,9 +3055,11 @@ button.cv-shortcut svg {
   background: #e9edf3;
 }
 
-.ai-sent .pill.planned {
-  color: var(--accent-strong);
-  background: var(--accent-tint);
+/* Outlined, so they do not look like the filled marks of a state such as Planned. */
+.ai-sent .pill.sent {
+  color: var(--text);
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
 /* Who does what. The Interviewer's box has the heavy edge. */
@@ -3056,6 +3068,7 @@ button.cv-shortcut svg {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: stretch;
   gap: 0.4rem;
+  max-width: 38rem;
   margin-top: auto;
 }
 
@@ -3095,18 +3108,16 @@ button.cv-shortcut svg {
   color: var(--accent-strong);
 }
 
-/* One sentence under the AI's lists that says whose judgement counts. */
+/* One sentence that says whose judgement counts: above the AI's lists, and under the action. */
 .ai-promise {
-  margin: 0.75rem 0 0;
-  padding-top: 0.5rem;
+  margin: 0 0 0.5rem;
   font-size: 0.78rem;
   color: var(--muted);
-  border-top: 1px solid var(--line);
 }
 
+/* Quiet, so the eye reads the summary and not "AI" down every row. */
 .summary-label {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--accent-strong);
+  color: var(--muted);
 }

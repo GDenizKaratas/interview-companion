@@ -389,7 +389,7 @@ const text = {
         title: "Speakers",
         confirmed: "confirmed",
         edit: "Edit",
-        gate: "Confirm who is speaking before generating AI Notes. Give each speaker a role.",
+        gate: "Confirm who is speaking before notes are taken. Give each speaker a role.",
         roles: { candidate: "Candidate", interviewer: "Interviewer", other: "Other" },
         confirm: "Confirm speakers",
         cancel: "Cancel",
@@ -419,7 +419,7 @@ const text = {
       notesTab: "AI Notes",
       askedTab: "Asked questions",
       promise: "AI takes notes from the Transcript; you evaluate the Candidate.",
-      steps: ["Transcript", "Speakers", "AI draft", "Your check"],
+      steps: ["Transcript", "Speakers", "AI draft", "You check"],
       noInterview: "Add an Interview first.",
       selectInterview: "Select an Interview above to see what was said in it.",
       next: {
@@ -475,8 +475,6 @@ const text = {
       loadFailed: "The Transcript could not be loaded.",
     },
     aiNotes: {
-      title: "AI Notes",
-      label: "AI draft",
       empty: "No notes have been taken yet.",
       noInterview: "Add an Interview first. AI Notes are made from its Transcript.",
       selectInterview: "Select an Interview above to see or generate its AI Notes.",
@@ -521,7 +519,7 @@ const text = {
       cancel: "Cancel",
       loadFailed: "AI Notes could not be loaded.",
       errors: {
-        failed: "Generation failed. Your data was not changed.",
+        failed: "The notes could not be taken. Your data was not changed.",
         failures: {
           apiKeyRefused: "The API key was refused. Check it under “Use with an API key”.",
           rateLimited: "Too many requests to the model. Try again in a minute.",
@@ -533,7 +531,7 @@ const text = {
           apiKeyMissing: "Add an API key first, under “Use with an API key”.",
           noTranscript: "Import this Interview's Transcript first.",
           speakerMappingNotConfirmed: "Confirm who is speaking before generating AI Notes.",
-          transcriptChanged: "The Transcript or its speakers changed during generation. Nothing was saved; generate again.",
+          transcriptChanged: "The Transcript or its speakers changed while the notes were being taken. Nothing was saved; take them again.",
           noteCorrected: "This note was corrected. Edit the correction instead.",
           noteDismissed: "This note was dismissed. Show it again first.",
         },
@@ -569,7 +567,7 @@ const text = {
       showAll: "Show all questions",
       // {interview} is replaced by the Interview's name.
       askedIn: "Asked in {interview}",
-      aiFoundAskedIn: "AI found it in {interview}",
+      aiFoundAskedIn: "It is in the Transcript of {interview}",
       notFoundIn: "Not found in the Transcript of {interview}",
       notFoundHint: "Not found in this Transcript. It may have been asked in other words.",
       // The state mark of a row is a button. {state} is replaced by the row's state.
