@@ -45,8 +45,8 @@ export function createApi(
   });
 
   // Whether Claude Desktop is connected to this copy, and the one-click connect that writes this
-  // copy's entry into its configuration file. The connect takes only a JSON request, which a page
-  // on another site cannot send here without the browser asking first.
+  // copy's entry into its configuration file. The connect takes only a JSON request, and the
+  // server's guard (local-only.ts) refuses it, like every change, from any page but the app's own.
   const configPath = options.mcpServerPath ? (options.claudeDesktopConfigPath ?? null) : null;
   const entry = () => desktopEntry({ serverPath: options.mcpServerPath ?? "", nodePath: process.execPath, dataDir: options.dataDir });
   api.get("/claude-desktop", (c) => c.json({ state: claudeDesktopState(configPath, entry()), configPath }));
