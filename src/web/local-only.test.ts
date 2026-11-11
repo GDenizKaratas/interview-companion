@@ -94,4 +94,21 @@ describe("Only this computer's own pages can use the local server", () => {
     expect(response.headers.get("X-Frame-Options")).toBe("DENY");
     expect(response.headers.get("Content-Security-Policy")).toBe("frame-ancestors 'none'");
   });
+
+  it("refuses a request body larger than the limit, before reading it into memory", async () => {
+    const response = await app.request("http://localhost:3000/api/candidates", {
+      method: "POST",
+      headers: {
+        Host: "localhost:3000",
+        Origin: "http://localhost:3000",
+        "Sec-Fetch-Site": "same-origin",
+        "Content-Type": "application/json",
+        "Content-Length": String(101 * 1024 * 1024),
+      },
+      body: JSON.stringify({ name: "Ece Yalın", role: "Backend Engineer" }),
+    });
+
+    expect(response.status).toBe(413);
+    expect(core.listCandidates()).toEqual([]);
+  });
 });
