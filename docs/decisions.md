@@ -641,6 +641,12 @@ Terms in capitals are defined in [GLOSSARY.md](../GLOSSARY.md).
 | 409 | A port already in use (or not allowed) when the server starts gives a plain message, with the address to open if the app is already running and how to start on another port, and the process ends with code 1 (`src/web/listen-error.ts`). | The Interviewer saw a Node.js stack trace, most often because the app was already running in another window. | Choosing the next free port by itself: the address in the guide and in bookmarks would change without notice. |
 | 410 | A plain-text Transcript may end its lines with CR alone, as well as CR LF and LF. A byte-order mark is already dropped and a non-UTF-8 file (such as Windows-1254) is already refused with "Save it as UTF-8" (decision kept); a WebVTT file with a byte-order mark and CR LF is now tested. | Older tools write CR alone, which read as one long line. | Guessing Windows-1254: some bytes mean other letters in other code pages, so a guess could change the text silently. |
 
+## 2026-11-11 — The MCP guide opens on Claude Code
+
+| # | Decision | Why | Rejected alternative |
+|---|---|---|---|
+| 411 | The "Use with MCP" guide opens on Claude Code, then Claude Desktop. Step 2 says how to start Interview Companion for the application chosen: in Claude Code the ready command `/mcp__interview-companion__candidate` (with the Candidate's name if wanted) or "Start Interview Companion"; in Claude Desktop "Start Interview Companion". Both say it stays on for the whole chat once started. The Turkish manual path for Claude Desktop names the menus in English with Turkish in brackets, and says the names may look different in the application's language. | The owner found the terminal command the surer way, and asked that the way to start and the menu path be clear in each language. Claude Desktop's Turkish menu names could not be confirmed, so the English names, which are confirmed, stay in front. | Opening on Claude Desktop: its one-click connect cannot be tried on every computer, and its prompts may not attach from a local server. Turkish menu names alone: not confirmed. |
+
 ## Open questions
 
 - The exact layout of a Google Meet transcript downloaded as `.txt` (decision 126, tracked in #33). It needs one real export with fictional content.
