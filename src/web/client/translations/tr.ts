@@ -79,7 +79,13 @@ const translation: TranslationFile = {
       open: "Transkripti nasıl alırım?",
       title: "Transkripti nasıl alırım?",
       routesLabel: "Toplantı aracınız",
-      meetInstead: "Ücretli plan yoksa ne yapılır, ona bakın",
+      meetRoutes: {
+        tactiqTitle: "Meet'te kalacaksanız: Tactiq",
+        tactiqAdd: "Tactiq'i Chrome'a ekle",
+        otherTitle: "Başka bir araç kullanabiliyorsanız:",
+        otherBetween: " (iş ya da okul hesabı) ve ",
+        otherAfter: " (ücretli plan) Türkçe transkripti konuşmacı adlarıyla dosya olarak verir.",
+      },
       routes: {
         teams: {
           name: "Microsoft Teams",
@@ -103,9 +109,13 @@ const translation: TranslationFile = {
         },
         meet: {
           name: "Google Meet",
-          needs: "Google'ın yardım sayfasına göre Meet transkripti şimdilik sekiz dilde sunuluyor; Türkçe bu listede henüz yok.",
-          steps: [],
-          notes: ["Türkçe bir görüşme için Teams, Zoom ya da \"Ücretli plan yoksa\" yolunu kullanın."],
+          needs: "Meet'in kendi transkripti şimdilik Türkçe çıkarmıyor.",
+          steps: [
+            { title: "Chrome'a ekleyin", hint: "Tactiq bir Chrome eklentisidir. Google hesabınızla girin." },
+            { title: "Görüşmede yazsın", hint: "Tactiq'te görüşme dilini Türkçe seçin." },
+            { title: "TXT indirin, buraya aktarın", hint: "Görüşmeden sonra transkripti Tactiq'te açın." },
+          ],
+          notes: ["Her ay ilk 10 transkript ücretsiz; sonrası ücretli. Transkript Tactiq'in sunucusunda tutulur: adaya söyleyin."],
         },
         local: {
           name: "Ücretli plan yoksa",
