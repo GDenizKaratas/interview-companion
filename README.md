@@ -1,6 +1,6 @@
 # Interview Companion
 
-A local workspace for technical interviewers. It keeps a Candidate's CV, Interview Transcripts, your own notes, and your questions in one place, and helps you find what the Candidate actually said. AI can help, but every quote it gives is checked against the source, and it never judges the Candidate.
+A local workspace for technical interviewers. It keeps a Candidate's CV, Interview Transcripts, your own notes, and your questions in one place, and helps you find what the Candidate actually said. AI can help, but every quote it gives is checked against the CV or Transcript it cites, and it never judges the Candidate.
 
 ![The Workspace of a fictional Candidate: CV, Transcript with confirmed speakers, notes, Asked Questions, and Saved Questions](docs/images/workspace.png)
 
@@ -18,7 +18,7 @@ Interview Companion keeps everything about one Candidate on one screen, finds ex
 2. **Add Interviews.** An Interview with a future date is Planned and shows in the calendar.
 3. **Write notes and questions** while you prepare or listen. Each line you paste becomes its own note. Questions you ask every Candidate for a role can be kept as Role Questions and are copied to each new Candidate with that role.
 4. **Import the Transcript** after the Interview: WebVTT (`.vtt`, for example a Microsoft Teams transcript download) or plain text with `Speaker: text` lines.
-5. **Confirm who is speaking.** Every speaker starts unverified. You mark each one as Candidate, Interviewer, or Other. Nothing AI-related runs on a Transcript before this.
+5. **Confirm who is speaking.** Every speaker starts unverified. You mark each one as Candidate, Interviewer, or Other. AI Notes and Asked Questions wait for this, and Suggested Questions leave out a Transcript until it is confirmed.
 6. **Search** the CV and Transcripts for a word, for example "Redis", optionally only in what the Candidate said. Results are exact excerpts, and a click opens the place they come from.
 7. **Get AI help, if you want it**: AI Notes about an Interview, the Asked Questions with a short Answer Summary each, Suggested Questions for the next Interview, and a Candidate Brief. See [Two ways to use AI](#two-ways-to-use-ai).
 8. **Review.** Each AI Note can be confirmed, corrected, or dismissed. Accepting a Suggested Question copies it into your own list.
@@ -80,11 +80,11 @@ Everything is stored on your machine in `data/` inside the project folder: one S
 ## Core principles
 
 - **Evidence is only an exact excerpt from a CV or a Transcript.** Your own notes are never Evidence of what the Candidate said ([ADR 0003](docs/adr/0003-evidence-is-only-cv-and-transcript.md)).
-- **No AI before the speakers are confirmed.** The worst failure of this product is crediting the Interviewer's words to the Candidate, and a name in a file is a label, not proof ([ADR 0004](docs/adr/0004-speaker-mapping-gate.md)).
+- **No AI Notes or Asked Questions before the speakers are confirmed.** Your AI client can still read an unconfirmed Transcript, where every speaker is marked unconfirmed. The worst failure of this product is crediting the Interviewer's words to the Candidate, and a name in a file is a label, not an identity ([ADR 0004](docs/adr/0004-speaker-mapping-gate.md)).
 - **No verdicts.** No scores, rankings, hire or no-hire, and no comparing Candidates. AI describes what was said; the judgment stays with you.
 - **Nothing runs without a request.** The app calls a model only when you press a button for it.
-- **AI never changes your work.** It cannot edit your notes or Saved Questions, and AI Notes you reviewed and suggestions you accepted stay when AI output is generated again.
-- **Local and single-user.** One Interviewer, one machine, one SQLite file, no accounts ([ADR 0001](docs/adr/0001-local-single-user-sqlite.md)).
+- **AI never changes your work.** It cannot edit your notes or Saved Questions. AI Notes you reviewed and suggestions you accepted stay when AI output is generated again.
+- **Local, one Interviewer.** One Interviewer, one machine, one SQLite file, no accounts ([ADR 0001](docs/adr/0001-local-single-user-sqlite.md)).
 
 ## Two ways to use AI
 
@@ -92,17 +92,17 @@ Everything is stored on your machine in `data/` inside the project folder: one S
 |---|---|---|
 | Who calls the model | The app, with your Anthropic API key, saved in AI Settings | Your AI client, such as Claude Code or Claude Desktop, with its own model |
 | What you get | AI Notes, Asked Questions, Suggested Questions | A Candidate Brief, and, if you allow saving, AI Notes, Asked Questions, and Suggested Questions |
-| Where quotes are checked | Before anything is saved | Before anything is saved, when saving is on. The brief's quotes are marked found or not found each time it is read. |
+| Where quotes are checked | Before anything is saved | AI Notes, Asked Questions, and Suggested Questions: before they are saved, when saving is on. The Candidate Brief: saved as written, and its quotes are marked found or not found each time it is read. |
 
-The app's model is Claude (`claude-opus-5-5`), behind a narrow provider interface. Before each request the app says what will be sent, for example "Sends this Interview's Transcript with speaker roles to Claude (Anthropic). Not the CV or your notes."
+The app's model is Claude, behind a narrow provider interface; the model and its settings are in `src/core/claude-provider.ts`. Before each request the app says what will be sent, for example "Sends this Interview's Transcript with speaker roles to Claude (Anthropic). Not the CV or your notes."
 
-The AI client route needs no key in the app: the Workspace has a **Copy brief command** button, and you paste the command into your AI client. Saving from the AI client is off until you turn it on in AI Settings ([ADR 0002](docs/adr/0002-two-ai-modes.md), [ADR 0005](docs/adr/0005-ai-client-saves-through-core.md)). Setup for Claude Code and Claude Desktop is in [docs/mcp.md](docs/mcp.md).
+The AI client route needs no key in the app: the Workspace has a **Copy brief command** button, and you paste the command into Claude Code. With another AI client, such as Claude Desktop, use the server's `brief` prompt in the way that client offers prompts. Saving from the AI client is off until you turn it on in AI Settings ([ADR 0002](docs/adr/0002-two-ai-modes.md), [ADR 0005](docs/adr/0005-ai-client-saves-through-core.md)). Setup for Claude Code and Claude Desktop is in [docs/mcp.md](docs/mcp.md).
 
 ## Why MCP?
 
 The Model Context Protocol (MCP) is an open standard that lets an AI client use a program's data through tools the program describes. Interview Companion runs an MCP server over stdio, so there is no network port: only the AI client that started it can talk to it.
 
-It matters here because many interviewers already use an AI client and do not want to manage another API key. With MCP, the app needs no key and calls no model; your AI client brings the model, discovers the tools (`search_evidence`, `get_transcript`, `get_cv`, and others) and the `brief` prompt at run time, and decides when to call them. A plain web API could serve the same data, but someone would still have to write the code that describes it to a model for each AI application. The tools can read everything, but they can only write checked AI work, and only when you allow it. They can never change your notes, questions, CVs, or Transcripts.
+It matters here because many interviewers already use an AI client and do not want to manage another API key. With MCP, the app needs no key and calls no model; your AI client brings the model, discovers the tools (`search_evidence`, `get_transcript`, `get_cv`, and others) and the `brief` prompt at run time, and decides when to call them. A plain web API could serve the same data. But someone would still have to write code, for each AI application, that describes the API to the model. The tools can read everything, but they can only write checked AI work, and only when you allow it. They can never change your notes, questions, CVs, or Transcripts.
 
 [docs/mcp.md](docs/mcp.md) explains MCP, tools, and prompts in more depth, lists every tool, and shows how to try it with the demo data.
 
@@ -171,7 +171,7 @@ What the code does not guarantee:
 
 Interview data is personal data about people who did not choose this tool. Settle these questions before you put a real Candidate in it:
 
-- **Consent.** Did the Candidate agree to the Interview being recorded and transcribed, and to the transcript being processed with AI? Did the other people in the Transcript, such as other interviewers?
+- **Consent.** Did the Candidate agree to the Interview being recorded and transcribed, and to the Transcript being processed with AI? Did the other people in the Transcript, such as other interviewers?
 - **Your organization's rules.** Are you allowed to keep candidate data on your own computer, outside the recruiting system? For how long?
 - **The AI provider.** In-app AI sends data to Anthropic: the Transcript for AI Notes, the Transcript and your Saved Questions for Asked Questions, and the CV, confirmed Transcripts, your notes, and your Saved Questions for Suggested Questions. The app shows what is sent next to each button. Through MCP, data goes to whichever model your AI client uses. Is that provider approved for candidate data, under an agreement your organization accepts?
 - **The law that applies to you**, such as the GDPR or KVKK: what is your legal basis, and how do you answer a Candidate who asks to see or delete their data? Deleting a Candidate in the app removes their rows and files, but not copies you exported or sent elsewhere.
@@ -202,7 +202,6 @@ How the real model behaves is a separate question, answered by a hand-run evalua
 - **Transcripts are imported from files.** WebVTT and plain text only. No recording, live transcription, or meeting bots. Google Meet makes no caption file, and its transcript, a Google Doc, is not supported yet ([#33](https://github.com/GDenizKaratas/interview-companion/issues/33)).
 - **Speakers are assigned by hand**, once per Transcript.
 - **One model provider** (Claude) for in-app AI.
-- **No real-model evaluation results yet** ([#62](https://github.com/GDenizKaratas/interview-companion/issues/62)).
 
 ## Roadmap
 

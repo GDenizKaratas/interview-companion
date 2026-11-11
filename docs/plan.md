@@ -9,7 +9,7 @@ Each milestone is small, can be tested on its own, and ends with a review before
 | 2. Evidence: CV, Transcript, search | Done |
 | 3. MCP server | Done |
 | 4. In-app AI | Done, except the first real-model evaluation run (#62) |
-| 5. Reliability and documentation | In progress (#19) |
+| 5. Reliability and documentation | Done; the repository is made public only with the owner's approval |
 
 ## Milestone 0 — Product and architecture
 

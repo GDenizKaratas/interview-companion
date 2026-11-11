@@ -43,7 +43,7 @@ flowchart LR
     Adapters --> Rules
     Rules <--> DB
     Web <--> Rules
-    MCP --> Rules
+    MCP <--> Rules
     Client <--> MCP
     Rules -.->|"only when the Interviewer asks"| LLM
 ```
@@ -63,9 +63,10 @@ erDiagram
     CANDIDATE ||--o{ SAVED_QUESTION : has
     CANDIDATE ||--o{ SUGGESTED_QUESTION : has
     CANDIDATE ||--o| CANDIDATE_BRIEF : has
-    ROLE_QUESTION }o--o{ SAVED_QUESTION : "copied as"
+    ROLE_QUESTION }o--o{ CANDIDATE : "copied to"
     INTERVIEW ||--o| TRANSCRIPT : has
     INTERVIEW ||--o{ INTERVIEWER_NOTE : "optionally tags"
+    INTERVIEW ||--o{ SAVED_QUESTION : "optionally tags"
     TRANSCRIPT ||--|{ SEGMENT : contains
     TRANSCRIPT ||--|{ SPEAKER : "has labels"
     SPEAKER ||--o{ SEGMENT : speaks
@@ -110,7 +111,7 @@ Notes on the model:
 | Rule | Where it is enforced |
 |---|---|
 | A quote must exist word for word in its source. | Core, before an AI Note or Asked Question is saved. |
-| No AI Notes before the Speaker Mapping is confirmed. | Core, at the start of generation. |
+| No AI Notes or Asked Questions before the Speaker Mapping is confirmed. | Core, at the start of generation. |
 | Changing a Speaker Mapping marks AI Notes and Asked Questions Stale. | Core, in the mapping update. |
 | AI never edits an Interviewer Note. | Core exposes no such operation to AI code. |
 | Regenerating suggestions never changes Saved Questions. | Saved Questions are copies in a separate table. |

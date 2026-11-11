@@ -29,4 +29,4 @@ npm test
 
 ## Pull requests
 
-Keep a pull request to one change, say what it does in user terms, and link the issue it closes.
+Keep a pull request to one change, say what it changes for the Interviewer, and link the issue it closes.

@@ -2,7 +2,7 @@
   "name": "interview-companion",
   "version": "0.1.0",
   "private": true,
-  "description": "A local workspace for technical interviewers, with a read-only MCP server.",
+  "description": "A local workspace for technical interviewers, with an MCP server for AI clients.",
   "license": "MIT",
   "type": "module",
   "engines": {
