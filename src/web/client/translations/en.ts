@@ -143,7 +143,7 @@ const text = {
     roleLabel: "Role",
     cvLabel: "CV (PDF, optional)",
     cvFirst: "Choose the CV and the name fills in by itself.",
-    cvHint: "The name was filled in from the CV. Check it before saving.",
+    cvHint: "The name is filled in from the CV. Check it before saving.",
     cvRemove: "Remove",
     cvChoose: "Choose PDF",
     newRole: "New role: no Candidate has it yet.",

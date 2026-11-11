@@ -64,7 +64,8 @@ export function listCandidateOverviews(db: DatabaseSync, today: Today, order?: C
     interview: (a, b) => {
       const [whenA, whenB] = [shownInterviewTime(a), shownInterviewTime(b)];
       if (whenA === null || whenB === null) return whenA === whenB ? byName(a, b) : whenA === null ? 1 : -1;
-      return direction * whenA.localeCompare(whenB) || byName(a, b);
+      // Plain text order: the day and time are written so that it is the order in time.
+      return whenA === whenB ? byName(a, b) : direction * (whenA < whenB ? -1 : 1);
     },
     cvAndQuestions: (a, b) =>
       direction * (Number(b.cv !== null) - Number(a.cv !== null) || b.savedQuestionCount - a.savedQuestionCount || byName(a, b)),

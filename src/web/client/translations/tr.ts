@@ -141,7 +141,7 @@ const translation: TranslationFile = {
       roleLabel: "Rol",
       cvLabel: "CV (PDF, isteğe bağlı)",
       cvFirst: "CV'yi seçin, ad kendiliğinden dolsun.",
-      cvHint: "Ad CV'den dolduruldu. Kaydetmeden önce kontrol edin.",
+      cvHint: "Ad CV'den doldurulur. Kaydetmeden önce kontrol edin.",
       cvRemove: "Kaldır",
       cvChoose: "PDF seç",
       newRole: "Yeni rol: henüz bu rolde aday yok.",

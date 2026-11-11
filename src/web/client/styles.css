@@ -3746,6 +3746,7 @@ button.column-sort.ordered {
 
 button.column-sort.ordered .column-sort-mark {
   opacity: 1;
+}
 
 /* The Interview filter in a card's head: a small bordered control, seen to be a choice. When it
    narrows the list it takes the accent colour, so a shorter list is never a surprise. */
