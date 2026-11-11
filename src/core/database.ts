@@ -220,6 +220,9 @@ const migrations: string[] = [
   // The Interviewer's own mark on a Saved Question, or NULL when they have not marked it. It is a
   // column of the question, so nothing that happens to Asked Questions can change it.
   `ALTER TABLE saved_question ADD COLUMN mark TEXT CHECK (mark IN ('asked', 'notAsked'));`,
+  // The Interviewer's mark that an Asked Question's summary is wrong. Only the Interviewer sets or
+  // clears it; finding the Asked Questions again replaces them, and the marks go with them.
+  `ALTER TABLE asked_question ADD COLUMN marked_wrong INTEGER NOT NULL DEFAULT 0 CHECK (marked_wrong IN (0, 1));`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

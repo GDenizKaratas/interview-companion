@@ -7,7 +7,7 @@ import { z } from "zod";
 import type { AiSource } from "./ai-notes.ts";
 import type { ProposedQuestionEvidence } from "./ai-provider.ts";
 import { confirmAiNote, correctAiNote, dismissAiNote, listAiNotes, restoreAiNote, saveCheckedAiNotes } from "./ai-notes.ts";
-import { askedQuestionRunOf, listAskedQuestions, saveCheckedAskedQuestions } from "./asked-questions.ts";
+import { askedQuestionRunOf, listAskedQuestions, markAskedQuestionWrong, saveCheckedAskedQuestions } from "./asked-questions.ts";
 import { getCandidateBrief, saveCandidateBrief } from "./candidate-brief.ts";
 import { deleteCandidateIfExists, getCandidate, insertCandidateRow, requireCandidate, type Candidate } from "./candidates.ts";
 import { acceptCv, getCv, readCvFile, storeCv, storedFileName, type AcceptedCv } from "./cv.ts";
@@ -119,6 +119,8 @@ const manifestSchema = z.object({
               savedQuestionId: z.string().nullable(),
               answerSummary: z.string(),
               answerEvidence: z.array(segmentQuote),
+              // Absent in an export made before an Asked Question could be marked wrong.
+              markedWrong: z.boolean().optional(),
             }),
           ),
         })
@@ -203,6 +205,7 @@ export function exportCandidate(db: DatabaseSync, folder: string, today: Today, 
           savedQuestionId: question.savedQuestionId,
           answerSummary: question.answerSummary,
           answerEvidence: question.answerEvidence,
+          markedWrong: question.markedWrong,
         })),
       },
     };
@@ -541,9 +544,10 @@ function rebuildAskedQuestions(
   problems: ImportProblem[],
 ): void {
   if (!asked) return;
-  const proposed = asked.questions.map((question) => ({
+  const proposed = asked.questions.map(({ markedWrong, ...question }) => ({
     ...question,
     savedQuestionId: question.savedQuestionId === null ? null : (savedIds.get(question.savedQuestionId) ?? null),
+    markedWrong: markedWrong ?? false,
   }));
   const checked = asked.checkedSavedQuestionIds.flatMap((id) => savedIds.get(id) ?? []);
   const result = saveCheckedAskedQuestions(db, at(asked.foundAt), interviewId, proposed, asked.source, checked);
@@ -557,6 +561,7 @@ function rebuildAskedQuestions(
         sameQuotes(candidate.answerEvidence, question.answerEvidence),
     );
     if (!match) problems.push({ kind: "askedQuestion", interviewNumber: number, text: question.question });
+    else if (question.markedWrong) markAskedQuestionWrong(db, match.id, true);
   }
 }
 

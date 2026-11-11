@@ -131,6 +131,9 @@ async function fullElif() {
   const states = source.listSavedQuestionStates(candidate.id);
   source.markSavedQuestion(states.find((state) => state.transcriptState === "asked")!.savedQuestionId, "notAsked");
   source.markSavedQuestion(states.find((state) => state.transcriptState === "planned")!.savedQuestionId, "asked");
+  // One Asked Question the Interviewer marked as wrong: one that matched a Saved Question, if any.
+  const asked = source.listAskedQuestions(first!.id)!.askedQuestions;
+  source.markAskedQuestionWrong((asked.find((q) => q.savedQuestionId !== null) ?? asked[0]!).id, true);
 
   const transcript = source.getTranscript(first!.id)!;
   const candidateSpeaker = transcript.speakers.find((s) => s.role === "candidate")!;
@@ -340,6 +343,27 @@ describe("Checks on import", () => {
     const imported = await target.importCandidate(repack(files, { ...manifest, savedQuestions }));
 
     expect(target.listSavedQuestions(imported.candidate.id).map((q) => [q.text, q.mark])).toEqual([["A?", null]]);
+  });
+
+  it("imports an export made before Asked Questions could be marked wrong", async () => {
+    const candidate = await elif();
+    const [first] = source.listInterviews(candidate.id);
+    source.markAskedQuestionWrong(source.listAskedQuestions(first!.id)!.askedQuestions[0]!.id, true);
+    const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);
+    type Interview = { askedQuestions: { questions: { markedWrong?: boolean }[] } | null };
+    const interviews = (manifest.interviews as Interview[]).map((interview) => ({
+      ...interview,
+      askedQuestions: interview.askedQuestions && {
+        ...interview.askedQuestions,
+        questions: interview.askedQuestions.questions.map((question) => without(question, "markedWrong")),
+      },
+    }));
+
+    const imported = await target.importCandidate(repack(files, { ...manifest, interviews }));
+
+    expect(imported.problems).toEqual([]);
+    const [importedFirst] = target.listInterviews(imported.candidate.id);
+    expect(target.listAskedQuestions(importedFirst!.id)!.askedQuestions.every((q) => !q.markedWrong)).toBe(true);
   });
 
   it("refuses an export whose Saved Question has a mark that is not one of the two, and saves nothing", async () => {

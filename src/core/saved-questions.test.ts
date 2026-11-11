@@ -268,10 +268,13 @@ describe("The Interviewer's mark on a Saved Question", () => {
   it("keeps the Saved Questions of a database made before they had a mark", () => {
     const [question] = addAll("A?");
     core.close();
-    // Puts the file back to the schema before the mark column: one version earlier, without it.
+    // Puts the file back to the schema before the mark column: two versions earlier, without it
+    // and without the Asked Question mark that came after it.
     const file = new DatabaseSync(dbPath);
     const { user_version: version } = file.prepare("PRAGMA user_version").get() as { user_version: number };
-    file.exec(`ALTER TABLE saved_question DROP COLUMN mark; PRAGMA user_version = ${version - 1};`);
+    file.exec(
+      `ALTER TABLE asked_question DROP COLUMN marked_wrong; ALTER TABLE saved_question DROP COLUMN mark; PRAGMA user_version = ${version - 2};`,
+    );
     file.close();
 
     core = openCore(dbPath);

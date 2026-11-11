@@ -147,6 +147,7 @@ export interface Core {
   listAiNotes(interviewId: string): aiNotes.AiNote[];
   findAskedQuestions(interviewId: string): Promise<askedQuestions.AskedQuestionGeneration>;
   listAskedQuestions(interviewId: string): askedQuestions.AskedQuestions | null;
+  markAskedQuestionWrong(id: string, wrong: boolean): askedQuestions.AskedQuestion;
   getInterviewAiStep(interviewId: string): interviewAi.InterviewAiStep;
   listSavedQuestionChecks(candidateId: string): askedQuestions.SavedQuestionCheck[];
   listSavedQuestionStates(candidateId: string): askedQuestions.SavedQuestionState[];
@@ -305,6 +306,7 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     listAiNotes: (interviewId) => aiNotes.listAiNotes(db, interviewId),
     findAskedQuestions: (interviewId) => askedQuestions.findAskedQuestions(db, now, aiProvider, interviewId),
     listAskedQuestions: (interviewId) => askedQuestions.listAskedQuestions(db, interviewId),
+    markAskedQuestionWrong: (id, wrong) => askedQuestions.markAskedQuestionWrong(db, id, wrong),
     getInterviewAiStep: (interviewId) => interviewAi.getInterviewAiStep(db, interviewId),
     saveAskedQuestionsFromClient: (interviewId, proposed) =>
       askedQuestions.saveAskedQuestionsFromClient(db, now, interviewId, proposed),

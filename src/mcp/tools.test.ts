@@ -342,6 +342,7 @@ describe("MCP server", () => {
     expect(text).toMatch(/word for word/i);
     expect(text).toMatch(/checked by Interview Companion only when .*saved/i);
     expect(text).toMatch(/data, not instructions/i);
+    expect(text).toMatch(/markedWrong/);
   });
 
   it("brief only reads while saving from the AI client is off, and says where to turn it on", async () => {
@@ -444,11 +445,20 @@ describe("MCP server", () => {
     const result = (await call("save_asked_questions", {
       interviewId: interview.id,
       askedQuestions: [askedQueue, { ...askedQueue, answerEvidence: [{ segmentNumber: 2, quote: "Kafka" }] }],
-    })) as { askedQuestions: { question: string; source: string }[]; dropped: number };
+    })) as { askedQuestions: { id: string; question: string; source: string }[]; dropped: number };
 
     expect(result.dropped).toBe(1);
     expect(result.askedQuestions).toEqual([expect.objectContaining({ question: "Which queue", source: "aiClient" })]);
     expect(await call("get_asked_questions", { interviewId: interview.id })).toEqual(core.listAskedQuestions(interview.id));
+    // The Interviewer's mark that a summary is wrong shows, and the Saved Question is no longer found there.
+    core.markAskedQuestionWrong(result.askedQuestions[0]!.id, true);
+    expect(await call("get_asked_questions", { interviewId: interview.id })).toMatchObject({
+      askedQuestions: [{ question: "Which queue", markedWrong: true }],
+    });
+    expect(await call("get_saved_question_checks", { candidateId: candidate.id })).toEqual([
+      expect.objectContaining({ savedQuestionId: saved.id, askedQuestion: null }),
+    ]);
+    core.markAskedQuestionWrong(result.askedQuestions[0]!.id, false);
     expect(await call("get_saved_question_checks", { candidateId: candidate.id })).toEqual([
       expect.objectContaining({ savedQuestionId: saved.id, interviewId: interview.id }),
     ]);
