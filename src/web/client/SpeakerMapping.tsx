@@ -7,16 +7,26 @@ const roleChoices: SpeakerRole[] = ["candidate", "interviewer", "other"];
 // How much of a speaker's first words is shown to help tell who the label is.
 const sampleLength = 60;
 
-// The Speaker Mapping of one Transcript. Until it is confirmed, it stays open and asks the
-// Interviewer to give every speaker a role. Once confirmed, it folds into one line with an
-// Edit button. Roles are never guessed: the Interviewer chooses each one (ADR 0004).
+// The Speaker Mapping of one Transcript, as one line that opens into a form. Until it is confirmed
+// the line is a warning the Interviewer clicks to confirm; once confirmed it is a quiet line with
+// an Edit button. Roles are never guessed: the Interviewer chooses each one (ADR 0004).
 export function SpeakerMapping({ transcript, onConfirmed }: { transcript: Transcript; onConfirmed: (transcript: Transcript) => void }) {
   const { text } = useText();
   const t = text.panels.transcript.speakers;
   const confirmed = transcript.speakerMappingConfirmedAt !== null;
   const [editing, setEditing] = useState(false);
 
-  if (confirmed && !editing) {
+  if (!confirmed && !editing) {
+    return (
+      <button type="button" className="speaker-mapping folded unconfirmed" onClick={() => setEditing(true)}>
+        <span className="speaker-mapping-alert">
+          <WarningIcon /> {t.notConfirmed}
+        </span>
+        <span className="speaker-mapping-call">{t.clickToConfirm}</span>
+      </button>
+    );
+  }
+  if (!editing) {
     return (
       <div className="speaker-mapping folded">
         <span>
@@ -31,7 +41,7 @@ export function SpeakerMapping({ transcript, onConfirmed }: { transcript: Transc
   return (
     <SpeakerMappingForm
       transcript={transcript}
-      onCancel={confirmed ? () => setEditing(false) : undefined}
+      onCancel={() => setEditing(false)}
       onConfirmed={(updated) => {
         setEditing(false);
         onConfirmed(updated);
@@ -46,7 +56,7 @@ function SpeakerMappingForm({
   onConfirmed,
 }: {
   transcript: Transcript;
-  onCancel: (() => void) | undefined;
+  onCancel: () => void;
   onConfirmed: (transcript: Transcript) => void;
 }) {
   const { text } = useText();
@@ -65,14 +75,41 @@ function SpeakerMappingForm({
     try {
       onConfirmed(await api.confirmSpeakerMapping(transcript.interviewId, roles as Record<string, SpeakerRole>));
     } catch (caught) {
-      setError(caught instanceof ApiError && caught.status === 404 ? t.changed : t.saveFailed);
+      setError(refusalMessage(caught));
     } finally {
       setSaving(false);
     }
   }
 
+  // Core decides whether the roles make a valid mapping; this only says why not, in the current language.
+  function refusalMessage(caught: unknown): string {
+    if (!(caught instanceof ApiError)) return t.saveFailed;
+    if (caught.status === 404) return t.changed;
+    if (caught.field === "candidate") return caught.rule === "format" ? t.oneCandidate : t.needCandidate;
+    if (caught.field === "interviewer") return t.needInterviewer;
+    return t.saveFailed;
+  }
+
+  // The Candidate is one speaker, so choosing it for a second one takes it from the first, the
+  // way a radio button moves. Core still checks the mapping when it is confirmed.
+  function choose(speakerId: string, role: SpeakerRole) {
+    const next = { ...roles, [speakerId]: role };
+    if (role === "candidate") {
+      for (const other of transcript.speakers) {
+        if (other.id !== speakerId && next[other.id] === "candidate") delete next[other.id];
+      }
+    }
+    setRoles(next);
+    setError(undefined);
+  }
+
   return (
-    <div className="speaker-mapping">
+    <div className="speaker-mapping editing">
+      <button type="button" className="icon-button speaker-mapping-close" aria-label={t.cancel} title={t.cancel} disabled={saving} onClick={onCancel}>
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </button>
       <p className="speaker-mapping-gate">{t.gate}</p>
       <ul className="speaker-list">
         {transcript.speakers.map((speaker) => (
@@ -88,7 +125,7 @@ function SpeakerMappingForm({
                   type="button"
                   className={roles[speaker.id] === role ? "role-choice chosen" : "role-choice"}
                   aria-pressed={roles[speaker.id] === role}
-                  onClick={() => setRoles({ ...roles, [speaker.id]: role })}
+                  onClick={() => choose(speaker.id, role)}
                 >
                   {t.roles[role]}
                 </button>
@@ -101,15 +138,26 @@ function SpeakerMappingForm({
         <button type="button" disabled={!complete || saving} onClick={() => void confirm()}>
           {t.confirm}
         </button>
-        {onCancel && (
-          <button type="button" className="quiet" onClick={onCancel} disabled={saving}>
-            {t.cancel}
-          </button>
-        )}
+        <button type="button" className="quiet" onClick={onCancel} disabled={saving}>
+          {t.cancel}
+        </button>
         {!complete && <span className="hint">{t.chooseAll}</span>}
       </div>
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
     </div>
+  );
+}
+
+function WarningIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M8 1.8l6.6 11.7H1.4z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M8 6.3v3.4M8 11.6v.2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
   );
 }
 

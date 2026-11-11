@@ -44,6 +44,10 @@ const text = {
     ai: "The last step needs AI. There are two ways:",
     close: "Close",
   },
+  connectAi: {
+    addApiKey: "Add an API key",
+    or: "or",
+  },
   mcpGuide: {
     open: "Use with MCP",
     title: "Use AI without an API key (MCP)",
@@ -539,6 +543,10 @@ const text = {
       viewFailed: "The PDF could not be shown.",
     },
     // The dropdown that tags an Interviewer Note or a Saved Question with an Interview.
+    interviewFilter: {
+      label: "Which Interview to show",
+      all: "All",
+    },
     interviewTag: {
       label: "Interview",
       none: "No interview",
@@ -546,7 +554,7 @@ const text = {
     interviewerNotes: {
       title: "My Notes",
       empty: "No personal notes yet.",
-      placeholder: "Write a note, Enter to save…",
+      placeholder: "Write a note about the Interview, Enter to save…",
       hint: "Each line becomes its own note.",
       savedAt: "Saved at",
       edit: "Edit",
@@ -582,6 +590,11 @@ const text = {
       speakers: {
         title: "Speakers",
         confirmed: "confirmed",
+        notConfirmed: "Speakers not confirmed",
+        clickToConfirm: "Click to confirm",
+        needCandidate: "One speaker must be the Candidate.",
+        oneCandidate: "Only one speaker can be the Candidate.",
+        needInterviewer: "One speaker must be the Interviewer.",
         edit: "Edit",
         gate: "Confirm who is speaking before notes are taken. Give each speaker a role.",
         roles: { candidate: "Candidate", interviewer: "Interviewer", other: "Other" },
@@ -771,7 +784,8 @@ const text = {
       hiddenByFilter: "Saved under {interview}. Questions of other Interviews are hidden while one is selected.",
       showAll: "Show all questions",
       // {interview} is replaced by the Interview's name.
-      askedIn: "Asked in {interview}",
+      review: "View",
+      reviewHint: "Opens the question and the Candidate's answer",
       aiFoundAskedIn: "It is in the Transcript of {interview}",
       notFoundIn: "Not found in the Transcript of {interview}",
       notFoundHint: "Not found in this Transcript. It may have been asked in other words.",

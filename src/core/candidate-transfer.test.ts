@@ -180,7 +180,11 @@ describe("Importing a Candidate", () => {
     const [first] = source.listInterviews(candidate.id);
     const transcript = source.getTranscript(first!.id)!;
     const roles = Object.fromEntries(transcript.speakers.map((s) => [s.id, s.role!]));
-    source.confirmSpeakerMapping(first!.id, Object.fromEntries(transcript.speakers.map((s) => [s.id, "other" as const])));
+    // Swapped and put back: a mapping needs a Candidate and an Interviewer, so "everyone is Other" is refused.
+    const swapped = Object.fromEntries(
+      transcript.speakers.map((s) => [s.id, s.role === "candidate" ? ("interviewer" as const) : s.role === "interviewer" ? ("candidate" as const) : s.role!]),
+    );
+    source.confirmSpeakerMapping(first!.id, swapped);
     source.confirmSpeakerMapping(first!.id, roles);
     expect(source.listAiNotes(first!.id).every((note) => note.stale)).toBe(true);
     const before = contentOf(source, candidate.id);

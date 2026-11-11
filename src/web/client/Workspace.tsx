@@ -9,6 +9,7 @@ import { EvidenceSearch } from "./EvidenceSearch.tsx";
 import { collapsePanels, ExpandableCard } from "./ExpandableCard.tsx";
 import { ExportCandidateDialog } from "./ExportCandidateDialog.tsx";
 import { InterviewSelector } from "./InterviewSelector.tsx";
+import { InterviewFilter } from "./InterviewFilter.tsx";
 import { MoreMenu } from "./MoreMenu.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, listPath, navigate } from "./navigation.ts";
@@ -30,6 +31,10 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   // The selected Interview's id, or null for all Interviews. The panels show only its content.
   // It is decided when the page has loaded: core says which Interview the Workspace opens on.
   const [interviewId, setInterviewId] = useState<string | null>(null);
+  // The Questions and My Notes cards have their own choice of Interview, and open on all of them:
+  // a question or a note is never out of sight because another Interview is selected above.
+  const [questionsInterviewId, setQuestionsInterviewId] = useState<string | null>(null);
+  const [notesInterviewId, setNotesInterviewId] = useState<string | null>(null);
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [interviewsFailed, setInterviewsFailed] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -285,25 +290,33 @@ export function Workspace({ candidateId }: { candidateId: string }) {
               />
             </div>
           </ExpandableCard>
-          <Panel area="questions" title={text.panels.questions.title}>
+          <Panel
+            area="questions"
+            title={text.panels.questions.title}
+            actions={<InterviewFilter interviews={interviews} value={questionsInterviewId} onChange={setQuestionsInterviewId} />}
+          >
             <SavedQuestions
               candidateId={load.candidate.id}
               role={load.candidate.role}
               interviews={interviews}
-              selectedInterviewId={interviewId}
-              onShowAll={() => setInterviewId(null)}
+              selectedInterviewId={questionsInterviewId}
+              onShowAll={() => setQuestionsInterviewId(null)}
               sourceVersion={transcriptVersion + cvVersion}
               askedVersion={askedVersion + transcriptVersion}
               onShowInTranscript={showInTranscript}
               onAskedQuestionMarked={() => setAskedMarkVersion((version) => version + 1)}
             />
           </Panel>
-          <Panel area="notes" title={text.panels.interviewerNotes.title}>
+          <Panel
+            area="notes"
+            title={text.panels.interviewerNotes.title}
+            actions={<InterviewFilter interviews={interviews} value={notesInterviewId} onChange={setNotesInterviewId} />}
+          >
             <NotesPanel
               candidateId={candidateId}
               interviews={interviews}
-              selectedInterviewId={interviewId}
-              onShowAll={() => setInterviewId(null)}
+              selectedInterviewId={notesInterviewId}
+              onShowAll={() => setNotesInterviewId(null)}
             />
           </Panel>
           <Panel area="ai" title={text.panels.ai.title} label={text.panels.ai.label}>
@@ -323,9 +336,9 @@ export function Workspace({ candidateId }: { candidateId: string }) {
 }
 
 // A panel of the Workspace, with the full-screen button every card has.
-function Panel({ area, title, label, children }: { area: string; title: string; label?: string; children: ReactNode }) {
+function Panel({ area, title, label, actions, children }: { area: string; title: string; label?: string; actions?: ReactNode; children: ReactNode }) {
   return (
-    <ExpandableCard className={`panel panel-${area}`} title={title} label={label}>
+    <ExpandableCard className={`panel panel-${area}`} title={title} label={label} actions={actions}>
       {children}
     </ExpandableCard>
   );

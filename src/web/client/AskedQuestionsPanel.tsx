@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { generationErrorMessage } from "./AiNotesPanel.tsx";
 import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
+import { ConnectAi } from "./ConnectAi.tsx";
 import { api, type AskedQuestion, type AskedQuestions, type Interview, type Transcript } from "./api.ts";
 import { ExchangeDialog } from "./ExchangeDialog.tsx";
 import { fill } from "./languages.ts";
@@ -130,9 +131,7 @@ function InterviewAskedQuestions({
       {apiKeySaved === false && (asked === null || asked?.stale) && (
         <div className="ai-notes-empty">
           <p className="empty">{t.noApiKey}</p>
-          <button type="button" className="quiet" onClick={() => setSettingsOpen(true)}>
-            {t.addApiKey}
-          </button>
+          <ConnectAi onAddApiKey={() => setSettingsOpen(true)} />
         </div>
       )}
       {apiKeySaved && transcript !== undefined && (

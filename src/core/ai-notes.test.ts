@@ -272,14 +272,14 @@ describe("AI Note generation", () => {
   });
 });
 
-// Moves the Interviewer to Other: a real change of the Speaker Mapping.
+// A real change of the Speaker Mapping: the two speakers' roles are swapped and then put back,
+// so the mapping is confirmed anew with the Candidate still the Candidate.
 function changeSpeakerMapping(): void {
-  const roles = Object.fromEntries(
-    core
-      .getTranscript(interview.id)!
-      .speakers.map((speaker) => [speaker.id, speaker.label === "Ece" ? "candidate" : "other"] as const),
-  );
-  core.confirmSpeakerMapping(interview.id, roles);
+  const speakers = core.getTranscript(interview.id)!.speakers;
+  const rolesWhere = (candidateLabel: string) =>
+    Object.fromEntries(speakers.map((speaker) => [speaker.id, speaker.label === candidateLabel ? "candidate" : "interviewer"] as const));
+  core.confirmSpeakerMapping(interview.id, rolesWhere("Ayşe"));
+  core.confirmSpeakerMapping(interview.id, rolesWhere("Ece"));
 }
 
 // Two checked notes, generated at 09:30.

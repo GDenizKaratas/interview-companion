@@ -15,9 +15,9 @@ interface SavedQuestionsProps {
   // The Candidate's role, whose Role Questions can be opened and added from here.
   role: string;
   interviews: Interview[];
-  // The Interview chosen in the Workspace header, or null for all.
+  // The Interview chosen in this card's own filter, or null for all.
   selectedInterviewId: string | null;
-  // Switches the Workspace header to all Interviews.
+  // Switches this card's filter to all Interviews.
   onShowAll: () => void;
   // Changes whenever a CV or Transcript changes.
   sourceVersion: number;
@@ -32,7 +32,7 @@ interface SavedQuestionsProps {
 // The Questions card: the Interviewer's own question list for one Candidate, and the Suggested
 // Questions in a second tab. Each question shows whether it was asked, not found, or is planned, on
 // a button that sets the Interviewer's own mark; core works out the state. Core keeps the order; after every change the list is fetched again, so the screen
-// always shows what core has saved. Core applies the header's Interview filter, as for My Notes.
+// always shows what core has saved. Core applies the card's Interview filter, as for My Notes.
 export function SavedQuestions({
   candidateId,
   role,
@@ -61,7 +61,7 @@ export function SavedQuestions({
   const [toDelete, setToDelete] = useState<SavedQuestion | undefined>();
   // The question waiting for the Interviewer to confirm "not asked" against what the Transcripts say.
   const [toMarkNotAsked, setToMarkNotAsked] = useState<SavedQuestion | undefined>();
-  // The Interview new questions are tagged with. It follows the header's selection.
+  // The Interview new questions are tagged with. It follows the card's filter.
   const [tag, setTag] = useState<string | null>(selectedInterviewId);
   const [followedSelection, setFollowedSelection] = useState(selectedInterviewId);
   // The Interview a just-added or re-tagged question went to, when the current filter hides it.
@@ -483,16 +483,19 @@ function QuestionItem({ question, interviews, checks, state: questionState, onOp
             const interview = interviews.find((i) => i.id === check.interviewId);
             if (!interview) return null;
             const name = interviewName(text, interview);
+            // The tick already says "asked", so the line names the Interview and offers one clear
+            // button that opens the question and the Candidate's answer.
             return check.askedQuestion ? (
-              <button
+              <span
                 key={check.interviewId}
-                type="button"
-                className={check.stale ? "link-button question-asked stale" : "link-button question-asked"}
+                className={check.stale ? "question-asked stale" : "question-asked"}
                 title={check.stale ? text.panels.askedQuestions.stale : undefined}
-                onClick={() => onOpenExchange(check.askedQuestion!)}
               >
-                {fill(ownDecision && state !== "asked" ? t.aiFoundAskedIn : t.askedIn, { interview: name })}
-              </button>
+                {ownDecision && state !== "asked" ? fill(t.aiFoundAskedIn, { interview: name }) : name}
+                <button type="button" className="review-button" title={t.reviewHint} onClick={() => onOpenExchange(check.askedQuestion!)}>
+                  {t.review}
+                </button>
+              </span>
             ) : (
               <span
                 key={check.interviewId}
@@ -516,7 +519,7 @@ function QuestionItem({ question, interviews, checks, state: questionState, onOp
           <button type="button" className="quiet" disabled={busy} onClick={() => setEditing(question.text)}>
             {t.edit}
           </button>
-          <button type="button" className="quiet" disabled={busy} onClick={onDelete}>
+          <button type="button" className="quiet danger-text" disabled={busy} onClick={onDelete}>
             {t.delete}
           </button>
         </span>

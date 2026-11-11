@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 import { ApiKeyDialog, apiKeyChanged } from "./ApiKeyDialog.tsx";
+import { ConnectAi } from "./ConnectAi.tsx";
 import { api, ApiError, type Interview, type SuggestedQuestion, type SuggestionEvidence } from "./api.ts";
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { interviewName } from "./interview-names.ts";
@@ -121,9 +122,7 @@ export function SuggestedQuestions({ candidateId, interviews, sourceVersion, onA
       {apiKeySaved === false && (
         <div className="ai-notes-empty">
           <p className="empty">{t.noApiKey}</p>
-          <button type="button" className="quiet" onClick={() => setSettingsOpen(true)}>
-            {t.addApiKey}
-          </button>
+          <ConnectAi onAddApiKey={() => setSettingsOpen(true)} />
         </div>
       )}
       {apiKeySaved && (

@@ -43,6 +43,10 @@ const translation: TranslationFile = {
       ai: "Son adım için AI gerekir. İki yolu var:",
       close: "Kapat",
     },
+    connectAi: {
+      addApiKey: "API anahtarı ekle",
+      or: "veya",
+    },
     mcpGuide: {
       open: "MCP ile kullan",
       title: "AI'yi API anahtarı olmadan kullan (MCP)",
@@ -515,6 +519,10 @@ const translation: TranslationFile = {
         loadFailed: "CV bilgisi alınamadı.",
         viewFailed: "PDF gösterilemedi.",
       },
+      interviewFilter: {
+        label: "Hangi görüşme gösterilsin",
+        all: "Tümü",
+      },
       interviewTag: {
         label: "Görüşme",
         none: "Görüşme yok",
@@ -522,7 +530,7 @@ const translation: TranslationFile = {
       interviewerNotes: {
         title: "Notlarım",
         empty: "Henüz kişisel not yok.",
-        placeholder: "Bir not yazın, kaydetmek için Enter…",
+        placeholder: "Görüşmeyle ilgili bir not yazın, kaydetmek için Enter…",
         hint: "Her satır ayrı bir not olur.",
         savedAt: "Kaydedilme zamanı",
         edit: "Düzenle",
@@ -555,6 +563,11 @@ const translation: TranslationFile = {
         speakers: {
           title: "Konuşmacılar",
           confirmed: "onaylandı",
+          notConfirmed: "Konuşmacılar onaylanmadı",
+          clickToConfirm: "Onaylamak için tıklayın",
+          needCandidate: "Bir konuşmacı Aday olmalı.",
+          oneCandidate: "Yalnızca bir konuşmacı Aday olabilir.",
+          needInterviewer: "Bir konuşmacı mutlaka Görüşmeci olmalı.",
           edit: "Düzenle",
           gate: "Not çıkarmadan önce kimin konuştuğunu onaylayın. Her konuşmacıya bir rol verin.",
           roles: { candidate: "Aday", interviewer: "Görüşmeci", other: "Diğer" },
@@ -731,7 +744,8 @@ const translation: TranslationFile = {
         loadFailed: "Sorular yüklenemedi.",
         hiddenByFilter: "{interview} altına kaydedildi. Bir görüşme seçiliyken diğer görüşmelerin soruları gizlenir.",
         showAll: "Tüm soruları göster",
-        askedIn: "Soruldu: {interview}",
+        review: "İncele",
+        reviewHint: "Soruyu ve adayın cevabını açar",
         aiFoundAskedIn: "Transkriptte geçiyor: {interview}",
         notFoundIn: "{interview} transkriptinde bulunamadı",
         notFoundHint: "Bu transkriptte bulunamadı. Başka sözcüklerle sorulmuş olabilir.",
