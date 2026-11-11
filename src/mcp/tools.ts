@@ -49,8 +49,8 @@ export function createMcpServer(core: AiClientCore): McpServer {
     "get_candidate",
     {
       description:
-        "Get one Candidate's overview: their CV (file name and page count), their Interviews in order " +
-        "with each Transcript's state and whether its Speaker Mapping is confirmed, and how many " +
+        "Get one Candidate's overview: their CV (file name and page count), their Interviews in order, each " +
+        "with its date and time when it has them, its Transcript's state and whether its Speaker Mapping is confirmed, and how many " +
         "Interviewer Notes and Saved Questions they have.",
       inputSchema: { candidateId },
       annotations: readOnly,

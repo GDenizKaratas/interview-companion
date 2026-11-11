@@ -87,6 +87,8 @@ const manifestSchema = z.object({
     z.object({
       id: z.string(),
       date: z.string().nullable(),
+      // Absent in an export made before Interviews had a time.
+      time: z.string().nullable().optional(),
       transcript: z
         .object({
           file: z.string(),
@@ -167,13 +169,14 @@ export function exportCandidate(db: DatabaseSync, folder: string, today: Today, 
 
   const interviews = listInterviews(db, today, candidateId).map((interview): Manifest["interviews"][number] => {
     const transcript = getTranscript(db, interview.id);
-    if (!transcript) return { id: interview.id, date: interview.date, transcript: null, aiNotes: [], askedQuestions: null };
+    if (!transcript) return { id: interview.id, date: interview.date, time: interview.time, transcript: null, aiNotes: [], askedQuestions: null };
     const file = readTranscriptFile(db, interview.id)!;
     const asked = listAskedQuestions(db, interview.id);
     const run = askedQuestionRunOf(db, interview.id);
     return {
       id: interview.id,
       date: interview.date,
+      time: interview.time,
       transcript: {
         file: addFile(`transcripts/interview-${interview.number}${extensionOf(file.fileName)}`, "transcript", file),
         importedAt: transcript.importedAt,
@@ -391,7 +394,7 @@ function rebuild(
   const candidateId = candidate.id;
   const interviewIds = new Map<string, string>();
   for (const interview of manifest.interviews) {
-    interviewIds.set(interview.id, addInterview(db, today, { candidateId, date: interview.date }).id);
+    interviewIds.set(interview.id, addInterview(db, today, { candidateId, date: interview.date, time: interview.time }).id);
   }
   const numbers = new Map(listInterviews(db, today, candidateId).map((interview) => [interview.id, interview.number]));
   const newInterview = (id: string | null) => (id === null ? null : (interviewIds.get(id) ?? null));

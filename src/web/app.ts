@@ -208,9 +208,31 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
   api.post("/candidates/:id/interviews", async (c) => {
     const fields = await jsonFields(c);
     return respondOrRefuse(c, () =>
-      c.json(core.addInterview({ candidateId: c.req.param("id"), date: stringField(fields, "date") }), 201),
+      c.json(core.addInterview({ candidateId: c.req.param("id"), date: stringField(fields, "date"), time: stringField(fields, "time") }),
+        201,
+      ),
     );
   });
+
+  // The Interview the Workspace opens on, or null when the Candidate has none.
+  api.get("/candidates/:id/default-interview", (c) =>
+    respondOrRefuse(c, () => c.json(core.getDefaultInterview(c.req.param("id")))),
+  );
+
+  // Changes when the Interview is. The body is { date, time }; a missing or empty one is removed.
+  api.put("/interviews/:id", async (c) => {
+    const fields = await jsonFields(c);
+    return respondOrRefuse(c, () =>
+      c.json(core.rescheduleInterview(c.req.param("id"), { date: stringField(fields, "date"), time: stringField(fields, "time") })),
+    );
+  });
+
+  api.delete("/interviews/:id", (c) =>
+    respondOrRefuse(c, () => {
+      core.deleteInterview(c.req.param("id"));
+      return c.body(null, 204);
+    }),
+  );
 
   api.get("/candidates/:id/notes", (c) =>
     respondOrRefuse(c, () =>

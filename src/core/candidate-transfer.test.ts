@@ -77,6 +77,7 @@ function contentOf(core: Core, candidateId: string) {
       return {
         number: interview.number,
         date: interview.date,
+        time: interview.time,
         transcript: transcript && {
           fileName: transcript.fileName,
           format: transcript.format,
@@ -267,6 +268,46 @@ describe("Checks on import", () => {
 
     expect(imported.problems).toEqual([]);
     expect(contentOf(target, imported.candidate.id)).toEqual(before);
+  });
+
+  it("carries the time of day of each Interview", async () => {
+    const candidate = source.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+    source.addInterview({ candidateId: candidate.id, date: "2026-11-03", time: "14:30" });
+    source.addInterview({ candidateId: candidate.id, date: "2026-11-03", time: "09:00" });
+    source.addInterview({ candidateId: candidate.id, date: "2026-11-05" });
+
+    const imported = await target.importCandidate(source.exportCandidate(candidate.id).bytes);
+
+    expect(target.listInterviews(imported.candidate.id).map((i) => [i.date, i.time])).toEqual([
+      ["2026-11-03", "09:00"],
+      ["2026-11-03", "14:30"],
+      ["2026-11-05", null],
+    ]);
+  });
+
+  it("refuses an export whose Interview has a time that is not real, or a time without a date, and saves nothing", async () => {
+    const candidate = source.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+    source.addInterview({ candidateId: candidate.id, date: "2026-11-03", time: "14:30" });
+    const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);
+    const [interview] = manifest.interviews as object[];
+
+    for (const change of [{ time: "25:00" }, { date: null }]) {
+      const interviews = [{ ...interview, ...change }];
+      await expect(target.importCandidate(repack(files, { ...manifest, interviews }))).rejects.toThrow(InvalidInputError);
+    }
+
+    expect(target.listCandidates()).toEqual([]);
+  });
+
+  it("imports an export made before Interviews had a time", async () => {
+    const candidate = source.createCandidate({ name: "Ada Demir", role: "Backend Engineer" });
+    source.addInterview({ candidateId: candidate.id, date: "2026-11-03", time: "14:30" });
+    const { manifest, files } = unpack(source.exportCandidate(candidate.id).bytes);
+    const interviews = (manifest.interviews as { time?: string }[]).map((interview) => without(interview, "time"));
+
+    const imported = await target.importCandidate(repack(files, { ...manifest, interviews }));
+
+    expect(target.listInterviews(imported.candidate.id).map((i) => [i.date, i.time])).toEqual([["2026-11-03", null]]);
   });
 
   it("refuses a zip with a file its JSON does not list", async () => {

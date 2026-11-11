@@ -153,6 +153,8 @@ const translation: TranslationFile = {
       planned: "planlandı",
       add: "Yeni mülakat",
       dateLabel: "Tarih (isteğe bağlı)",
+      timeLabel: "Saat (isteğe bağlı)",
+      invalidTime: "Saat 00:00 ile 23:59 arasında olmalı.",
       save: "Mülakat ekle",
       cancel: "Vazgeç",
       invalidDate: "Tarih gerçek bir gün olmalı.",

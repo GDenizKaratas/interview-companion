@@ -64,6 +64,7 @@ function NewInterviewForm({
 }) {
   const { text } = useText();
   const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [saveError, setSaveError] = useState<unknown>();
   const [saving, setSaving] = useState(false);
 
@@ -72,7 +73,7 @@ function NewInterviewForm({
     setSaving(true);
     setSaveError(undefined);
     try {
-      onAdded(await api.addInterview({ candidateId, date }));
+      onAdded(await api.addInterview({ candidateId, date, time: date ? time : "" }));
     } catch (error) {
       setSaveError(error);
       setSaving(false);
@@ -84,6 +85,10 @@ function NewInterviewForm({
       <label>
         <span className="visually-hidden">{text.interviews.dateLabel}</span>
         <input type="date" value={date} title={text.interviews.dateLabel} onChange={(e) => setDate(e.target.value)} autoFocus />
+      </label>
+      <label>
+        <span className="visually-hidden">{text.interviews.timeLabel}</span>
+        <input type="time" value={time} title={text.interviews.timeLabel} disabled={!date} onChange={(e) => setTime(e.target.value)} />
       </label>
       <AddButton type="submit" disabled={saving}>
         {text.interviews.save}
@@ -101,5 +106,6 @@ function refusalMessage(text: Text, error: unknown): string {
   if (error instanceof ApiError && error.field === "date" && error.rule === "format") {
     return text.interviews.invalidDate;
   }
+  if (error instanceof ApiError && error.field === "time") return text.interviews.invalidTime;
   return text.interviews.saveFailed;
 }

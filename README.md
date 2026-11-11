@@ -15,7 +15,7 @@ Interview Companion keeps everything about one Candidate on one screen, finds ex
 ## How it works
 
 1. **Add a Candidate**, optionally from their CV (a PDF with text). The app reads the text page by page and suggests the name.
-2. **Add Interviews.** An Interview with a future date is Planned and shows in the calendar.
+2. **Add Interviews.** An Interview can have a date and a time. One that has not happened yet is Planned and shows in the calendar.
 3. **Write notes and questions** while you prepare or listen. Each line you paste becomes its own note. Questions you ask every Candidate for a role can be kept as Role Questions and are copied to each new Candidate with that role.
 4. **Import the Transcript** after the Interview: WebVTT (`.vtt`, for example a Microsoft Teams transcript download) or plain text with `Speaker: text` lines.
 5. **Confirm who is speaking.** Every speaker starts unverified. You mark each one as Candidate, Interviewer, or Other. AI Notes and Asked Questions wait for this, and Suggested Questions leave out a Transcript until it is confirmed.

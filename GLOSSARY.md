@@ -17,11 +17,11 @@ _Avoid_: Applicant, interviewee
 ### Sources
 
 **Interview**:
-One conversation with a Candidate. Interviews may have a date and are numbered by it (First Interview, Second Interview); those without a date come after the dated ones, in the order they were added. It may have a Transcript.
+One conversation with a Candidate. Interviews may have a date, and with it a time of day, and are numbered by them (First Interview, Second Interview); those without a date come after the dated ones, in the order they were added. It may have a Transcript.
 _Avoid_: Meeting, session, round
 
 **Planned**:
-An Interview whose date is after today. An Interview dated today or earlier has taken place; one without a date is neither.
+An Interview that has not happened yet: its date is after today, or it is today and its time is still ahead. An Interview dated earlier, or today with no time or a time already passed, has taken place; one without a date is neither.
 _Avoid_: Upcoming, scheduled
 
 **CV**:

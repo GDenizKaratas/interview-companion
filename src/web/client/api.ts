@@ -143,6 +143,11 @@ export const api = {
     request<Interview[]>(`/candidates/${encodeURIComponent(candidateId)}/interviews`),
   addInterview: ({ candidateId, ...fields }: NewInterview) =>
     request<Interview>(`/candidates/${encodeURIComponent(candidateId)}/interviews`, sendJson("POST", fields)),
+  getDefaultInterview: (candidateId: string) =>
+    request<Interview | null>(`/candidates/${encodeURIComponent(candidateId)}/default-interview`),
+  rescheduleInterview: (id: string, fields: { date: string; time: string }) =>
+    request<Interview>(`/interviews/${encodeURIComponent(id)}`, sendJson("PUT", fields)),
+  deleteInterview: (id: string) => request<void>(`/interviews/${encodeURIComponent(id)}`, { method: "DELETE" }),
   listInterviewerNotes: (candidateId: string, interviewId: string | null) =>
     request<InterviewerNote[]>(
       `/candidates/${encodeURIComponent(candidateId)}/notes` +

@@ -155,6 +155,8 @@ const text = {
     planned: "planned",
     add: "New Interview",
     dateLabel: "Date (optional)",
+    timeLabel: "Time (optional)",
+    invalidTime: "The time must be between 00:00 and 23:59.",
     save: "Add Interview",
     cancel: "Cancel",
     invalidDate: "The date must be a real day.",

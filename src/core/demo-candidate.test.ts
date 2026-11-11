@@ -206,6 +206,15 @@ describe("Demo set", () => {
     expect(core.listCandidates().map((c) => c.id).sort()).toEqual([own.id, ...demos.map((c) => c.id)].sort());
   });
 
+  it("gives the set one day with three Planned Interviews, two of them at the same time", async () => {
+    const demos = await core.loadDemoCandidates();
+
+    const planned = demos.flatMap((c) => core.listInterviews(c.id)).filter((i) => i.planned);
+    const busiest = planned.filter((i) => i.date === "2026-11-16").map((i) => i.time).sort();
+    expect(busiest).toEqual(["10:00", "10:00", "15:30"]);
+    expect(demos.flatMap((c) => core.listInterviews(c.id)).filter((i) => i.date !== null).every((i) => i.time !== null)).toBe(true);
+  });
+
   it("gives the set past, Planned, and undated Interviews, so a calendar has something to show", async () => {
     const demos = await core.loadDemoCandidates();
 

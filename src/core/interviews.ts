@@ -13,14 +13,23 @@ export interface Interview {
   number: number;
   // A calendar day, YYYY-MM-DD, or null when the Interview has no date yet.
   date: string | null;
-  // True when the date is after today: the Interview has not happened yet.
+  // The time of day the Interview starts, HH:MM on a 24-hour clock, or null when none was given.
+  // Only an Interview with a date has a time.
+  time: string | null;
+  // True when the Interview has not happened yet: its date is after today, or it is today with
+  // a time that is still ahead. An Interview today without a time has taken place.
   planned: boolean;
   createdAt: string;
 }
 
-export interface NewInterview {
-  candidateId: string;
+// When an Interview is. A date or time that is left out, null, or blank means there is none.
+export interface InterviewTime {
   date?: string | null;
+  time?: string | null;
+}
+
+export interface NewInterview extends InterviewTime {
+  candidateId: string;
 }
 
 interface InterviewRow {
@@ -28,23 +37,26 @@ interface InterviewRow {
   candidate_id: string;
   added_order: number;
   date: string | null;
+  time: string | null;
   created_at: string;
 }
 
-// Today as a calendar day, YYYY-MM-DD. Core asks for it so tests can fix the day.
-export type Today = () => string;
+// Today as a calendar day, YYYY-MM-DD, and the time now as HH:MM, both on the Interviewer's
+// computer. Core asks for them so tests can fix the day and the time.
+export type Today = () => { day: string; time: string };
 
 export function addInterview(db: DatabaseSync, today: Today, input: NewInterview): Interview {
   requireCandidate(db, input.candidateId);
-  const date = optionalDate(input.date);
+  const { date, time } = dateAndTime(input);
   const id = randomUUID();
   // The order is read and used in one transaction, so two Interviews never get the same one.
   inTransaction(db, () => {
-    db.prepare("INSERT INTO interview (id, candidate_id, added_order, date, created_at) VALUES (?, ?, ?, ?, ?)").run(
+    db.prepare("INSERT INTO interview (id, candidate_id, added_order, date, time, created_at) VALUES (?, ?, ?, ?, ?, ?)").run(
       id,
       input.candidateId,
       nextAddedOrder(db, input.candidateId),
       date,
+      time,
       new Date().toISOString(),
     );
   });
@@ -53,18 +65,47 @@ export function addInterview(db: DatabaseSync, today: Today, input: NewInterview
   return listInterviews(db, today, input.candidateId).find((interview) => interview.id === id)!;
 }
 
-// Earliest date first. Interviews without a date come last, in the order they were added.
+// Earliest date first, and within a day earliest time first; Interviews of that day without a
+// time follow. Interviews without a date come last. Ties keep the order they were added.
 export function listInterviews(db: DatabaseSync, today: Today, candidateId: string): Interview[] {
   requireCandidate(db, candidateId);
   const rows = db
     .prepare(
-      `SELECT id, candidate_id, added_order, date, created_at FROM interview
+      `SELECT id, candidate_id, added_order, date, time, created_at FROM interview
        WHERE candidate_id = ?
-       ORDER BY date IS NULL, date, added_order`,
+       ORDER BY date IS NULL, date, time IS NULL, time, added_order`,
     )
     .all(candidateId) as unknown as InterviewRow[];
-  const day = today();
-  return rows.map((row, index) => toInterview(row, index + 1, day));
+  const now = today();
+  return rows.map((row, index) => toInterview(row, index + 1, now));
+}
+
+// Sets when the Interview is. Both parts are replaced: a date or time left out is removed, as
+// a blank one is, so the caller always gives the whole new date and time.
+export function rescheduleInterview(db: DatabaseSync, today: Today, interviewId: string, input: InterviewTime): Interview {
+  const candidateId = candidateOfInterview(db, interviewId);
+  const { date, time } = dateAndTime(input);
+  db.prepare("UPDATE interview SET date = ?, time = ? WHERE id = ?").run(date, time, interviewId);
+  return listInterviews(db, today, candidateId).find((interview) => interview.id === interviewId)!;
+}
+
+// Deletes the Interview with its Transcript and everything made from that Transcript: its AI
+// Notes, its Asked Questions, and the Suggested Questions that quote it. Interviewer Notes and
+// Saved Questions tagged with the Interview stay with the Candidate and lose the tag. The
+// database's foreign keys do all of this.
+export function deleteInterview(db: DatabaseSync, interviewId: string): void {
+  requireInterview(db, interviewId);
+  db.prepare("DELETE FROM interview WHERE id = ?").run(interviewId);
+}
+
+// The Interview the Workspace opens on: the latest one that has taken place; when none has, the
+// earliest Planned one; when none is dated, the first one. null when the Candidate has none.
+// "Latest" follows the order of listInterviews, so on one day an Interview without a time
+// counts as later than the timed ones.
+export function getDefaultInterview(db: DatabaseSync, today: Today, candidateId: string): Interview | null {
+  const interviews = listInterviews(db, today, candidateId);
+  const takenPlace = interviews.filter((interview) => interview.date !== null && !interview.planned);
+  return takenPlace.at(-1) ?? interviews.find((interview) => interview.planned) ?? interviews[0] ?? null;
 }
 
 // Refuses with NotFoundError unless the Interview exists.
@@ -127,14 +168,37 @@ function optionalDate(value: string | null | undefined): string | null {
   return trimmed;
 }
 
-// Days written as YYYY-MM-DD sort like text, so a plain comparison tells which is later.
-function toInterview(row: InterviewRow, number: number, today: string): Interview {
+// A blank time means no time was given. Any other value must be HH:MM on a 24-hour clock.
+function optionalTime(value: string | null | undefined): string | null {
+  const trimmed = (value ?? "").trim();
+  if (trimmed === "") return null;
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(trimmed)) {
+    throw new InvalidInputError("time", "format", "The time must be written as HH:MM, from 00:00 to 23:59.");
+  }
+  return trimmed;
+}
+
+// The date and time of an Interview as given. A time is refused without a date, because it
+// would say nothing about when the Interview is.
+function dateAndTime(input: InterviewTime): { date: string | null; time: string | null } {
+  const date = optionalDate(input.date);
+  const time = optionalTime(input.time);
+  if (time !== null && date === null) {
+    throw new InvalidInputError("date", "required", "An Interview with a time needs a date.");
+  }
+  return { date, time };
+}
+
+// Marks the row as Planned or not. Days written as YYYY-MM-DD, and times written as HH:MM, sort
+// like text, so a plain comparison tells which is later.
+function toInterview(row: InterviewRow, number: number, now: { day: string; time: string }): Interview {
   return {
     id: row.id,
     candidateId: row.candidate_id,
     number,
     date: row.date,
-    planned: row.date !== null && row.date > today,
+    time: row.time,
+    planned: row.date !== null && (row.date > now.day || (row.date === now.day && row.time !== null && row.time > now.time)),
     createdAt: row.created_at,
   };
 }
