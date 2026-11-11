@@ -248,3 +248,41 @@ describe("Interview tag of Saved Questions", () => {
     expect(texts()).toEqual(["Hidden?", "The only one shown?"]);
   });
 });
+
+describe("The Interviewer's mark on a Saved Question", () => {
+  it("has no mark until the Interviewer sets one, and keeps the mark after the database is opened again", () => {
+    const [first, second, third] = addAll("A?", "B?", "C?");
+    expect(first!.mark).toBeNull();
+
+    expect(core.markSavedQuestion(first!.id, "asked").mark).toBe("asked");
+    core.markSavedQuestion(second!.id, "notAsked");
+    core.markSavedQuestion(third!.id, "asked");
+    core.markSavedQuestion(third!.id, null);
+    core.close();
+
+    core = openCore(dbPath);
+    expect(core.listSavedQuestions(candidate.id).map((q) => q.mark)).toEqual(["asked", "notAsked", null]);
+  });
+
+  it("refuses a mark that is not one of the two, or an unknown question, and changes nothing", () => {
+    const [question] = addAll("A?");
+    core.markSavedQuestion(question!.id, "asked");
+
+    expect(() => core.markSavedQuestion(question!.id, "maybe" as never)).toThrow(InvalidInputError);
+    expect(() => core.markSavedQuestion("no-such-question", "asked")).toThrow(NotFoundError);
+
+    expect(core.listSavedQuestions(candidate.id).map((q) => q.mark)).toEqual(["asked"]);
+  });
+
+  it("keeps the mark when the question is edited, tagged, or moved", () => {
+    const interview = core.addInterview({ candidateId: candidate.id, date: "2026-11-03" });
+    const [question] = addAll("A?", "B?");
+    core.markSavedQuestion(question!.id, "notAsked");
+
+    expect(core.editSavedQuestion(question!.id, "A, again?").mark).toBe("notAsked");
+    expect(core.tagSavedQuestion(question!.id, interview.id).mark).toBe("notAsked");
+    core.moveSavedQuestion(question!.id, 1);
+
+    expect(core.listSavedQuestions(candidate.id).map((q) => q.mark)).toEqual([null, "notAsked"]);
+  });
+});
