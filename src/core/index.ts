@@ -61,6 +61,8 @@ export { evidenceSources } from "./evidence-search.ts";
 export { claudeModel, claudeProvider } from "./claude-provider.ts";
 // What no AI text about a Candidate may do: the same text for the app's model and the AI client.
 export { neutralityRules, privateMatters, writingRulesInOneSentence } from "./ai-writing-rules.ts";
+// How much AI work one save may hold, from any source. The MCP tools show the same numbers.
+export { aiWorkLimits } from "./ai-work-limits.ts";
 export {
   AiProviderError,
   InvalidInputError,

@@ -5,6 +5,7 @@ import { requireCandidate } from "./candidates.ts";
 import { inTransaction } from "./database.ts";
 import { InvalidInputError } from "./errors.ts";
 import type { Now } from "./interviewer-notes.ts";
+import { aiWorkLimits } from "./ai-work-limits.ts";
 import { containsQuote } from "./quotes.ts";
 
 // The Candidate Brief an AI client wrote and saved through MCP. The app does not write it and
@@ -45,11 +46,21 @@ export function saveCandidateBriefFromClient(
 }
 
 // Saves the brief, replacing the Candidate's earlier one, without checking the AI client switch.
-// Also used for an imported Candidate.
+// Also used for an imported Candidate, so the limits below hold for every way in. A brief is one
+// document: one that is too large is refused whole, not cut.
 export function saveCandidateBrief(db: DatabaseSync, now: Now, candidateId: string, brief: NewCandidateBrief): CandidateBrief {
   requireCandidate(db, candidateId);
   const text = brief.text.trim();
   if (text === "") throw new InvalidInputError("text", "required", "A Candidate Brief needs text.");
+  if (text.length > aiWorkLimits.briefText) {
+    throw new InvalidInputError("text", "format", `A Candidate Brief can be at most ${aiWorkLimits.briefText} characters.`);
+  }
+  if (brief.evidence.length > aiWorkLimits.briefEvidence) {
+    throw new InvalidInputError("evidence", "format", `A Candidate Brief can cite at most ${aiWorkLimits.briefEvidence} quotes.`);
+  }
+  if (brief.evidence.some((evidence) => evidence.quote.length > aiWorkLimits.text)) {
+    throw new InvalidInputError("evidence", "format", `A quote can be at most ${aiWorkLimits.text} characters.`);
+  }
   const numbers = new Set(brief.evidence.map((evidence) => evidence.number));
   if (numbers.size !== brief.evidence.length) {
     throw new InvalidInputError("evidence", "format", "Each Evidence number can be used only once.");

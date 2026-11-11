@@ -5,12 +5,18 @@ import { briefPrompt } from "./brief-prompt.ts";
 import { candidatePrompt } from "./candidate-prompt.ts";
 import { serverInstructions } from "./server-instructions.ts";
 import { createStartKeys, notStartedMessage, startKeySentence } from "./start-key.ts";
-import { evidenceSources, InvalidInputError, NotFoundError, PreconditionError, writingRulesInOneSentence, type AiClientCore } from "../core/index.ts";
+import { aiWorkLimits, evidenceSources, InvalidInputError, NotFoundError, PreconditionError, writingRulesInOneSentence, type AiClientCore } from "../core/index.ts";
 
-// Bounds on what the AI client can save in one call, so a runaway client cannot flood the
-// Workspace. They are generous for a real Interview.
-const limits = { notes: 40, askedQuestions: 60, suggestions: 25, evidence: 8, briefEvidence: 100 };
-const textLimits = { long: 2000, brief: 50_000 };
+// Bounds on what one save may hold. Core applies them to every save, whoever wrote it; the
+// schemas show the same numbers so the AI client knows them before it calls.
+const limits = {
+  notes: aiWorkLimits.aiNotes,
+  askedQuestions: aiWorkLimits.askedQuestions,
+  suggestions: aiWorkLimits.suggestedQuestions,
+  evidence: aiWorkLimits.quotesPerItem,
+  briefEvidence: aiWorkLimits.briefEvidence,
+};
+const textLimits = { long: aiWorkLimits.text, brief: aiWorkLimits.briefText };
 
 const briefNumber = z.number().int().positive().describe("The number in square brackets in the text, such as 1 for [1].");
 

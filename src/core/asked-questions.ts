@@ -8,6 +8,7 @@ import { NotFoundError, PreconditionError } from "./errors.ts";
 import { getInterfaceLanguage } from "./interface-language.ts";
 import type { Now } from "./interviewer-notes.ts";
 import { candidateOfInterview, listInterviews, requireInterview, type Today } from "./interviews.ts";
+import { aiWorkLimits, fitsLimits } from "./ai-work-limits.ts";
 import { containsQuote } from "./quotes.ts";
 import { findSavedQuestion, listSavedQuestions, markSavedQuestion, type SavedQuestion } from "./saved-questions.ts";
 import {
@@ -117,8 +118,9 @@ function savedQuestionsOf(db: DatabaseSync, transcript: Transcript) {
   return listSavedQuestions(db, candidateOfInterview(db, transcript.interviewId));
 }
 
-// Keeps the proposed questions whose quotes are all found and saves them in place of the
-// Interview's earlier ones, with the Saved Questions that were checked.
+// Keeps the proposed questions whose quotes are all found, up to the limit of one save, and saves
+// them in place of the Interview's earlier ones, with the Saved Questions that were checked.
+// Every way in (the app, the AI client, an import) comes through here.
 function accept(
   db: DatabaseSync,
   now: Now,
@@ -130,7 +132,9 @@ function accept(
 ): AskedQuestionGeneration {
   const interviewerSegments = segmentsOf(transcript, "interviewer");
   const candidateSegments = segmentsOf(transcript, "candidate");
-  const backed = proposed.filter((asked) => isBacked(asked, interviewerSegments, candidateSegments));
+  const backed = proposed
+    .filter((asked) => isBacked(asked, interviewerSegments, candidateSegments))
+    .slice(0, aiWorkLimits.askedQuestions);
   // An answer with nothing usable, empty or all dropped, never wipes questions found earlier.
   if (backed.length > 0 || listAskedQuestions(db, transcript.interviewId) === null) {
     // A Saved Question deleted while the model was answering is no longer there to link or check.
@@ -153,6 +157,8 @@ function isBacked(
   candidateSegments: Map<number, string>,
 ): boolean {
   if (asked.question.trim() === "" || asked.answerSummary.trim() === "" || asked.answerEvidence.length === 0) return false;
+  const texts = [asked.question, asked.answerSummary, asked.questionEvidence.quote, ...asked.answerEvidence.map((e) => e.quote)];
+  if (!fitsLimits(texts, asked.answerEvidence.length)) return false;
   const { segmentNumber, quote } = asked.questionEvidence;
   if (!containsQuote(interviewerSegments.get(segmentNumber), quote)) return false;
   return asked.answerEvidence.every(
