@@ -1866,6 +1866,18 @@ button.question-state:disabled {
   background: rgb(10 37 64 / 0.45);
 }
 
+/* The × at the top right of a dialog, in place while the content scrolls. */
+.dialog-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  z-index: 1;
+  margin: -0.5rem -0.5rem 0 0.5rem;
+  font-size: 1.15rem;
+  line-height: 1;
+  background: var(--surface);
+}
+
 .confirm-dialog h2 {
   margin-bottom: 0.75rem;
   font-size: 1.05rem;

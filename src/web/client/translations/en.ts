@@ -7,6 +7,7 @@ const text = {
   appName: "Interview Companion",
   tagline: "Your interviews, all in one place.",
   languageLabel: "Language",
+  closeDialog: "Close",
   aiSettings: {
     open: "Use with an API key",
     title: "Use AI with an API key",

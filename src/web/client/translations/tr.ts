@@ -6,6 +6,7 @@ const translation: TranslationFile = {
     appName: "Interview Companion",
     tagline: "Görüşmeleriniz tek bir yerde.",
     languageLabel: "Dil",
+    closeDialog: "Kapat",
     aiSettings: {
       open: "API anahtarıyla kullan",
       title: "AI'yi API anahtarıyla kullan",

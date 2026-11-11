@@ -3,6 +3,7 @@ import { api, ApiError, type RoleQuestion, type RoleQuestionList } from "./api.t
 import { ConfirmDialog } from "./ConfirmDialog.tsx";
 import { onEnter } from "./enter-key.ts";
 import { fill } from "./languages.ts";
+import { DialogCloseButton } from "./ModalDialog.tsx";
 import { useText } from "./text.tsx";
 
 interface RoleQuestionsDialogProps {
@@ -115,6 +116,7 @@ export function RoleQuestionsDialog({ initialRole, onClose }: RoleQuestionsDialo
         onClose();
       }}
     >
+      <DialogCloseButton onClose={onClose} />
       <h2 id="role-questions-title">{t.title}</h2>
       <label className="role-questions-role">
         {t.roleLabel}

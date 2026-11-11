@@ -73,6 +73,7 @@ export function AddCandidateDialog({
   return (
     <ModalDialog
       title={text.candidates.addTitle}
+      kind="form"
       wide
       onCancel={onClose}
       actions={

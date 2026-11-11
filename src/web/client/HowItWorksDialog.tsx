@@ -10,6 +10,7 @@ export function HowItWorksDialog({ onUseApiKey, onUseMcp, onClose }: { onUseApiK
   return (
     <ModalDialog
       title={t.title}
+      kind="info"
       large
       onCancel={onClose}
       actions={

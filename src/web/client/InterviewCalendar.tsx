@@ -149,6 +149,7 @@ export function InterviewCalendar({ interviews, undated }: { interviews: DatedIn
       {openDay && (
         <ModalDialog
           title={longDay(languageCode, openDay)}
+          kind="info"
           wide
           onCancel={() => setOpenDay(undefined)}
           actions={

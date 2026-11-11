@@ -61,6 +61,7 @@ export function ImportCandidate({ ref }: { ref: Ref<ImportCandidateHandle> }) {
       {state.step === "failed" && (
         <ModalDialog
           title={t.failedTitle}
+          kind="info"
           onCancel={() => setState({ step: "idle" })}
           actions={
             <button type="button" autoFocus onClick={() => setState({ step: "idle" })}>
@@ -86,6 +87,7 @@ export function ImportCandidate({ ref }: { ref: Ref<ImportCandidateHandle> }) {
       {state.step === "report" && (
         <ModalDialog
           title={t.report.title}
+          kind="info"
           onCancel={() => navigate(candidatePath(state.result.candidate.id))}
           actions={
             <button type="button" autoFocus onClick={() => navigate(candidatePath(state.result.candidate.id))}>

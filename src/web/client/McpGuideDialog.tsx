@@ -48,6 +48,7 @@ export function McpGuideDialog({ onClose }: { onClose: () => void }) {
   return (
     <ModalDialog
       title={t.title}
+      kind="info"
       large
       onCancel={onClose}
       actions={
