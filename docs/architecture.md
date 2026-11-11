@@ -118,7 +118,7 @@ Notes on the model:
 | A Suggested Question's quotes must exist word for word in the CV or a Transcript. | Core, before a suggestion is saved. |
 | Replacing a CV or Transcript removes the suggestions that quote it. | The database, through a foreign key and a trigger. |
 | No generation without a request. | Generation is only reachable from explicit actions. |
-| The MCP server can only read, except for checked AI work the Interviewer allowed. | The MCP server gets `aiClientCore(core)`, a view that holds core's reads and only `saveAiNotesFromClient`, `saveAskedQuestionsFromClient`, `saveSuggestedQuestionsFromClient`, and `saveCandidateBriefFromClient`; all refuse while the setting is off. The first three run the same checks as in-app generation (ADR 0005). |
+| The MCP server can only read, except for checked AI work, which the Interviewer can turn off. | The MCP server gets `aiClientCore(core)`, a view that holds core's reads and only `saveAiNotesFromClient`, `saveAskedQuestionsFromClient`, `saveSuggestedQuestionsFromClient`, and `saveCandidateBriefFromClient`; all refuse while the setting is off. The first three run the same checks as in-app generation (ADR 0005). |
 | A saved Candidate Brief's quotes are shown as found only when they are in this Candidate's CV or Transcripts now. | Core, every time the brief is read. |
 | An imported Candidate's files and AI work pass the same checks as new ones. | Core, which rebuilds the import through its own operations. |
 | Importing a Candidate already in the app never merges. | Core refuses until the Interviewer chooses Replace or Keep both. |

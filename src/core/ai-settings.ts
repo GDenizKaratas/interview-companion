@@ -26,18 +26,17 @@ export function readApiKey(db: DatabaseSync): string | undefined {
   return getSetting(db, settingKey);
 }
 
-// Whether the AI client (through MCP) may save AI Notes and Suggested Questions. Off until the
-// Interviewer turns it on under "Use with MCP". Only the web interface can change it: the AI client's
-// view of core does not hold the switch.
+// Whether the AI client (through MCP) may save its checked AI work. On by default; the
+// Interviewer can turn it off under "Use with MCP", and that choice is stored as "no". Only the
+// web interface can change it: the AI client's view of core does not hold the switch.
 const aiClientWritesKey = "ai_client_writes";
 
 export function aiClientWritesAllowed(db: DatabaseSync): boolean {
-  return getSetting(db, aiClientWritesKey) === "yes";
+  return getSetting(db, aiClientWritesKey) !== "no";
 }
 
 export function allowAiClientWrites(db: DatabaseSync, allowed: boolean): void {
-  if (allowed) setSetting(db, aiClientWritesKey, "yes");
-  else deleteSetting(db, aiClientWritesKey);
+  setSetting(db, aiClientWritesKey, allowed ? "yes" : "no");
 }
 
 // Refuses a write from the AI client while the Interviewer has not allowed it.

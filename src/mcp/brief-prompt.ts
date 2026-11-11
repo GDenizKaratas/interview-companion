@@ -35,7 +35,7 @@ const findCandidate =
 
 // Steps both lists share, word for word.
 const readOthers =
-  "Call get_saved_questions and get_interviewer_notes, and get_saved_question_checks to see which Saved Questions were asked in which Interview.";
+  "Call get_saved_questions, whose state says whether each Saved Question was asked, and get_interviewer_notes, and get_saved_question_checks to see in which Interview.";
 const readAiNotes = "Call get_ai_notes for each Interview that has a Transcript.";
 const search =
   "Call search_evidence for the topics of the Candidate's role and CV, and for each topic you are about to write about. Run several searches with different words, because it is a keyword search. To report what the Candidate said, search with candidateOnly set to true.";
@@ -96,7 +96,7 @@ For each Interview in order, short statements of what the Candidate said, each w
 The Interviewer Notes, marked as the Interviewer's opinion and not Evidence. Write "None." if there are none.
 
 ## Open topics
-What has not been talked about yet: the Saved Questions that are not marked asked (see mark) and that no Asked Question matches, in the Interviewer's order, and topics you searched for and did not find, written as "not found in the indexed sources". This is a list for the next Interview, not a list of what the Candidate lacks.
+What has not been talked about yet: the Saved Questions whose state in get_saved_questions is not asked, in the Interviewer's order, and topics you searched for and did not find, written as "not found in the indexed sources". This is a list for the next Interview, not a list of what the Candidate lacks.
 
 ## Reasons and Evidence
 One numbered entry per Evidence number used above:

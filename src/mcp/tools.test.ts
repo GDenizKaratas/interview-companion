@@ -123,7 +123,7 @@ describe("MCP server", () => {
     expect(instructions).toContain("The Interviewer decides about the Candidate");
     expect(instructions).toContain("hire or do not hire");
     // What the tools can and cannot change.
-    expect(instructions).toContain("only when the Interviewer has allowed it");
+    expect(instructions).toContain("unless the Interviewer has turned saving off");
     expect(instructions).toContain("Nothing can be deleted");
   });
 
@@ -263,7 +263,42 @@ describe("MCP server", () => {
     const second = core.addSavedQuestion({ candidateId: candidate.id, text: "How did you make it idempotent?" });
     core.moveSavedQuestion(second.id, 0);
 
-    expect(await call("get_saved_questions", { candidateId: candidate.id })).toEqual([second, first]);
+    const untouched = { state: "planned", decidedBy: "transcripts", transcriptState: "planned", differsFromTranscripts: false };
+    expect(await call("get_saved_questions", { candidateId: candidate.id })).toEqual([
+      { ...second, ...untouched },
+      { ...first, ...untouched },
+    ]);
+  });
+
+  it("get_saved_questions gives core's one state for each question, so the AI client merges nothing", async () => {
+    const interview = readyInterview();
+    const found = core.addSavedQuestion({ candidateId: candidate.id, text: "Which queue?" });
+    const markedByHand = core.addSavedQuestion({ candidateId: candidate.id, text: "Which database?" });
+    core.saveAskedQuestionsFromClient(interview.id, [
+      {
+        question: "Which queue",
+        questionEvidence: { segmentNumber: 1, quote: "Which queue did you use?" },
+        savedQuestionId: found.id,
+        answerSummary: "Said they used Redis with BullMQ.",
+        answerEvidence: [{ segmentNumber: 2, quote: "Redis with BullMQ" }],
+      },
+    ]);
+    // The Transcript says the second was not asked; the Interviewer says it was, and their mark decides.
+    core.setSavedQuestionAsked(markedByHand.id, true);
+
+    const questions = (await call("get_saved_questions", { candidateId: candidate.id })) as { id: string }[];
+
+    expect(questions).toEqual([
+      expect.objectContaining({ id: found.id, state: "asked", decidedBy: "transcripts", differsFromTranscripts: false }),
+      expect.objectContaining({
+        id: markedByHand.id,
+        mark: "asked",
+        state: "asked",
+        decidedBy: "interviewer",
+        transcriptState: "notFound",
+        differsFromTranscripts: true,
+      }),
+    ]);
   });
 
   it("get_saved_questions refuses an unknown Candidate", async () => {
@@ -432,6 +467,13 @@ describe("MCP server", () => {
     expect(await promptText({})).toContain("ask me which Candidate");
   });
 
+  it("the candidate prompt asks for answers in the app's interface language, so a name alone gets a Turkish answer", async () => {
+    expect(await promptText({ candidate: "Mert" })).toContain("Answer in Turkish unless I write in another language.");
+
+    core.setInterfaceLanguage("en");
+    expect(await promptText({ candidate: "Mert" })).toContain("Answer in English unless I write in another language.");
+  });
+
   async function promptText(args: Record<string, string>): Promise<string> {
     const { messages } = await client.getPrompt({ name: "candidate", arguments: args });
     expect(messages).toHaveLength(1);
@@ -492,6 +534,7 @@ describe("MCP server", () => {
   });
 
   it("brief only reads while saving from the AI client is off, and says where to turn it on", async () => {
+    core.allowAiClientWrites(false);
     const text = await fetchBriefPrompt();
 
     for (const tool of ["save_ai_notes", "save_asked_questions", "save_suggested_questions", "save_candidate_brief"]) {
@@ -555,6 +598,7 @@ describe("MCP server", () => {
 
   it("save_ai_notes refuses while saving from the AI client is off, and says where to turn it on", async () => {
     const interview = readyInterview();
+    core.allowAiClientWrites(false);
 
     const message = await refusal("save_ai_notes", { interviewId: interview.id, notes: [redisNote] });
 
@@ -578,6 +622,7 @@ describe("MCP server", () => {
   it("save_asked_questions saves through core's checks, and get_asked_questions and get_saved_question_checks read them back", async () => {
     const interview = readyInterview();
     const saved = core.addSavedQuestion({ candidateId: candidate.id, text: "Which queue?" });
+    core.allowAiClientWrites(false);
     const askedQueue = {
       question: "Which queue",
       questionEvidence: { segmentNumber: 1, quote: "Which queue did you use?" },
@@ -631,6 +676,7 @@ describe("MCP server", () => {
   });
 
   it("save_candidate_brief refuses while saving from the AI client is off", async () => {
+    core.allowAiClientWrites(false);
     const message = await refusal("save_candidate_brief", { candidateId: candidate.id, text: "# Brief", evidence: [] });
 
     expect(message).toContain("Use with MCP");
@@ -655,7 +701,15 @@ describe("MCP server", () => {
       text: "# Candidate Brief: Ada Demir\n\n- Used Redis [1] and Kafka [2].",
       savedAt: "2026-11-10T09:30:00.000Z",
       evidence: [
-        { number: 1, source: "transcript", interviewId: interview.id, segmentNumber: 2, quote: "Redis with BullMQ", found: true },
+        {
+          number: 1,
+          source: "transcript",
+          interviewId: interview.id,
+          segmentNumber: 2,
+          quote: "Redis with BullMQ",
+          found: true,
+          speakerRole: "candidate",
+        },
         { number: 2, source: "cv", page: 1, quote: "Kafka", found: false },
       ],
     };

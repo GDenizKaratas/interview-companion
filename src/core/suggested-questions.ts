@@ -13,6 +13,7 @@ import type { Now } from "./interviewer-notes.ts";
 import { listInterviewerNotes } from "./interviewer-notes.ts";
 import { listInterviews, type Today } from "./interviews.ts";
 import { insertSavedQuestion, listSavedQuestions, type SavedQuestion } from "./saved-questions.ts";
+import { aiWorkLimits, fitsLimits } from "./ai-work-limits.ts";
 import { containsQuote } from "./quotes.ts";
 import { getTranscript } from "./transcripts.ts";
 
@@ -118,7 +119,8 @@ function acceptSuggestions(
   leftOut: string[],
   source: AiSource,
 ): SuggestedQuestionGeneration {
-  const backed = proposed.filter((suggestion) => isBacked(suggestion, sent, current));
+  // Every way in (the app, the AI client, an import) comes through here, so the limit of one save holds for all.
+  const backed = proposed.filter((suggestion) => isBacked(suggestion, sent, current)).slice(0, aiWorkLimits.suggestedQuestions);
   // An answer with nothing usable does not cost the Interviewer the suggestions they already have.
   if (backed.length > 0) saveSuggestions(db, now, candidateId, backed, source);
   return { suggestions: listSuggestedQuestions(db, candidateId), dropped: proposed.length - backed.length, leftOut };
@@ -207,6 +209,8 @@ function isBacked(
   current: SourceStamps,
 ): boolean {
   if (suggestion.question.trim() === "" || suggestion.reason.trim() === "") return false;
+  const texts = [suggestion.question, suggestion.reason, ...suggestion.evidence.map((e) => e.quote)];
+  if (!fitsLimits(texts, suggestion.evidence.length)) return false;
   return suggestion.evidence.every((evidence) => {
     if (evidence.source === "cv") {
       if (!sent.cv || sent.cv.stamp !== current.cv) return false;

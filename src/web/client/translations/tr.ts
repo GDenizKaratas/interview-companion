@@ -336,6 +336,9 @@ const translation: TranslationFile = {
       cvPage: "CV, sayfa {page}",
       segment: "{interview}, {segment}. konuşma",
       unknownInterview: "bu adaya ait olmayan bir görüşme, {segment}. konuşma",
+      notCandidateWords: "adayın değil, {role} sözü",
+      speakersNotConfirmed: "konuşmacılar onaylanmadı",
+      roleOf: { interviewer: "görüşmecinin", other: "başka bir konuşmacının" },
     },
     interviews: {
       label: "Görüşme",

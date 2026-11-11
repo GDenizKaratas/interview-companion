@@ -30,3 +30,7 @@ We now let the AI client save AI Notes and Suggested Questions through MCP. They
 - Later (#46, approved by the owner) the AI client may also save a Candidate Brief under the same switch. Unlike AI Notes, it is saved even when a quote is not found: core keeps one brief per Candidate and marks each quote found or not found every time it is read. This replaces ADR 0002's "the Candidate Brief is not stored".
 - Later (#47) the MCP server may read whether saving is on, so the `brief` prompt gives only reading steps while it is off. It still cannot turn the switch (decisions 207 and 208).
 - ADR 0002 still holds for the two modes; its "MCP is read-only" consequence is replaced by this ADR.
+
+## Note, 2026-11-11: saving is on by default
+
+Chosen by the owner. Saving from the AI client is now on in a new install; the Interviewer can turn it off under "Use with MCP", and that choice is kept. An install from before this change keeps saving off unless the Interviewer had turned it on. Why: an Interviewer who connects an AI client expects its notes to appear in the app and may not notice the switch. What keeps it safe: every saved item is checked quote by quote, arrives Unreviewed and labelled as from the AI application, nothing can be deleted or changed through MCP, and the start key limits saving to chats where the user started Interview Companion. The switch stays visible, to turn saving off. This replaces "Saving is off until the Interviewer turns it on" above (decision 417).

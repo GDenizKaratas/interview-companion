@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { aiClientCore, openCore, PreconditionError, type Candidate, type Core, type Interview, type Transcript } from "./index.ts";
 
@@ -46,8 +47,17 @@ const interviewerQuote = { statement: "Arka plan işlerinden söz etti.", eviden
 const madeUpQuote = { statement: "Kafka kullandı.", evidence: [{ segmentNumber: 2, quote: "Kafka" }] };
 
 describe("Writes from the AI client", () => {
-  it("are off until the Interviewer turns them on, and then refused with a reason", () => {
+  it("are on in a new database, so a connected AI client's work appears in the app", () => {
     confirmRoles(importTranscript());
+
+    expect(core.aiClientWritesAllowed()).toBe(true);
+    expect(core.saveAiNotesFromClient(interview.id, [backedNote]).notes).toHaveLength(1);
+  });
+
+  it("are refused with a reason once the Interviewer turns them off", () => {
+    confirmRoles(importTranscript());
+
+    core.allowAiClientWrites(false);
 
     expect(core.aiClientWritesAllowed()).toBe(false);
     expect(() => core.saveAiNotesFromClient(interview.id, [backedNote])).toThrow(
@@ -57,12 +67,39 @@ describe("Writes from the AI client", () => {
     expect(core.listAiNotes(interview.id)).toEqual([]);
   });
 
-  it("can be turned on and off again", () => {
-    core.allowAiClientWrites(true);
-    expect(core.aiClientWritesAllowed()).toBe(true);
-
+  it("can be turned off and on again, and the choice is kept when the app opens again", () => {
     core.allowAiClientWrites(false);
+    core.close();
+    core = openCore(join(dir, "test.sqlite"));
     expect(core.aiClientWritesAllowed()).toBe(false);
+
+    core.allowAiClientWrites(true);
+    core.close();
+    core = openCore(join(dir, "test.sqlite"));
+    expect(core.aiClientWritesAllowed()).toBe(true);
+  });
+
+  it("stay as they were in a database from before the default changed: off unless the Interviewer turned them on", () => {
+    core.close();
+    const path = join(dir, "test.sqlite");
+    // A database made before saving was on by default: no value meant off, and turning on wrote "yes".
+    const asBefore = (allowed: boolean) => {
+      const db = new DatabaseSync(path);
+      const version = (db.prepare("PRAGMA user_version").get() as { user_version: number }).user_version;
+      db.prepare("DELETE FROM setting WHERE key = 'ai_client_writes'").run();
+      if (allowed) db.prepare("INSERT INTO setting (key, value) VALUES ('ai_client_writes', 'yes')").run();
+      db.exec(`PRAGMA user_version = ${version - 1}`);
+      db.close();
+    };
+
+    asBefore(false);
+    core = openCore(path);
+    expect(core.aiClientWritesAllowed()).toBe(false);
+    core.close();
+
+    asBefore(true);
+    core = openCore(path);
+    expect(core.aiClientWritesAllowed()).toBe(true);
   });
 });
 
@@ -159,7 +196,6 @@ describe("The AI client's view of core", () => {
 describe("The switch for writes from the AI client", () => {
   it("is read on every save, so turning it off stops the next save at once", () => {
     confirmRoles(importTranscript());
-    core.allowAiClientWrites(true);
     expect(core.saveAiNotesFromClient(interview.id, [backedNote]).notes).toHaveLength(1);
 
     core.allowAiClientWrites(false);

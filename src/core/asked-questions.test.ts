@@ -525,10 +525,10 @@ describe("Marking an Asked Question as wrong", () => {
     fake.askedQuestions = [payments];
     const [pay] = (await core.findAskedQuestions(interview.id)).askedQuestions;
     core.close();
-    // Puts the file back to the schema before the mark: one version earlier, without it.
+    // Puts the file back to the schema before the mark: two versions earlier, without it (the AI client default after it changes no table).
     const file = new DatabaseSync(join(dir, "test.sqlite"));
     const { user_version: version } = file.prepare("PRAGMA user_version").get() as { user_version: number };
-    file.exec(`ALTER TABLE asked_question DROP COLUMN marked_wrong; PRAGMA user_version = ${version - 1};`);
+    file.exec(`ALTER TABLE asked_question DROP COLUMN marked_wrong; PRAGMA user_version = ${version - 2};`);
     file.close();
 
     core = openCore(join(dir, "test.sqlite"), { now: () => clock, aiProvider: fake.factory });
@@ -601,6 +601,7 @@ describe("Asked Questions from the AI client", () => {
     confirmRoles(importTranscript());
     const saved = core.addSavedQuestion({ candidateId: candidate.id, text: "Testleri nasıl yazdınız?" });
     const proposed = [backgroundJobs, { ...payments, answerEvidence: [{ segmentNumber: 4, quote: "never said" }] }];
+    core.allowAiClientWrites(false);
 
     expect(() => core.saveAskedQuestionsFromClient(interview.id, proposed)).toThrow(
       expect.objectContaining({ reason: "aiClientWritesOff" }),
