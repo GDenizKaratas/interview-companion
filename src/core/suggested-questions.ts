@@ -90,9 +90,22 @@ export function saveSuggestedQuestionsFromClient(
   proposed: ProposedQuestion[],
 ): SuggestedQuestionGeneration {
   requireAiClientWrites(db);
+  return saveCheckedSuggestedQuestions(db, today, now, candidateId, proposed, "aiClient");
+}
+
+// Saves Suggested Questions written elsewhere, such as an imported Candidate's, with the same
+// checks as the AI client's. It does not check the AI client switch.
+export function saveCheckedSuggestedQuestions(
+  db: DatabaseSync,
+  today: Today,
+  now: Now,
+  candidateId: string,
+  proposed: ProposedQuestion[],
+  source: AiSource,
+): SuggestedQuestionGeneration {
   requireCandidate(db, candidateId);
   const { sent, leftOut } = buildRequest(db, today, candidateId, null);
-  return acceptSuggestions(db, now, candidateId, proposed, sent, currentStamps(db, candidateId), leftOut, "aiClient");
+  return acceptSuggestions(db, now, candidateId, proposed, sent, currentStamps(db, candidateId), leftOut, source);
 }
 
 function acceptSuggestions(
@@ -272,9 +285,23 @@ export function acceptSuggestedQuestion(db: DatabaseSync, now: Now, id: string):
   requireOpen(suggestion);
   const acceptedAt = now().toISOString();
   return inTransaction(db, () => {
-    db.prepare("UPDATE suggested_question SET accepted_at = ? WHERE id = ?").run(acceptedAt, id);
+    markSuggestionAccepted(db, id, acceptedAt);
     return insertSavedQuestion(db, suggestion.candidateId, suggestion.text, "suggestion", acceptedAt);
   });
+}
+
+// Marks a suggestion accepted at the given time without copying it, for an imported Candidate
+// whose copy is among their Saved Questions already.
+export function markSuggestionAccepted(db: DatabaseSync, id: string, acceptedAt: string): void {
+  db.prepare("UPDATE suggested_question SET accepted_at = ? WHERE id = ?").run(acceptedAt, id);
+}
+
+// When each of the Candidate's accepted suggestions was accepted, by id, for an export.
+export function acceptedTimesOf(db: DatabaseSync, candidateId: string): Map<string, string> {
+  const rows = db
+    .prepare("SELECT id, accepted_at FROM suggested_question WHERE candidate_id = ? AND accepted_at IS NOT NULL")
+    .all(candidateId) as unknown as { id: string; accepted_at: string }[];
+  return new Map(rows.map((row) => [row.id, row.accepted_at]));
 }
 
 // Changes the question before it is accepted. The reason and Evidence stay as the AI gave them.

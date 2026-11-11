@@ -38,7 +38,8 @@ export function insertCandidate(db: DatabaseSync, id: string, input: NewCandidat
   });
 }
 
-function insertCandidateRow(db: DatabaseSync, id: string, input: NewCandidate): Candidate {
+// Adds the Candidate alone, with no Role Questions. An imported Candidate brings their own questions.
+export function insertCandidateRow(db: DatabaseSync, id: string, input: NewCandidate): Candidate {
   const candidate: Candidate = {
     id,
     name: requireText("name", input.name),

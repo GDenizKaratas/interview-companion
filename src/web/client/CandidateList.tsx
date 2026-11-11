@@ -4,6 +4,7 @@ import { api, ApiError, type CandidateOverview } from "./api.ts";
 import { cvRefusalMessage } from "./cv-refusal.ts";
 import { CvPreviewDialog } from "./CvPreviewDialog.tsx";
 import { ExpandableCard } from "./ExpandableCard.tsx";
+import { ImportCandidate } from "./ImportCandidate.tsx";
 import { InterviewCalendar } from "./InterviewCalendar.tsx";
 import { interviewName } from "./interview-names.ts";
 import { candidatePath, linkTo, navigate } from "./navigation.ts";
@@ -114,6 +115,7 @@ export function CandidateList() {
           <button type="button" className="quiet" onClick={() => setRoleQuestionsOpen(true)}>
             {text.roleQuestions.open}
           </button>
+          <ImportCandidate />
         </header>
         <form className="candidate-form card" onSubmit={handleSubmit}>
           <label>

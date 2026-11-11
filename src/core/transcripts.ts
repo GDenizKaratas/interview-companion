@@ -74,11 +74,12 @@ export function importTranscript(db: DatabaseSync, now: Now, interviewId: string
   // The earlier Transcript, with its speakers and segments, goes only when the new one is stored.
   inTransaction(db, () => {
     db.prepare("DELETE FROM transcript WHERE interview_id = ?").run(interviewId);
-    db.prepare("INSERT INTO transcript (interview_id, file_name, format, imported_at) VALUES (?, ?, ?, ?)").run(
+    db.prepare("INSERT INTO transcript (interview_id, file_name, format, imported_at, original) VALUES (?, ?, ?, ?, ?)").run(
       interviewId,
       file.fileName,
       format,
       now().toISOString(),
+      file.bytes,
     );
     const speakerIds = new Map<string, string>();
     const insertSpeaker = db.prepare(
@@ -181,6 +182,21 @@ export function getTranscript(db: DatabaseSync, interviewId: string): Transcript
     speakers,
     segments,
   };
+}
+
+// The Transcript file as the Interviewer chose it, or undefined when the Interview has no
+// Transcript. A Transcript imported before the file was kept is written again as plain text,
+// one "Speaker: text" line per segment, under the same name ending in .txt; its times are lost.
+export function readTranscriptFile(db: DatabaseSync, interviewId: string): TranscriptFile | undefined {
+  const row = db.prepare("SELECT file_name, original FROM transcript WHERE interview_id = ?").get(interviewId) as
+    | { file_name: string; original: Uint8Array | null }
+    | undefined;
+  if (!row) return undefined;
+  if (row.original !== null) return { fileName: row.file_name, bytes: new Uint8Array(row.original) };
+  const transcript = getTranscript(db, interviewId)!;
+  const labels = new Map(transcript.speakers.map((speaker) => [speaker.id, speaker.label]));
+  const text = transcript.segments.map((segment) => `${labels.get(segment.speakerId)}: ${segment.text}`).join("\n");
+  return { fileName: row.file_name.replace(/(\.[^.]*)?$/, ".txt"), bytes: new TextEncoder().encode(`${text}\n`) };
 }
 
 // Gives every speaker of the Interview's Transcript its role and confirms the Speaker Mapping,

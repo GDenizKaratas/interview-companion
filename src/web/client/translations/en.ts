@@ -69,6 +69,49 @@ const text = {
     copyBriefCommandHint: "Copies the command for Claude Code. Paste it there to write and save this Candidate's brief.",
     briefCommandCopied: "Copied",
     briefCommandCopyFailed: "Could not copy",
+    exportCandidate: "Export",
+    exportCandidateHint: "Download everything about this Candidate as one zip",
+  },
+  exportCandidate: {
+    title: "Export this Candidate",
+    contents:
+      "One zip file with the CV and each Transcript as their original files, and everything else: Interviews, Speaker Mappings, your notes and questions, AI Notes with their review, asked questions, Suggested Questions, and the Candidate Brief. It can be imported into another copy of Interview Companion.",
+    personalData:
+      "The zip holds the Candidate's personal data. Share it only where the Candidate's consent allows, and delete copies you no longer need.",
+    download: "Download zip",
+    cancel: "Cancel",
+  },
+  importCandidate: {
+    open: "Import",
+    importing: "Importing…",
+    notAnExport: "This file is not a Candidate export from Interview Companion.",
+    newerVersion: "This export was made by a newer version of Interview Companion. Update the app to import it.",
+    failed: "The Candidate could not be imported.",
+    failedTitle: "Import failed",
+    close: "Close",
+    exists: {
+      title: "This Candidate is already here",
+      detail:
+        "Replace deletes the Candidate here, with everything about them, and imports the zip in their place. Keep both adds the zip as a separate Candidate. Nothing is merged.",
+      replace: "Replace",
+      keepBoth: "Keep both",
+      cancel: "Cancel",
+    },
+    report: {
+      title: "Imported, with some parts not saved",
+      detail:
+        "Every quote was checked again against the imported CV and Transcripts. These parts did not pass, so they were not saved. A Candidate Brief is saved as written; its quotes listed here show as not found.",
+      open: "Open the Workspace",
+      kinds: {
+        cv: "CV file could not be read",
+        transcript: "Transcript could not be read",
+        speakerMapping: "Speaker Mapping not confirmed: the speakers changed",
+        aiNote: "AI Note",
+        askedQuestion: "Asked question",
+        suggestedQuestion: "Suggested Question",
+        briefQuote: "Brief quote not found",
+      },
+    },
   },
   brief: {
     title: "Candidate Brief",

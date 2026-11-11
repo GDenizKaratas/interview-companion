@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { ModalDialog } from "./ModalDialog.tsx";
 
 interface ConfirmDialogProps {
   title: string;
@@ -8,42 +9,42 @@ interface ConfirmDialogProps {
   cancelLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
+  // A choice that deletes nothing, shown between Cancel and the confirm button, such as Keep both.
+  otherAction?: { label: string; onClick: () => void };
 }
 
 // The one way the app asks before deleting something. It opens as a modal dialog: the page
 // behind it cannot be clicked, Escape cancels, and Cancel has the focus, so pressing Enter
 // by habit never deletes anything.
-export function ConfirmDialog({ title, children, confirmLabel, cancelLabel, onConfirm, onCancel }: ConfirmDialogProps) {
-  const dialog = useRef<HTMLDialogElement>(null);
+export function ConfirmDialog({ title, children, confirmLabel, cancelLabel, onConfirm, onCancel, otherAction }: ConfirmDialogProps) {
   const cancelButton = useRef<HTMLButtonElement>(null);
 
+  // Runs after the dialog has opened, since a child's effects run first.
   useEffect(() => {
-    dialog.current?.showModal();
     cancelButton.current?.focus();
   }, []);
 
   return (
-    <dialog
-      ref={dialog}
-      className="confirm-dialog"
-      aria-labelledby="confirm-dialog-title"
-      onCancel={(event) => {
-        event.preventDefault();
-        // Escape here must not also close a dialog this one was opened from.
-        event.stopPropagation();
-        onCancel();
-      }}
+    <ModalDialog
+      title={title}
+      onCancel={onCancel}
+      actions={
+        <>
+          <button type="button" ref={cancelButton} className="quiet" onClick={onCancel}>
+            {cancelLabel}
+          </button>
+          {otherAction && (
+            <button type="button" className="secondary" onClick={otherAction.onClick}>
+              {otherAction.label}
+            </button>
+          )}
+          <button type="button" className="danger" onClick={onConfirm}>
+            {confirmLabel}
+          </button>
+        </>
+      }
     >
-      <h2 id="confirm-dialog-title">{title}</h2>
-      {children && <div className="confirm-dialog-subject">{children}</div>}
-      <div className="confirm-dialog-actions">
-        <button type="button" ref={cancelButton} className="quiet" onClick={onCancel}>
-          {cancelLabel}
-        </button>
-        <button type="button" className="danger" onClick={onConfirm}>
-          {confirmLabel}
-        </button>
-      </div>
-    </dialog>
+      {children}
+    </ModalDialog>
   );
 }

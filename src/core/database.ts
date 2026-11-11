@@ -212,6 +212,9 @@ const migrations: string[] = [
    ) STRICT;
    CREATE INDEX role_question_copy_candidate ON role_question_copy (candidate_id);
    ALTER TABLE saved_question ADD COLUMN from_role INTEGER NOT NULL DEFAULT 0 CHECK (from_role IN (0, 1));`,
+  // The Transcript file exactly as the Interviewer chose it, so a Candidate export holds the
+  // original. NULL for a Transcript imported before this column existed.
+  `ALTER TABLE transcript ADD COLUMN original BLOB;`,
 ];
 
 // Opens the database file and brings its schema up to date. created is true when the file

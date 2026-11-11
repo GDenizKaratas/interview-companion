@@ -7,6 +7,7 @@ import * as askedQuestions from "./asked-questions.ts";
 import type { AiProviderFactory, ProposedAiNote, ProposedAskedQuestion, ProposedQuestion } from "./ai-provider.ts";
 import * as aiSettings from "./ai-settings.ts";
 import * as candidateBrief from "./candidate-brief.ts";
+import * as candidateTransfer from "./candidate-transfer.ts";
 import * as candidateOverview from "./candidate-overview.ts";
 import * as candidates from "./candidates.ts";
 import { claudeProvider } from "./claude-provider.ts";
@@ -38,6 +39,7 @@ export type {
 export type { AskedQuestion, AskedQuestionGeneration, AskedQuestions, SavedQuestionCheck, SegmentQuote } from "./asked-questions.ts";
 export type { BriefEvidence, CandidateBrief, NewBriefEvidence, NewCandidateBrief } from "./candidate-brief.ts";
 export type { CandidateOverview, InterviewOverview } from "./candidate-overview.ts";
+export type { CandidateExport, CandidateImport, ExistingCandidate, ImportOptions, ImportProblem } from "./candidate-transfer.ts";
 export type { Candidate, NewCandidate } from "./candidates.ts";
 export type { Cv, CvFile, CvPage, NewCandidateWithCv } from "./cv.ts";
 export type {
@@ -77,6 +79,8 @@ export interface Core {
   getCandidate(id: string): candidates.Candidate | undefined;
   getCandidateOverview(candidateId: string): candidateOverview.CandidateOverview;
   deleteCandidate(id: string): void;
+  exportCandidate(id: string): candidateTransfer.CandidateExport;
+  importCandidate(zip: Uint8Array, options?: candidateTransfer.ImportOptions): Promise<candidateTransfer.CandidateImport>;
   loadDemoCandidate(): Promise<candidates.Candidate>;
   loadDemoCandidateOnFirstStart(): Promise<candidates.Candidate | undefined>;
   loadDemoCandidates(): Promise<candidates.Candidate[]>;
@@ -219,6 +223,8 @@ export function openCore(dbPath: string, options: CoreOptions = {}): Core {
     getCandidate: (id) => candidates.getCandidate(db, id),
     getCandidateOverview: (candidateId) => candidateOverview.getCandidateOverview(db, today, candidateId),
     deleteCandidate: (id) => cv.deleteCandidateAndCv(db, cvFolder, id),
+    exportCandidate: (id) => candidateTransfer.exportCandidate(db, cvFolder, today, now, id),
+    importCandidate: (zip, options) => candidateTransfer.importCandidate(db, cvFolder, today, zip, options),
     loadDemoCandidate: () => demoCandidate.loadDemoCandidate(db, cvFolder, today, now),
     loadDemoCandidateOnFirstStart: () => demoCandidate.loadDemoCandidateOnFirstStart(db, cvFolder, today, now),
     loadDemoCandidates: () => demoCandidate.loadDemoCandidates(db, cvFolder, today, now),

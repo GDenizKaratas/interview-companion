@@ -8,6 +8,7 @@ import { CvPanel } from "./CvPanel.tsx";
 import type { CvFocus } from "./evidence-focus.ts";
 import { EvidenceSearch } from "./EvidenceSearch.tsx";
 import { ExpandableCard } from "./ExpandableCard.tsx";
+import { ExportCandidateDialog } from "./ExportCandidateDialog.tsx";
 import { InterviewSelector } from "./InterviewSelector.tsx";
 import { NotesPanel } from "./NotesPanel.tsx";
 import { linkTo, navigate } from "./navigation.ts";
@@ -33,6 +34,7 @@ export function Workspace({ candidateId }: { candidateId: string }) {
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [briefOpen, setBriefOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   // Counts changes to the selected Interview's Transcript, so the AI Notes panel loads again.
   const [transcriptVersion, setTranscriptVersion] = useState(0);
   // Asked Questions come first in the AI panel: after an Interview they are what is needed most.
@@ -157,6 +159,11 @@ export function Workspace({ candidateId }: { candidateId: string }) {
         )}
         {load.state === "ready" && <CopyBriefCommand candidateName={load.candidate.name} />}
         {load.state === "ready" && (
+          <button type="button" className="secondary export-button" title={text.workspace.exportCandidateHint} onClick={() => setExportOpen(true)}>
+            {text.workspace.exportCandidate}
+          </button>
+        )}
+        {load.state === "ready" && (
           <button
             type="button"
             className="icon-button danger-quiet delete-candidate"
@@ -171,6 +178,9 @@ export function Workspace({ candidateId }: { candidateId: string }) {
       </header>
       {briefOpen && load.state === "ready" && (
         <CandidateBriefDialog candidate={load.candidate} interviews={interviews} onClose={() => setBriefOpen(false)} />
+      )}
+      {exportOpen && load.state === "ready" && (
+        <ExportCandidateDialog candidate={load.candidate} onClose={() => setExportOpen(false)} />
       )}
       {deleteFailed && <p className="error">{text.workspace.deleteCandidateFailed}</p>}
       {confirmingDelete && load.state === "ready" && (

@@ -10,7 +10,10 @@ import type {
   BriefEvidence,
   Candidate,
   CandidateBrief,
+  CandidateImport,
   CandidateOverview,
+  ExistingCandidate,
+  ImportProblem,
   Cv,
   CvPage,
   EvidenceResult,
@@ -36,7 +39,7 @@ import type {
   TranscriptFormat,
 } from "../../core/index.ts";
 
-export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateOverview, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
+export type { AiFailure, AiNote, AiNoteGeneration, AskedQuestion, AskedQuestionGeneration, AskedQuestions, BriefEvidence, Candidate, CandidateBrief, CandidateImport, CandidateOverview, ExistingCandidate, ImportProblem, Cv, CvPage, EvidenceResult, EvidenceSearch, EvidenceSources, Highlight, Interview, InterviewerNote, RoleQuestion, RoleQuestionList, SavedQuestion, SavedQuestionCheck, SpeakerRole, SuggestedQuestion, SuggestedQuestionGeneration, SuggestionEvidence, Transcript, TranscriptFormat };
 
 export class ApiError extends Error {
   readonly status: number;
@@ -97,6 +100,9 @@ export const api = {
   deleteCandidate: (id: string) => request<void>(`/candidates/${encodeURIComponent(id)}`, { method: "DELETE" }),
   createCandidateWithCv: (input: NewCandidate, cv: File) =>
     request<Candidate>("/candidates", sendForm({ ...input, cv })),
+  candidateExportUrl: (candidateId: string) => `/api/candidates/${encodeURIComponent(candidateId)}/export`,
+  importCandidate: (file: File, ifExists?: ExistingCandidate) =>
+    request<CandidateImport>("/candidate-imports", sendForm(ifExists ? { file, ifExists } : { file })),
   guessCandidateName: (cv: File) => request<{ name: string }>("/cv-name-guess", sendForm({ cv })),
   getCv: (candidateId: string) => request<Cv | null>(`/candidates/${encodeURIComponent(candidateId)}/cv`),
   cvFileUrl: (candidateId: string) => `/api/candidates/${encodeURIComponent(candidateId)}/cv/file`,

@@ -48,6 +48,30 @@ export function createApi(core: Core, options: { mcpServerPath?: string; dataDir
     );
   });
 
+  // The Candidate as one zip, downloaded as a file named after them.
+  api.get("/candidates/:id/export", (c) =>
+    respondOrRefuse(c, () => {
+      const exported = core.exportCandidate(c.req.param("id"));
+      return c.body(exported.bytes.slice().buffer, 200, {
+        "Content-Type": "application/zip",
+        "Content-Disposition": attachment(exported.fileName),
+        "Cache-Control": "no-store",
+      });
+    }),
+  );
+
+  // Imports a Candidate export, sent as a form with a "file" and, once the Interviewer has
+  // chosen what to do with a Candidate already in the app, "ifExists": replace or keepBoth.
+  api.post("/candidate-imports", async (c) => {
+    const form = await c.req.parseBody();
+    const file = await fileField(form, "file");
+    const choice = stringField(form, "ifExists");
+    const ifExists = choice === "replace" || choice === "keepBoth" ? choice : undefined;
+    return respondOrRefuse(c, async () =>
+      c.json(await core.importCandidate(file?.bytes ?? new Uint8Array(), { ifExists }), 201),
+    );
+  });
+
   // Only a suggestion for the name box; nothing is stored.
   api.post("/cv-name-guess", async (c) => {
     const cv = await fileField(await c.req.parseBody(), "cv");
@@ -418,6 +442,13 @@ async function respondOrRefuse(c: Context, run: () => Response | Promise<Respons
     }
     throw error;
   }
+}
+
+// A Content-Disposition header that downloads the file under its name. The name may hold any
+// letter, so it is also given in UTF-8 (RFC 6266), with a plain ASCII copy for old browsers.
+function attachment(fileName: string): string {
+  const ascii = fileName.normalize("NFD").replace(/[^\x20-\x7e]/g, "").replace(/["\\]/g, "") || "candidate.zip";
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(fileName).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)}`;
 }
 
 // A path as one shell word: as it is when it has only safe characters, in single quotes otherwise.

@@ -95,18 +95,19 @@ export function saveAskedQuestionsFromClient(
   return saveCheckedAskedQuestions(db, now, interviewId, proposed, "aiClient");
 }
 
-// Saves Asked Questions written elsewhere, such as the demo's, through the confirmed-Transcript gate
-// and the quote check, with every current Saved Question counted as checked. It does not check
-// the AI client switch.
+// Saves Asked Questions written elsewhere, such as the demo's or an imported Candidate's, through
+// the confirmed-Transcript gate and the quote check. The Saved Questions counted as checked are
+// those given, or every current one. It does not check the AI client switch.
 export function saveCheckedAskedQuestions(
   db: DatabaseSync,
   now: Now,
   interviewId: string,
   proposed: ProposedAskedQuestion[],
   source: AiSource,
+  checkedIds?: string[],
 ): AskedQuestionGeneration {
   const transcript = requireConfirmedTranscript(db, interviewId);
-  return accept(db, now, transcript, proposed, savedQuestionsOf(db, transcript).map((q) => q.id), source);
+  return accept(db, now, transcript, proposed, checkedIds ?? savedQuestionsOf(db, transcript).map((q) => q.id), source);
 }
 
 // The Candidate's Saved Questions, which the model may match.
@@ -266,6 +267,19 @@ export function listAskedQuestions(db: DatabaseSync, interviewId: string): Asked
       };
     }),
   };
+}
+
+// Who found the Interview's Asked Questions and which Saved Questions were checked, for an export,
+// or null when they were never found.
+export function askedQuestionRunOf(db: DatabaseSync, interviewId: string): { source: AiSource; checkedIds: string[] } | null {
+  const run = db.prepare("SELECT source FROM asked_question_run WHERE interview_id = ?").get(interviewId) as
+    | { source: AiSource }
+    | undefined;
+  if (!run) return null;
+  const checked = db
+    .prepare("SELECT saved_question_id FROM asked_question_checked WHERE interview_id = ?")
+    .all(interviewId) as unknown as { saved_question_id: string }[];
+  return { source: run.source, checkedIds: checked.map((row) => row.saved_question_id) };
 }
 
 // Where one Saved Question stands in one Interview whose questions were found: the Asked Question
