@@ -3847,7 +3847,7 @@ button.ai-note-row:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
-.ai-note-list li + li {
+.ai-note-list li:has(> .ai-note-row) + li {
   margin-top: 0.4rem;
 }
 

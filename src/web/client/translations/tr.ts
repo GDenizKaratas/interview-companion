@@ -646,7 +646,7 @@ const translation: TranslationFile = {
         markWrong: "Özeti yanlış olarak işaretle",
         summaryIsWrong: "Özet yanlış",
         markedWrong: "Özet yanlış olarak işaretlendi",
-        markedWrongHint: "Sorularım'da soruldu sayılmaz.",
+        markedWrongHint: "Sorularım'daki sayıma girmez.",
         notWrong: "İşareti kaldır",
         markFailed: "İşaret kaydedilemedi.",
         wrongCount: "{count} soru yanlış olarak işaretlendi",

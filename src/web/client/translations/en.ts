@@ -678,7 +678,7 @@ const text = {
       markWrong: "Mark the summary as wrong",
       summaryIsWrong: "Summary is wrong",
       markedWrong: "Summary marked wrong",
-      markedWrongHint: "Not counted as asked in My questions.",
+      markedWrongHint: "Left out of the count in My questions.",
       notWrong: "Remove the mark",
       markFailed: "The mark could not be saved.",
       // {count} is replaced by a number.
@@ -729,7 +729,7 @@ const text = {
       fromAiClient: "From your AI client",
       fromAiClientHint: "Written by Claude Code or Claude Desktop through MCP, and checked by the app like any AI Note.",
       open: "Opens the note and the quotes it rests on",
-      quoteCount: "{count} quotes",
+      quoteCount: "Quotes: {count}",
       staleTag: "Speakers changed",
       dialogTitle: "Note about the Candidate",
       close: "Close",
